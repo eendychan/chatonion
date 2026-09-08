@@ -235,7 +235,6 @@ fun ChatComposable(
                         fontSize = displaySettings.fontSize,
                         animateGifs = displaySettings.animateGifs,
                         callbacks = callbacks,
-                        onCollapse = pinnedMessageViewModel::toggleExpanded,
                         onUnpin = pinnedMessageViewModel::unpin,
                     )
                 }
