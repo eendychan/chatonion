@@ -40,7 +40,12 @@ fun PinnedMessageBanner(
         shadowElevation = 4.dp,
     ) {
         Box {
-            Column(modifier = Modifier.padding(top = 2.dp, bottom = 2.dp, end = 32.dp)) {
+            Column(
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(top = 6.dp, bottom = 6.dp, start = 4.dp, end = 36.dp),
+            ) {
                 PrivMessageComposable(
                     message = state.message,
                     fontSize = fontSize,
@@ -56,8 +61,8 @@ fun PinnedMessageBanner(
                 IconButton(
                     onClick = onUnpin,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(2.dp)
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 2.dp)
                         .size(28.dp),
                 ) {
                     Icon(
