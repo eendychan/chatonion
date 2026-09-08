@@ -179,7 +179,7 @@ fun MainScreen(
     }
     val isImeVisible = WindowInsets.isImeVisible
 
-    // Keyboard height tracking — VM handles debounce + persistence
+    // Keyboard height tracking â€” VM handles debounce + persistence
     LaunchedEffect(isLandscape) { mainScreenViewModel.initKeyboardHeight(isLandscape) }
     val keyboardHeightPx by mainScreenViewModel.keyboardHeightPx.collectAsStateWithLifecycle()
     val minKeyboardHeightPx = with(density) { 100.dp.toPx() }
@@ -211,7 +211,7 @@ fun MainScreen(
     val isTheaterMode = streamVmState.isTheaterMode
     val streamState = rememberStreamToolbarState(currentStream)
 
-    // PiP state — observe via lifecycle since onPause fires when entering PiP
+    // PiP state â€” observe via lifecycle since onPause fires when entering PiP
     val isInPipMode = observePipMode(streamViewModel)
 
     // Wide split layout: side-by-side stream + chat on medium+ width windows
@@ -568,11 +568,23 @@ fun MainScreen(
                             is FullScreenSheetState.History,
                             is FullScreenSheetState.Closed,
                             -> {
+                                // Search, last message, mod actions and stream toggle now live in the
+                                // top toolbar's overflow menu instead of duplicating them here.
+                                val hiddenToToolbar =
+                                    persistentListOf(
+                                        InputAction.Search,
+                                        InputAction.LastMessage,
+                                        InputAction.ModActions,
+                                        InputAction.Stream,
+                                    )
                                 when {
                                     // Theater mode is already fullscreen, so toggling chat fullscreen makes no sense there
-                                    useTheaterLayout -> mainState.inputActions.filterNot { it == InputAction.Fullscreen }.toImmutableList()
+                                    useTheaterLayout ->
+                                        mainState.inputActions
+                                            .filterNot { it == InputAction.Fullscreen || it in hiddenToToolbar }
+                                            .toImmutableList()
 
-                                    else -> mainState.inputActions
+                                    else -> mainState.inputActions.filterNot { it in hiddenToToolbar }.toImmutableList()
                                 }
                             }
                         },
@@ -700,6 +712,25 @@ fun MainScreen(
                     ToolbarAction.TogglePinnedMessage -> {
                         activePinnedMessageViewModel?.toggleExpanded()
                     }
+
+                    ToolbarAction.OpenSearch -> {
+                        activeChannel?.let { sheetNavigationViewModel.openHistory(HistoryChannel.Channel(it)) }
+                    }
+
+                    ToolbarAction.LastMessage -> {
+                        chatInputViewModel.getLastMessage()
+                    }
+
+                    ToolbarAction.OpenModActions -> {
+                        inputState.activeChannel?.let { modActionsViewModel.show(it) }
+                    }
+
+                    ToolbarAction.ToggleStream -> {
+                        when {
+                            currentStream != null -> streamViewModel.closeStream()
+                            else -> activeChannel?.let { streamViewModel.toggleStream(it) }
+                        }
+                    }
                 }
             }
 
@@ -712,6 +743,7 @@ fun MainScreen(
                     showAppBar = effectiveShowAppBar && visible,
                     isFullscreen = isFullscreen,
                     isLoggedIn = isLoggedIn,
+                    isModerator = mainScreenViewModel.isModeratorInChannel(inputState.activeChannel),
                     currentStream = currentStream,
                     isAudioOnly = isAudioOnly,
                     streamHeightDp = streamState.heightDp,
@@ -955,7 +987,7 @@ fun MainScreen(
                     onDrag to onDragEnd
                 }
 
-            // Moving between layouts must not dispose the stream — a disposed StreamView rips
+            // Moving between layouts must not dispose the stream â€” a disposed StreamView rips
             // the WebView out of its new parent and kills playback
             val streamView =
                 remember {
@@ -1208,7 +1240,7 @@ private fun MainScreenFocusEffects(
             }
     }
 
-    // Clear focus after stream closes — the layout shift from removing StreamView
+    // Clear focus after stream closes â€” the layout shift from removing StreamView
     // can cause the TextField to regain focus and open the keyboard.
     LaunchedEffect(currentStream) {
         if (currentStream == null) {
