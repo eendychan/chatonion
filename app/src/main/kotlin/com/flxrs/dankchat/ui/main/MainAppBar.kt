@@ -3,8 +3,6 @@ package com.flxrs.dankchat.ui.main
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -12,24 +10,19 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CameraAlt
@@ -37,30 +30,33 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,23 +66,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.composeunstyled.UnstyledScrollArea
-import com.composeunstyled.UnstyledThumb
-import com.composeunstyled.UnstyledVerticalScrollbar
-import com.composeunstyled.rememberScrollAreaState
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.ui.theme.toolbarPillColor
 import com.flxrs.dankchat.utils.compose.predictiveBackScale
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 
 @Immutable
 sealed interface AppBarMenu {
@@ -131,9 +117,22 @@ internal class InlineMenuItemRegistry {
 
 internal val LocalInlineMenuItemRegistry = staticCompositionLocalOf<InlineMenuItemRegistry?> { null }
 
+private val OVERFLOW_ITEM_SIZE = 44.dp
+private val OVERFLOW_ITEM_ICON_SIZE = 20.dp
+
+/**
+ * Everything that used to live as separate icons/pills next to the channel tabs (add channel,
+ * mentions, pinned/quick actions) plus the actions that used to sit below the message input
+ * (search, last message, moderation, stream toggle) is collapsed into this single menu. It
+ * expands left-to-right next to the trigger button and scrolls horizontally, mirroring the
+ * channel tab strip instead of the old top-to-bottom dropdown.
+ */
 @Composable
 fun InlineOverflowMenu(
     isLoggedIn: Boolean,
+    isModerator: Boolean,
+    hasActiveStream: Boolean,
+    mentionCount: Int,
     onDismiss: () -> Unit,
     onAction: (ToolbarAction) -> Unit,
     initialMenu: AppBarMenu = AppBarMenu.Main,
@@ -162,99 +161,56 @@ fun InlineOverflowMenu(
         }
     }
 
-    val menuWidth = rememberMainMenuWidth(isLoggedIn)
-
     val scrollState = rememberScrollState()
-    val scrollAreaState = rememberScrollAreaState(scrollState)
-    var itemHeightPx by remember { mutableIntStateOf(0) }
-    val measureModifier = Modifier.onSizeChanged { if (itemHeightPx == 0) itemHeightPx = it.height }
-
-    val scrollbarAlpha = remember { Animatable(RESTING_SCROLLBAR_ALPHA) }
-    LaunchedEffect(currentMenu) {
-        scrollState.scrollTo(0)
-        val maxScroll = snapshotFlow { scrollState.maxValue }.first { it != Int.MAX_VALUE }
-        if (maxScroll > 0) {
-            scrollbarAlpha.snapTo(1f)
-            delay(400)
-            scrollbarAlpha.animateTo(RESTING_SCROLLBAR_ALPHA, tween(500))
-        } else {
-            scrollbarAlpha.snapTo(RESTING_SCROLLBAR_ALPHA)
-        }
-    }
+    LaunchedEffect(currentMenu) { scrollState.scrollTo(0) }
 
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.toolbarPillColor,
         modifier = Modifier.predictiveBackScale(backProgress),
     ) {
-        UnstyledScrollArea(
-            state = scrollAreaState,
-            modifier =
-                Modifier
-                    .width(menuWidth)
-                    .heightIn(max = maxHeightDp),
-        ) {
-            AnimatedContent(
-                targetState = currentMenu,
-                transitionSpec = {
-                    if (targetState != AppBarMenu.Main) {
-                        (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
-                    } else {
-                        (slideInHorizontally { -it } + fadeIn()).togetherWith(slideOutHorizontally { it } + fadeOut())
-                    }.using(SizeTransform(clip = false))
-                },
-                label = "InlineMenuTransition",
-            ) { menu ->
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(scrollState)
-                            .padding(vertical = 8.dp),
-                ) {
-                    when (menu) {
-                        AppBarMenu.Main -> MainMenuContent(
-                            isLoggedIn = isLoggedIn,
-                            onAction = onAction,
-                            onDismiss = onDismiss,
-                            onNavigateToUpload = { currentMenu = AppBarMenu.Upload },
-                            onNavigateToChannel = { currentMenu = AppBarMenu.Channel },
-                            modifier = measureModifier,
-                        )
+        AnimatedContent(
+            targetState = currentMenu,
+            transitionSpec = {
+                if (targetState != AppBarMenu.Main) {
+                    (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
+                } else {
+                    (slideInHorizontally { -it } + fadeIn()).togetherWith(slideOutHorizontally { it } + fadeOut())
+                }.using(SizeTransform(clip = false))
+            },
+            label = "InlineMenuTransition",
+        ) { menu ->
+            Row(
+                modifier =
+                    Modifier
+                        .heightIn(max = maxHeightDp.takeIf { it > 0.dp } ?: OVERFLOW_ITEM_SIZE + 8.dp)
+                        .horizontalScroll(scrollState)
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                when (menu) {
+                    AppBarMenu.Main -> MainMenuContent(
+                        isLoggedIn = isLoggedIn,
+                        isModerator = isModerator,
+                        hasActiveStream = hasActiveStream,
+                        mentionCount = mentionCount,
+                        onAction = onAction,
+                        onDismiss = onDismiss,
+                        onNavigateToUpload = { currentMenu = AppBarMenu.Upload },
+                        onNavigateToChannel = { currentMenu = AppBarMenu.Channel },
+                    )
 
-                        AppBarMenu.Upload -> UploadMenuContent(
-                            onAction = onAction,
-                            onDismiss = onDismiss,
-                            onBack = { currentMenu = AppBarMenu.Main },
-                            modifier = measureModifier,
-                        )
+                    AppBarMenu.Upload -> UploadMenuContent(
+                        onAction = onAction,
+                        onDismiss = onDismiss,
+                        onBack = { currentMenu = AppBarMenu.Main },
+                    )
 
-                        AppBarMenu.Channel -> ChannelMenuContent(
-                            isLoggedIn = isLoggedIn,
-                            onAction = onAction,
-                            onDismiss = onDismiss,
-                            onBack = { currentMenu = AppBarMenu.Main },
-                            modifier = measureModifier,
-                        )
-                    }
-                }
-            }
-            if (scrollState.maxValue > itemHeightPx) {
-                UnstyledVerticalScrollbar(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .fillMaxHeight()
-                            .padding(vertical = 6.dp)
-                            .padding(end = 6.dp)
-                            .width(4.dp),
-                ) {
-                    UnstyledThumb(
-                        modifier = Modifier.background(
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = scrollbarAlpha.value),
-                            RoundedCornerShape(100),
-                        ),
-                        enabled = false,
+                    AppBarMenu.Channel -> ChannelMenuContent(
+                        isLoggedIn = isLoggedIn,
+                        onAction = onAction,
+                        onDismiss = onDismiss,
+                        onBack = { currentMenu = AppBarMenu.Main },
                     )
                 }
             }
@@ -262,119 +218,175 @@ fun InlineOverflowMenu(
     }
 }
 
+/** Compact, icon-only, square menu entry (no label shown — meaning must be clear from the icon alone). */
 @Composable
-private fun InlineMenuItem(
-    text: String,
+private fun InlineMenuIconItem(
+    key: String,
     icon: ImageVector,
+    contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    maxLines: Int = 1,
-    hasSubMenu: Boolean = false,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
 ) {
     val registry = LocalInlineMenuItemRegistry.current
-    val isPressed = registry?.pressedKey == text
+    val isPressed = registry?.pressedKey == key
     if (registry != null) {
-        DisposableEffect(registry, text) {
-            onDispose { registry.unregister(text) }
+        DisposableEffect(registry, key) {
+            onDispose { registry.unregister(key) }
         }
     }
     val highlightColor = MaterialTheme.colorScheme.surfaceContainerHighest
     Row(
         modifier =
             modifier
-                .fillMaxWidth()
+                .size(OVERFLOW_ITEM_SIZE)
                 .onGloballyPositioned { coords ->
-                    registry?.register(text, coords.boundsInWindow(), onClick)
-                }.background(if (isPressed) highlightColor else Color.Transparent)
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                    registry?.register(key, coords.boundsInWindow(), onClick)
+                }.background(if (isPressed) highlightColor else Color.Transparent, MaterialTheme.shapes.small)
+                .clickable(onClick = onClick),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(OVERFLOW_ITEM_ICON_SIZE),
         )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        if (hasSubMenu) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
-            )
-        }
     }
 }
 
 @Composable
-private fun InlineSubMenuHeader(
-    title: String,
-    onBack: () -> Unit,
-) {
+private fun InlineSubMenuHeaderIcon(onBack: () -> Unit) {
     Row(
         modifier =
             Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onBack)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .size(OVERFLOW_ITEM_SIZE)
+                .clickable(onClick = onBack),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = null,
+            contentDescription = stringResource(R.string.back),
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(end = 8.dp),
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
 
 @Composable
-private fun ColumnScope.MainMenuContent(
+private fun RowScope.MainMenuContent(
     isLoggedIn: Boolean,
+    isModerator: Boolean,
+    hasActiveStream: Boolean,
+    mentionCount: Int,
     onAction: (ToolbarAction) -> Unit,
     onDismiss: () -> Unit,
     onNavigateToUpload: () -> Unit,
     onNavigateToChannel: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
+    InlineMenuIconItem(
+        key = "settings",
+        icon = Icons.Default.Settings,
+        contentDescription = stringResource(R.string.settings),
+        onClick = {
+            onAction(ToolbarAction.OpenSettings)
+            onDismiss()
+        },
+    )
+
+    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+    InlineMenuIconItem(
+        key = "add_channel",
+        icon = Icons.Default.Add,
+        contentDescription = stringResource(R.string.add_channel),
+        onClick = {
+            onAction(ToolbarAction.AddChannel)
+            onDismiss()
+        },
+    )
+    if (isLoggedIn) {
+        InlineMenuIconItem(
+            key = "mentions",
+            icon = if (mentionCount > 0) Icons.Default.Notifications else Icons.Outlined.Notifications,
+            contentDescription = stringResource(R.string.mentions_title),
+            tint = if (mentionCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            onClick = {
+                onAction(ToolbarAction.OpenMentions)
+                onDismiss()
+            },
+        )
+    }
+
+    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+    InlineMenuIconItem(
+        key = "search",
+        icon = Icons.Default.Search,
+        contentDescription = stringResource(R.string.input_action_search),
+        onClick = {
+            onAction(ToolbarAction.OpenSearch)
+            onDismiss()
+        },
+    )
+    InlineMenuIconItem(
+        key = "last_message",
+        icon = Icons.Default.History,
+        contentDescription = stringResource(R.string.input_action_last_message),
+        onClick = {
+            onAction(ToolbarAction.LastMessage)
+            onDismiss()
+        },
+    )
+    if (isModerator) {
+        InlineMenuIconItem(
+            key = "mod_actions",
+            icon = Icons.Outlined.Shield,
+            contentDescription = stringResource(R.string.menu_mod_actions),
+            onClick = {
+                onAction(ToolbarAction.OpenModActions)
+                onDismiss()
+            },
+        )
+    }
+    InlineMenuIconItem(
+        key = "toggle_stream",
+        icon = if (hasActiveStream) Icons.Filled.Videocam else Icons.Outlined.Videocam,
+        contentDescription = stringResource(R.string.toggle_stream),
+        tint = if (hasActiveStream) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        onClick = {
+            onAction(ToolbarAction.ToggleStream)
+            onDismiss()
+        },
+    )
+
+    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
     if (!isLoggedIn) {
-        InlineMenuItem(
-            text = stringResource(R.string.login),
+        InlineMenuIconItem(
+            key = "login",
             icon = Icons.AutoMirrored.Filled.Login,
+            contentDescription = stringResource(R.string.login),
             onClick = {
                 onAction(ToolbarAction.Login)
                 onDismiss()
             },
-            modifier = modifier,
         )
     } else {
-        InlineMenuItem(
-            text = stringResource(R.string.relogin),
+        InlineMenuIconItem(
+            key = "relogin",
             icon = Icons.Default.Refresh,
+            contentDescription = stringResource(R.string.relogin),
             onClick = {
                 onAction(ToolbarAction.Relogin)
                 onDismiss()
             },
-            modifier = modifier,
         )
-        InlineMenuItem(
-            text = stringResource(R.string.logout),
+        InlineMenuIconItem(
+            key = "logout",
             icon = Icons.AutoMirrored.Filled.Logout,
+            contentDescription = stringResource(R.string.logout),
             onClick = {
                 onAction(ToolbarAction.Logout)
                 onDismiss()
@@ -382,175 +394,134 @@ private fun ColumnScope.MainMenuContent(
         )
     }
 
-    HorizontalDivider()
+    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-    InlineMenuItem(
-        text = stringResource(R.string.manage_channels),
+    InlineMenuIconItem(
+        key = "manage_channels",
         icon = Icons.Default.EditNote,
+        contentDescription = stringResource(R.string.manage_channels),
         onClick = {
             onAction(ToolbarAction.ManageChannels)
             onDismiss()
         },
     )
-    InlineMenuItem(
-        text = stringResource(R.string.remove_channel),
+    InlineMenuIconItem(
+        key = "remove_channel",
         icon = Icons.Default.RemoveCircleOutline,
+        contentDescription = stringResource(R.string.remove_channel),
         onClick = {
             onAction(ToolbarAction.RemoveChannel)
             onDismiss()
         },
     )
-    InlineMenuItem(
-        text = stringResource(R.string.reload_emotes),
+    InlineMenuIconItem(
+        key = "reload_emotes",
         icon = Icons.Default.EmojiEmotions,
+        contentDescription = stringResource(R.string.reload_emotes),
         onClick = {
             onAction(ToolbarAction.ReloadEmotes)
             onDismiss()
         },
     )
-    InlineMenuItem(
-        text = stringResource(R.string.reconnect),
+    InlineMenuIconItem(
+        key = "reconnect",
         icon = Icons.Default.Autorenew,
+        contentDescription = stringResource(R.string.reconnect),
         onClick = {
             onAction(ToolbarAction.Reconnect)
             onDismiss()
         },
     )
 
-    HorizontalDivider()
+    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-    InlineMenuItem(
-        text = stringResource(R.string.upload_media),
+    InlineMenuIconItem(
+        key = "upload_media",
         icon = Icons.Default.CloudUpload,
+        contentDescription = stringResource(R.string.upload_media),
         onClick = onNavigateToUpload,
-        hasSubMenu = true,
     )
-    InlineMenuItem(
-        text = stringResource(R.string.channel),
+    InlineMenuIconItem(
+        key = "channel_info",
         icon = Icons.Default.Info,
+        contentDescription = stringResource(R.string.channel),
         onClick = onNavigateToChannel,
-        hasSubMenu = true,
-    )
-
-    HorizontalDivider()
-
-    InlineMenuItem(
-        text = stringResource(R.string.settings),
-        icon = Icons.Default.Settings,
-        onClick = {
-            onAction(ToolbarAction.OpenSettings)
-            onDismiss()
-        },
     )
 }
 
 @Composable
-private fun ColumnScope.UploadMenuContent(
+private fun RowScope.UploadMenuContent(
     onAction: (ToolbarAction) -> Unit,
     onDismiss: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    InlineSubMenuHeader(title = stringResource(R.string.upload_media), onBack = onBack)
-    InlineMenuItem(
-        text = stringResource(R.string.take_picture),
+    InlineSubMenuHeaderIcon(onBack = onBack)
+    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    InlineMenuIconItem(
+        key = "take_picture",
         icon = Icons.Default.CameraAlt,
+        contentDescription = stringResource(R.string.take_picture),
         onClick = {
             onAction(ToolbarAction.CaptureImage)
             onDismiss()
         },
-        modifier = modifier,
-        maxLines = 2,
     )
-    InlineMenuItem(
-        text = stringResource(R.string.record_video),
+    InlineMenuIconItem(
+        key = "record_video",
         icon = Icons.Default.Videocam,
+        contentDescription = stringResource(R.string.record_video),
         onClick = {
             onAction(ToolbarAction.CaptureVideo)
             onDismiss()
         },
-        maxLines = 2,
     )
-    InlineMenuItem(
-        text = stringResource(R.string.choose_media),
+    InlineMenuIconItem(
+        key = "choose_media",
         icon = Icons.Default.Image,
+        contentDescription = stringResource(R.string.choose_media),
         onClick = {
             onAction(ToolbarAction.ChooseMedia)
             onDismiss()
         },
-        maxLines = 2,
     )
 }
 
 @Composable
-private fun ColumnScope.ChannelMenuContent(
+private fun RowScope.ChannelMenuContent(
     isLoggedIn: Boolean,
     onAction: (ToolbarAction) -> Unit,
     onDismiss: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    InlineSubMenuHeader(title = stringResource(R.string.channel), onBack = onBack)
-    InlineMenuItem(
-        text = stringResource(R.string.open_channel),
+    InlineSubMenuHeaderIcon(onBack = onBack)
+    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    InlineMenuIconItem(
+        key = "open_channel",
         icon = Icons.Default.OpenInBrowser,
+        contentDescription = stringResource(R.string.open_channel),
         onClick = {
             onAction(ToolbarAction.OpenChannel)
             onDismiss()
         },
-        modifier = modifier,
-        maxLines = 2,
     )
-    InlineMenuItem(
-        text = stringResource(R.string.report_channel),
+    InlineMenuIconItem(
+        key = "report_channel",
         icon = Icons.Default.Flag,
+        contentDescription = stringResource(R.string.report_channel),
         onClick = {
             onAction(ToolbarAction.ReportChannel)
             onDismiss()
         },
-        maxLines = 2,
     )
     if (isLoggedIn) {
-        InlineMenuItem(
-            text = stringResource(R.string.block_channel),
+        InlineMenuIconItem(
+            key = "block_channel",
             icon = Icons.Default.Block,
+            contentDescription = stringResource(R.string.block_channel),
             onClick = {
                 onAction(ToolbarAction.BlockChannel)
                 onDismiss()
             },
-            maxLines = 2,
         )
-    }
-}
-
-private val MENU_ITEM_CHROME_WIDTH = (16 + 20 + 12 + 20 + 16).dp // padding + icon + gap + submenu arrow + padding
-private val MIN_MENU_WIDTH = 200.dp
-
-@Composable
-private fun rememberMainMenuWidth(isLoggedIn: Boolean): Dp {
-    val density = LocalDensity.current
-    val textMeasurer = rememberTextMeasurer()
-    val textStyle = MaterialTheme.typography.bodyLarge
-
-    val mainItemTexts = buildList {
-        if (isLoggedIn) {
-            add(stringResource(R.string.relogin))
-            add(stringResource(R.string.logout))
-        } else {
-            add(stringResource(R.string.login))
-        }
-        add(stringResource(R.string.manage_channels))
-        add(stringResource(R.string.remove_channel))
-        add(stringResource(R.string.reload_emotes))
-        add(stringResource(R.string.reconnect))
-        add(stringResource(R.string.upload_media))
-        add(stringResource(R.string.channel))
-        add(stringResource(R.string.settings))
-    }
-
-    return remember(mainItemTexts, density, textStyle) {
-        val maxTextWidthPx = mainItemTexts.maxOf { textMeasurer.measure(it, textStyle).size.width }
-        val totalWidthPx = with(density) { MENU_ITEM_CHROME_WIDTH.roundToPx() } + maxTextWidthPx
-        maxOf(with(density) { totalWidthPx.toDp() }, MIN_MENU_WIDTH)
     }
 }
