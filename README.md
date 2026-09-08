@@ -1,4 +1,4 @@
-[🇬🇧 English](README_ENG.md) | 🇷🇺 Русский
+[English](README_ENG.md) | Russian
 
 # <img src="https://user-images.githubusercontent.com/85196642/153115305-e39f854d-6dc9-4975-a60b-653f6ecc87df.png" height="75"> chatonion
 
