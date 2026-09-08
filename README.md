@@ -1,5 +1,4 @@
 # <img src="https://user-images.githubusercontent.com/85196642/153115305-e39f854d-6dc9-4975-a60b-653f6ecc87df.png" height="75"> chatonion
-# fork of DankChat by flex3r
 
 [![Build status](https://github.com/flex3r/DankChat/actions/workflows/android.yml/badge.svg?branch=develop)](https://github.com/flex3r/DankChat/actions)  
 
