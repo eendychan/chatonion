@@ -4,7 +4,7 @@
 
 [![Build status](https://github.com/eendychan/chatonion/actions/workflows/android.yml/badge.svg?branch=develop)](https://github.com/eendychan/chatonion/actions)  
 
-### **Качай chatonion [здесь](https://github.com/eendychan/chatonion/releases/tag/release)**
+### **Качай chatonion [здесь](https://github.com/eendychan/chatonion/releases)**
 *· Обязательно нажимай «Всё равно установить», когда во время установки появится диалоговое окно*
 
 ### Скриншоты
