@@ -119,7 +119,6 @@ fun FloatingToolbar(
     showAppBar: Boolean,
     isFullscreen: Boolean,
     isLoggedIn: Boolean,
-    isModerator: Boolean = false,
     currentStream: UserName?,
     isAudioOnly: Boolean,
     streamHeightDp: Dp,
@@ -130,6 +129,7 @@ fun FloatingToolbar(
     onAudioOnly: () -> Unit,
     onStreamClose: () -> Unit,
     modifier: Modifier = Modifier,
+    isModerator: Boolean = false,
     endAligned: Boolean = false,
     showTabs: Boolean = true,
     addChannelTooltipState: TooltipState? = null,
@@ -355,7 +355,6 @@ fun FloatingToolbar(
                                             }
                                         },
                             ) {
-                                val pillColor = MaterialTheme.colorScheme.toolbarPillColor
                                 val indicatorColor = MaterialTheme.colorScheme.primary
                                 Box {
                                     Box(
