@@ -73,6 +73,7 @@ fun PrivMessageComposable(
     modifier: Modifier = Modifier,
     highlightShape: Shape = RectangleShape,
     showChannelPrefix: Boolean = false,
+    showHeader: Boolean = true,
     animateGifs: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -186,6 +187,7 @@ fun PrivMessageComposable(
             message = message,
             fontSize = fontSize,
             showChannelPrefix = showChannelPrefix,
+            showHeader = showHeader,
             animateGifs = animateGifs,
             interactionSource = interactionSource,
             backgroundColor = backgroundColor,
@@ -201,6 +203,7 @@ private fun PrivMessageText(
     message: ChatMessageUiState.PrivMessageUi,
     fontSize: Float,
     showChannelPrefix: Boolean,
+    showHeader: Boolean,
     animateGifs: Boolean,
     interactionSource: MutableInteractionSource,
     backgroundColor: Color,
@@ -227,6 +230,7 @@ private fun PrivMessageText(
             defaultTextColor,
             nameColor,
             showChannelPrefix,
+            showHeader,
             linkColor,
             fontSize,
         ) {
@@ -244,7 +248,7 @@ private fun PrivMessageText(
                 }
 
                 // Timestamp
-                if (message.timestamp.isNotEmpty()) {
+                if (showHeader && message.timestamp.isNotEmpty()) {
                     withStyle(timestampSpanStyle(fontSize, defaultTextColor)) {
                         append(message.timestamp)
                     }
@@ -258,7 +262,7 @@ private fun PrivMessageText(
                 }
 
                 // Username with click annotation (only if nameText is not empty)
-                if (message.nameText.isNotEmpty()) {
+                if (showHeader && message.nameText.isNotEmpty()) {
                     withStyle(
                         SpanStyle(
                             fontWeight = FontWeight.Bold,
