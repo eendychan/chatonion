@@ -16,3 +16,4 @@ value class UserId(
 fun String.toUserId() = UserId(this)
 
 inline fun UserId.ifBlank(default: () -> UserId?): UserId? = if (value.isBlank()) default() else this
+
