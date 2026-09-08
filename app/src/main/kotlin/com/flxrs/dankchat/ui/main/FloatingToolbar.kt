@@ -1,13 +1,12 @@
 package com.flxrs.dankchat.ui.main
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -22,7 +21,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -80,25 +78,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.IntrinsicMeasurable
-import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.LayoutModifier
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.composeunstyled.UnstyledScrollArea
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.ui.main.channel.ChannelTabUiState
@@ -135,7 +125,6 @@ fun FloatingToolbar(
     addChannelTooltipState: TooltipState? = null,
     onAddChannelTooltipDismiss: () -> Unit = {},
     onSkipTour: () -> Unit = {},
-    menuMaxHeightDp: Dp = 0.dp,
     onToolbarBottomChange: (Int) -> Unit = {},
     isEmoteMenuOpen: Boolean = false,
     onCloseEmoteMenu: () -> Unit = {},
@@ -300,321 +289,302 @@ fun FloatingToolbar(
                             },
                     verticalAlignment = Alignment.Top,
                 ) {
-                    // Push action pill to end when no tabs are shown
-                    if (endAligned && (!showTabs || tabState.tabs.isEmpty())) {
+                    // Push the pill to the end when this toolbar variant isn't showing tabs at all.
+                    // Once the pill is shown it always fills the row via weight(1f), so an empty tab
+                    // list on its own is no longer a reason to push - it still needs to host the
+                    // pin/overflow buttons (and, from inside the overflow menu, "add channel").
+                    if (endAligned && !showTabs) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
 
-                    // Scrollable tabs pill
+                    // One continuous pill: channel avatars (or, once expanded, the overflow menu's
+                    // icons) on the left, with the pin toggle and the overflow trigger fixed at the
+                    // end so they never disappear while the menu is open.
                     AnimatedVisibility(
-                        visible = showTabs && tabState.tabs.isNotEmpty(),
+                        visible = showTabs,
                         modifier = Modifier.weight(1f, fill = endAligned),
                         enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
                         exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
                     ) {
-                        Column(modifier = if (endAligned) Modifier.fillMaxWidth() else Modifier) {
-                            val mentionGradientColor = MaterialTheme.colorScheme.error
-                            Surface(
-                                shape = MaterialTheme.shapes.extraLarge,
-                                color = MaterialTheme.colorScheme.toolbarPillColor,
-                                modifier =
-                                    Modifier
-                                        .clip(MaterialTheme.shapes.extraLarge)
-                                        .drawWithContent {
-                                            drawContent()
-                                            val gradientWidth = 24.dp.toPx()
-                                            if (hasLeftMention) {
-                                                drawRect(
-                                                    brush =
-                                                        Brush.horizontalGradient(
-                                                            colors =
-                                                                listOf(
-                                                                    mentionGradientColor.copy(alpha = 0.5f),
-                                                                    mentionGradientColor.copy(alpha = 0f),
-                                                                ),
-                                                            endX = gradientWidth,
-                                                        ),
-                                                    size = Size(gradientWidth, size.height),
+                        val overflowMenuRegistry = remember { InlineMenuItemRegistry() }
+                        val mentionGradientColor = MaterialTheme.colorScheme.error
+                        Surface(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = MaterialTheme.colorScheme.toolbarPillColor,
+                            modifier =
+                                Modifier
+                                    .then(if (endAligned) Modifier.fillMaxWidth() else Modifier)
+                                    .clip(MaterialTheme.shapes.extraLarge)
+                                    .drawWithContent {
+                                        drawContent()
+                                        if (showOverflowMenu) return@drawWithContent
+                                        val gradientWidth = 24.dp.toPx()
+                                        if (hasLeftMention) {
+                                            drawRect(
+                                                brush =
+                                                    Brush.horizontalGradient(
+                                                        colors =
+                                                            listOf(
+                                                                mentionGradientColor.copy(alpha = 0.5f),
+                                                                mentionGradientColor.copy(alpha = 0f),
+                                                            ),
+                                                        endX = gradientWidth,
+                                                    ),
+                                                size = Size(gradientWidth, size.height),
+                                            )
+                                        }
+                                        if (hasRightMention) {
+                                            drawRect(
+                                                brush =
+                                                    Brush.horizontalGradient(
+                                                        colors =
+                                                            listOf(
+                                                                mentionGradientColor.copy(alpha = 0f),
+                                                                mentionGradientColor.copy(alpha = 0.5f),
+                                                            ),
+                                                        startX = size.width - gradientWidth,
+                                                        endX = size.width,
+                                                    ),
+                                                topLeft = Offset(size.width - gradientWidth, 0f),
+                                                size = Size(gradientWidth, size.height),
+                                            )
+                                        }
+                                    },
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    Crossfade(targetState = showOverflowMenu, label = "ToolbarPillContent") { isOverflow ->
+                                        if (isOverflow) {
+                                            CompositionLocalProvider(LocalInlineMenuItemRegistry provides overflowMenuRegistry) {
+                                                InlineOverflowMenu(
+                                                    isLoggedIn = isLoggedIn,
+                                                    isModerator = isModerator,
+                                                    hasActiveStream = currentStream != null,
+                                                    mentionCount = totalMentionCount,
+                                                    onDismiss = {
+                                                        showOverflowMenu = false
+                                                        overflowInitialMenu = AppBarMenu.Main
+                                                    },
+                                                    initialMenu = overflowInitialMenu,
+                                                    onAction = onAction,
                                                 )
                                             }
-                                            if (hasRightMention) {
-                                                drawRect(
-                                                    brush =
-                                                        Brush.horizontalGradient(
-                                                            colors =
-                                                                listOf(
-                                                                    mentionGradientColor.copy(alpha = 0f),
-                                                                    mentionGradientColor.copy(alpha = 0.5f),
-                                                                ),
-                                                            startX = size.width - gradientWidth,
-                                                            endX = size.width,
-                                                        ),
-                                                    topLeft = Offset(size.width - gradientWidth, 0f),
-                                                    size = Size(gradientWidth, size.height),
+                                        } else {
+                                            val indicatorColor = MaterialTheme.colorScheme.primary
+                                            Box(
+                                                modifier =
+                                                    Modifier
+                                                        .padding(horizontal = 8.dp)
+                                                        .onSizeChanged { tabViewportWidth = it.width }
+                                                        .clipToBounds()
+                                                        .horizontalScroll(tabScrollState),
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    tabState.tabs.forEachIndexed { index, tab ->
+                                                        val isSelected = index == selectedIndex
+                                                        val hasActivity = tab.mentionCount > 0 || tab.hasUnread
+                                                        val ringColor = when {
+                                                            isSelected -> MaterialTheme.colorScheme.primary
+                                                            hasActivity -> MaterialTheme.colorScheme.onSurface
+                                                            else -> Color.Transparent
+                                                        }
+                                                        Box(
+                                                            contentAlignment = Alignment.Center,
+                                                            modifier =
+                                                                Modifier
+                                                                    .combinedClickable(
+                                                                        // Let taps fall through to the dismiss scrim while a menu is open
+                                                                        enabled = !showOverflowMenu,
+                                                                        onClick = { onAction(ToolbarAction.SelectTab(index)) },
+                                                                        onLongClick = { onAction(ToolbarAction.LongClickTab) },
+                                                                    ).defaultMinSize(minHeight = 48.dp)
+                                                                    .padding(horizontal = 5.dp, vertical = 6.dp)
+                                                                    .reportPosition(tabLayoutState, index),
+                                                        ) {
+                                                            Box(
+                                                                contentAlignment = Alignment.Center,
+                                                                modifier =
+                                                                    Modifier
+                                                                        .size(34.dp)
+                                                                        .clip(CircleShape)
+                                                                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                                                        .border(
+                                                                            width = if (isSelected) 2.dp else 1.dp,
+                                                                            color = ringColor,
+                                                                            shape = CircleShape,
+                                                                        ),
+                                                            ) {
+                                                                if (tab.avatarUrl != null) {
+                                                                    AsyncImage(
+                                                                        model = tab.avatarUrl,
+                                                                        contentDescription = tab.displayName,
+                                                                        contentScale = ContentScale.Crop,
+                                                                        modifier = Modifier
+                                                                            .fillMaxSize()
+                                                                            .clip(CircleShape),
+                                                                    )
+                                                                } else {
+                                                                    Text(
+                                                                        text = tab.displayName.take(1).uppercase(),
+                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                        style = MaterialTheme.typography.labelLarge,
+                                                                        fontWeight = FontWeight.Bold,
+                                                                    )
+                                                                }
+                                                            }
+                                                            if (tab.mentionCount > 0) {
+                                                                Badge(modifier = Modifier.align(Alignment.TopEnd))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                PagerTabIndicator(
+                                                    pagerState = composePagerState,
+                                                    state = tabLayoutState,
+                                                    color = indicatorColor,
+                                                    modifier = Modifier.align(Alignment.BottomStart),
                                                 )
                                             }
-                                        },
-                            ) {
-                                val indicatorColor = MaterialTheme.colorScheme.primary
-                                Box {
+                                        }
+                                    }
+                                }
+
+                                // Pin toggle - fixed at the end, always visible regardless of whether
+                                // the overflow menu is open.
+                                val pinButtonWidth by animateDpAsState(
+                                    targetValue = if (hasActivePinnedMessage) 48.dp else 0.dp,
+                                    label = "pinButtonWidth",
+                                )
+                                if (pinButtonWidth > 0.dp) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier =
+                                            Modifier
+                                                .width(pinButtonWidth)
+                                                .clipToBounds()
+                                                .graphicsLayer { alpha = pinButtonWidth.value / 48f },
+                                    ) {
+                                        IconButton(onClick = { onAction(ToolbarAction.TogglePinnedMessage) }) {
+                                            when {
+                                                isPinnedMessageShown -> Icon(
+                                                    imageVector = Icons.Default.PushPin,
+                                                    contentDescription = stringResource(R.string.pinned_message_collapse),
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                )
+
+                                                else -> Icon(
+                                                    imageVector = Icons.Outlined.PushPin,
+                                                    contentDescription = stringResource(R.string.pinned_message_show),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Overflow trigger - fixed at the end, always visible.
+                                var triggerLayoutCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+                                val overflowTrigger: @Composable () -> Unit = {
                                     Box(
                                         modifier =
                                             Modifier
-                                                .padding(horizontal = 8.dp)
-                                                .onSizeChanged { tabViewportWidth = it.width }
-                                                .clipToBounds()
-                                                .horizontalScroll(tabScrollState),
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            tabState.tabs.forEachIndexed { index, tab ->
-                                                val isSelected = index == selectedIndex
-                                                val hasActivity = tab.mentionCount > 0 || tab.hasUnread
-                                                val ringColor = when {
-                                                    isSelected -> MaterialTheme.colorScheme.primary
-                                                    hasActivity -> MaterialTheme.colorScheme.onSurface
-                                                    else -> Color.Transparent
-                                                }
-                                                Box(
-                                                    contentAlignment = Alignment.Center,
-                                                    modifier =
-                                                        Modifier
-                                                            .combinedClickable(
-                                                                // Let taps fall through to the dismiss scrim while a menu is open
-                                                                enabled = !showOverflowMenu,
-                                                                onClick = { onAction(ToolbarAction.SelectTab(index)) },
-                                                                onLongClick = { onAction(ToolbarAction.LongClickTab) },
-                                                            ).defaultMinSize(minHeight = 48.dp)
-                                                            .padding(horizontal = 5.dp, vertical = 6.dp)
-                                                            .reportPosition(tabLayoutState, index),
-                                                ) {
-                                                    Box(
-                                                        contentAlignment = Alignment.Center,
-                                                        modifier =
-                                                            Modifier
-                                                                .size(34.dp)
-                                                                .clip(CircleShape)
-                                                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                                                .border(
-                                                                    width = if (isSelected) 2.dp else 1.dp,
-                                                                    color = ringColor,
-                                                                    shape = CircleShape,
-                                                                ),
-                                                    ) {
-                                                        if (tab.avatarUrl != null) {
-                                                            AsyncImage(
-                                                                model = tab.avatarUrl,
-                                                                contentDescription = tab.displayName,
-                                                                contentScale = ContentScale.Crop,
-                                                                modifier = Modifier
-                                                                    .fillMaxSize()
-                                                                    .clip(CircleShape),
-                                                            )
-                                                        } else {
-                                                            Text(
-                                                                text = tab.displayName.take(1).uppercase(),
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                style = MaterialTheme.typography.labelLarge,
-                                                                fontWeight = FontWeight.Bold,
-                                                            )
+                                                .size(44.dp)
+                                                .onGloballyPositioned { triggerLayoutCoords = it }
+                                                .pointerInput(overflowMenuRegistry) {
+                                                    awaitEachGesture {
+                                                        awaitFirstDown(requireUnconsumed = false)
+                                                        if (showOverflowMenu) {
+                                                            showOverflowMenu = false
+                                                            return@awaitEachGesture
+                                                        }
+                                                        overflowInitialMenu = AppBarMenu.Main
+                                                        showOverflowMenu = true
+                                                        keyboardController?.hide()
+                                                        onCloseEmoteMenu()
+                                                        while (true) {
+                                                            val event = awaitPointerEvent()
+                                                            val change = event.changes.first()
+                                                            val coords = triggerLayoutCoords
+                                                            val windowPos =
+                                                                coords?.localToWindow(change.position) ?: change.position
+                                                            overflowMenuRegistry.pressedKey = overflowMenuRegistry.keyAt(windowPos)
+                                                            if (!change.pressed) {
+                                                                overflowMenuRegistry.selectAt(windowPos)
+                                                                overflowMenuRegistry.pressedKey = null
+                                                                break
+                                                            }
                                                         }
                                                     }
-                                                    if (tab.mentionCount > 0) {
-                                                        Badge(modifier = Modifier.align(Alignment.TopEnd))
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        PagerTabIndicator(
-                                            pagerState = composePagerState,
-                                            state = tabLayoutState,
-                                            color = indicatorColor,
-                                            modifier = Modifier.align(Alignment.BottomStart),
+                                                },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MoreVert,
+                                            contentDescription = stringResource(R.string.more),
+                                            tint =
+                                                if (totalMentionCount > 0) {
+                                                    MaterialTheme.colorScheme.error
+                                                } else {
+                                                    LocalContentColor.current
+                                                },
                                         )
                                     }
                                 }
-                            }
-                        }
-                    }
-
-                    // Action icons + inline overflow menu
-                    val overflowMenuRegistry = remember { InlineMenuItemRegistry() }
-                    Row(verticalAlignment = Alignment.Top) {
-                        Spacer(Modifier.width(6.dp))
-
-                        CompositionLocalProvider(LocalInlineMenuItemRegistry provides overflowMenuRegistry) {
-                            Column(modifier = Modifier.width(IntrinsicSize.Min)) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.extraLarge,
-                                    color = MaterialTheme.colorScheme.toolbarPillColor,
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        // Reserve space at start when menu is open and not logged in,
-                                        // so the pill matches the 3-icon width and icons stay end-aligned
-                                        if (!isLoggedIn && showOverflowMenu) {
-                                            Spacer(modifier = Modifier.width(48.dp))
-                                        }
-                                        // Animate the measured width instead of using AnimatedVisibility: the pill
-                                        // sits in an IntrinsicSize.Min column, and AnimatedVisibility reports the
-                                        // full intrinsic width during its exit, making the tabs pill jump afterwards
-                                        val pinButtonWidth by animateDpAsState(
-                                            targetValue = if (hasActivePinnedMessage) 48.dp else 0.dp,
-                                            label = "pinButtonWidth",
-                                        )
-                                        if (pinButtonWidth > 0.dp) {
-                                            Box(
-                                                contentAlignment = Alignment.Center,
-                                                modifier =
-                                                    Modifier
-                                                        .width(pinButtonWidth)
-                                                        .clipToBounds()
-                                                        .graphicsLayer { alpha = pinButtonWidth.value / 48f },
-                                            ) {
-                                                IconButton(onClick = { onAction(ToolbarAction.TogglePinnedMessage) }) {
-                                                    when {
-                                                        isPinnedMessageShown -> Icon(
-                                                            imageVector = Icons.Default.PushPin,
-                                                            contentDescription = stringResource(R.string.pinned_message_collapse),
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                        )
-
-                                                        else -> Icon(
-                                                            imageVector = Icons.Outlined.PushPin,
-                                                            contentDescription = stringResource(R.string.pinned_message_show),
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        var triggerLayoutCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
-                                        val overflowTrigger: @Composable () -> Unit = {
-                                            Box(
-                                                modifier =
-                                                    Modifier
-                                                        .size(44.dp)
-                                                        .onGloballyPositioned { triggerLayoutCoords = it }
-                                                        .pointerInput(overflowMenuRegistry) {
-                                                            awaitEachGesture {
-                                                                awaitFirstDown(requireUnconsumed = false)
-                                                                if (showOverflowMenu) {
-                                                                    showOverflowMenu = false
-                                                                    return@awaitEachGesture
-                                                                }
-                                                                overflowInitialMenu = AppBarMenu.Main
-                                                                showOverflowMenu = true
-                                                                keyboardController?.hide()
-                                                                onCloseEmoteMenu()
-                                                                while (true) {
-                                                                    val event = awaitPointerEvent()
-                                                                    val change = event.changes.first()
-                                                                    val coords = triggerLayoutCoords
-                                                                    val windowPos =
-                                                                        coords?.localToWindow(change.position) ?: change.position
-                                                                    overflowMenuRegistry.pressedKey = overflowMenuRegistry.keyAt(windowPos)
-                                                                    if (!change.pressed) {
-                                                                        overflowMenuRegistry.selectAt(windowPos)
-                                                                        overflowMenuRegistry.pressedKey = null
-                                                                        break
-                                                                    }
-                                                                }
-                                                            }
-                                                        },
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.MoreVert,
-                                                    contentDescription = stringResource(R.string.more),
-                                                    tint =
-                                                        if (totalMentionCount > 0) {
-                                                            MaterialTheme.colorScheme.error
-                                                        } else {
-                                                            LocalContentColor.current
-                                                        },
+                                if (addChannelTooltipState != null) {
+                                    LaunchedEffect(Unit) {
+                                        addChannelTooltipState.show()
+                                    }
+                                    LaunchedEffect(Unit) {
+                                        snapshotFlow { addChannelTooltipState.isVisible }
+                                            .dropWhile { !it } // skip initial false
+                                            .first { !it } // wait for dismiss (any cause)
+                                        onAddChannelTooltipDismiss()
+                                    }
+                                    TooltipBox(
+                                        positionProvider =
+                                            TooltipDefaults.rememberTooltipPositionProvider(
+                                                TooltipAnchorPosition.Above,
+                                                spacingBetweenTooltipAndAnchor = 8.dp,
+                                            ),
+                                        tooltip = {
+                                            val tourColors =
+                                                TooltipDefaults.richTooltipColors(
+                                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    actionContentColor = MaterialTheme.colorScheme.secondary,
                                                 )
-                                            }
-                                        }
-                                        if (addChannelTooltipState != null) {
-                                            LaunchedEffect(Unit) {
-                                                addChannelTooltipState.show()
-                                            }
-                                            LaunchedEffect(Unit) {
-                                                snapshotFlow { addChannelTooltipState.isVisible }
-                                                    .dropWhile { !it } // skip initial false
-                                                    .first { !it } // wait for dismiss (any cause)
-                                                onAddChannelTooltipDismiss()
-                                            }
-                                            TooltipBox(
-                                                positionProvider =
-                                                    TooltipDefaults.rememberTooltipPositionProvider(
-                                                        TooltipAnchorPosition.Above,
-                                                        spacingBetweenTooltipAndAnchor = 8.dp,
-                                                    ),
-                                                tooltip = {
-                                                    val tourColors =
-                                                        TooltipDefaults.richTooltipColors(
-                                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                            actionContentColor = MaterialTheme.colorScheme.secondary,
-                                                        )
-                                                    RichTooltip(
-                                                        colors = tourColors,
-                                                        caretShape = TooltipDefaults.caretShape(caretSize = DpSize(24.dp, 12.dp)),
-                                                        action = {
-                                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                                TextButton(onClick = {
-                                                                    addChannelTooltipState.dismiss()
-                                                                    onAddChannelTooltipDismiss()
-                                                                    onSkipTour()
-                                                                }) {
-                                                                    Text(stringResource(R.string.tour_skip))
-                                                                }
-                                                                TextButton(onClick = {
-                                                                    addChannelTooltipState.dismiss()
-                                                                    onAddChannelTooltipDismiss()
-                                                                }) {
-                                                                    Text(stringResource(R.string.tour_next))
-                                                                }
-                                                            }
-                                                        },
-                                                    ) {
-                                                        Text(stringResource(R.string.tour_add_more_channels_hint))
+                                            RichTooltip(
+                                                colors = tourColors,
+                                                caretShape = TooltipDefaults.caretShape(caretSize = DpSize(24.dp, 12.dp)),
+                                                action = {
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                        TextButton(onClick = {
+                                                            addChannelTooltipState.dismiss()
+                                                            onAddChannelTooltipDismiss()
+                                                            onSkipTour()
+                                                        }) {
+                                                            Text(stringResource(R.string.tour_skip))
+                                                        }
+                                                        TextButton(onClick = {
+                                                            addChannelTooltipState.dismiss()
+                                                            onAddChannelTooltipDismiss()
+                                                        }) {
+                                                            Text(stringResource(R.string.tour_next))
+                                                        }
                                                     }
                                                 },
-                                                state = addChannelTooltipState,
-                                                hasAction = true,
                                             ) {
-                                                overflowTrigger()
+                                                Text(stringResource(R.string.tour_add_more_channels_hint))
                                             }
-                                        } else {
-                                            overflowTrigger()
-                                        }
-                                    }
-                                }
-
-                                AnimatedVisibility(
-                                    visible = showOverflowMenu,
-                                    enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
-                                    exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
-                                    modifier =
-                                        Modifier
-                                            .skipIntrinsicHeight()
-                                            .padding(top = 4.dp)
-                                            .endAlignedOverflow(),
-                                ) {
-                                    InlineOverflowMenu(
-                                        isLoggedIn = isLoggedIn,
-                                        isModerator = isModerator,
-                                        hasActiveStream = currentStream != null,
-                                        mentionCount = totalMentionCount,
-                                        onDismiss = {
-                                            showOverflowMenu = false
-                                            overflowInitialMenu = AppBarMenu.Main
                                         },
-                                        initialMenu = overflowInitialMenu,
-                                        onAction = onAction,
-                                        maxHeightDp = menuMaxHeightDp,
-                                    )
+                                        state = addChannelTooltipState,
+                                        hasAction = true,
+                                    ) {
+                                        overflowTrigger()
+                                    }
+                                } else {
+                                    overflowTrigger()
                                 }
                             }
                         }
@@ -624,88 +594,3 @@ fun FloatingToolbar(
         }
     }
 }
-
-/**
- * Allows the child to measure at its natural width (up to 3x parent width)
- * without affecting the parent Column's width.
- * Reports 0 intrinsic width so [IntrinsicSize.Min] ignores this child.
- * Places the child end-aligned (right edge matches parent right edge).
- */
-private fun Modifier.endAlignedOverflow() = this.then(
-    object : LayoutModifier {
-        override fun MeasureScope.measure(
-            measurable: Measurable,
-            constraints: Constraints,
-        ): MeasureResult {
-            val parentWidth = constraints.maxWidth
-            val placeable =
-                measurable.measure(
-                    constraints.copy(minWidth = 0, maxWidth = (parentWidth * 3).coerceAtMost(MAX_LAYOUT_SIZE)),
-                )
-            return layout(parentWidth, placeable.height) {
-                placeable.place(parentWidth - placeable.width, 0)
-            }
-        }
-
-        override fun IntrinsicMeasureScope.minIntrinsicWidth(
-            measurable: IntrinsicMeasurable,
-            height: Int,
-        ): Int = 0
-
-        override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-            measurable: IntrinsicMeasurable,
-            height: Int,
-        ): Int = 0
-
-        override fun IntrinsicMeasureScope.minIntrinsicHeight(
-            measurable: IntrinsicMeasurable,
-            width: Int,
-        ): Int = measurable.minIntrinsicHeight(width)
-
-        override fun IntrinsicMeasureScope.maxIntrinsicHeight(
-            measurable: IntrinsicMeasurable,
-            width: Int,
-        ): Int = measurable.maxIntrinsicHeight(width)
-    },
-)
-
-/**
- * Prevents intrinsic height queries from propagating to children.
- * Needed because [com.composeunstyled.UnstyledScrollArea] crashes on intrinsic height measurement,
- * and [IntrinsicSize.Min] on a parent Column triggers these queries.
- */
-private fun Modifier.skipIntrinsicHeight() = this.then(
-    object : LayoutModifier {
-        override fun MeasureScope.measure(
-            measurable: Measurable,
-            constraints: Constraints,
-        ): MeasureResult {
-            val placeable = measurable.measure(constraints)
-            return layout(placeable.width, placeable.height) {
-                placeable.placeRelative(0, 0)
-            }
-        }
-
-        override fun IntrinsicMeasureScope.minIntrinsicHeight(
-            measurable: IntrinsicMeasurable,
-            width: Int,
-        ): Int = 0
-
-        override fun IntrinsicMeasureScope.maxIntrinsicHeight(
-            measurable: IntrinsicMeasurable,
-            width: Int,
-        ): Int = 0
-
-        override fun IntrinsicMeasureScope.minIntrinsicWidth(
-            measurable: IntrinsicMeasurable,
-            height: Int,
-        ): Int = measurable.minIntrinsicWidth(height)
-
-        override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-            measurable: IntrinsicMeasurable,
-            height: Int,
-        ): Int = measurable.maxIntrinsicWidth(height)
-    },
-)
-
-private const val MAX_LAYOUT_SIZE = 16_777_215
