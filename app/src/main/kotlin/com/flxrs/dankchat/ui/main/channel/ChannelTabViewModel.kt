@@ -22,6 +22,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
+/** Holds everything but `avatarUrls` from the `combine` below - kept separate because Kotlin's typed `combine` overload tops out at 5 flows. */
+private data class TabBaseState(
+    val active: UserName?,
+    val unread: Map<UserName, Boolean>,
+    val mentions: Map<UserName, Int>,
+    val loadingStates: List<ChannelLoadingState>,
+    val globalState: GlobalLoadingState,
+)
+
 @KoinViewModel
 class ChannelTabViewModel(
     private val chatChannelProvider: ChatChannelProvider,
@@ -55,8 +64,12 @@ class ChannelTabViewModel(
                     chatNotificationRepository.channelMentionCount,
                     combine(loadingFlows) { it.toList() },
                     channelDataCoordinator.globalLoadingState,
-                    avatarUrls,
-                ) { active, unread, mentions, loadingStates, globalState, avatars ->
+                ) { active, unread, mentions, loadingStates, globalState ->
+                    // kotlinx.coroutines' typed `combine` only goes up to 5 flows, and `avatarUrls`
+                    // would be a 6th - so it's combined separately below instead of being folded in here.
+                    TabBaseState(active, unread, mentions, loadingStates, globalState)
+                }.combine(avatarUrls) { base, avatars ->
+                    val (active, unread, mentions, loadingStates, globalState) = base
                     val tabs =
                         channels.mapIndexed { index, channelWithRename ->
                             ChannelTabItem(
