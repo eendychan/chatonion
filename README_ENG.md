@@ -6,7 +6,7 @@ English | [Russian](README.md)
 
 ### **Download chatonion [here](https://github.com/eendychan/chatonion/releases/tag/release)**
 
-*· Make sure to tap "Install anyway" if Google Play Protect shows a warning during installation.*
+*· Make sure to tap "Install anyway" if you seen a warning during installation.*
 
 ### Screenshots
 
