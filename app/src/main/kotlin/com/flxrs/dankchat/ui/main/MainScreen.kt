@@ -179,7 +179,7 @@ fun MainScreen(
     }
     val isImeVisible = WindowInsets.isImeVisible
 
-    // Keyboard height tracking â€” VM handles debounce + persistence
+    // Keyboard height tracking — VM handles debounce + persistence
     LaunchedEffect(isLandscape) { mainScreenViewModel.initKeyboardHeight(isLandscape) }
     val keyboardHeightPx by mainScreenViewModel.keyboardHeightPx.collectAsStateWithLifecycle()
     val minKeyboardHeightPx = with(density) { 100.dp.toPx() }
@@ -211,7 +211,7 @@ fun MainScreen(
     val isTheaterMode = streamVmState.isTheaterMode
     val streamState = rememberStreamToolbarState(currentStream)
 
-    // PiP state â€” observe via lifecycle since onPause fires when entering PiP
+    // PiP state — observe via lifecycle since onPause fires when entering PiP
     val isInPipMode = observePipMode(streamViewModel)
 
     // Wide split layout: side-by-side stream + chat on medium+ width windows
@@ -758,7 +758,6 @@ fun MainScreen(
                     addChannelTooltipState = if (featureTourState.postOnboardingStep is PostOnboardingStep.ToolbarPlusHint) featureTourViewModel.addChannelTooltipState else null,
                     onAddChannelTooltipDismiss = featureTourViewModel::onToolbarHintDismissed,
                     onSkipTour = featureTourViewModel::skipTour,
-                    menuMaxHeightDp = menuMaxHeightDp,
                     onToolbarBottomChange = { toolbarBottomPx = it },
                     isEmoteMenuOpen = inputState.isEmoteMenuOpen,
                     onCloseEmoteMenu = { chatInputViewModel.setEmoteMenuOpen(false) },
@@ -987,7 +986,7 @@ fun MainScreen(
                     onDrag to onDragEnd
                 }
 
-            // Moving between layouts must not dispose the stream â€” a disposed StreamView rips
+            // Moving between layouts must not dispose the stream — a disposed StreamView rips
             // the WebView out of its new parent and kills playback
             val streamView =
                 remember {
@@ -1240,7 +1239,7 @@ private fun MainScreenFocusEffects(
             }
     }
 
-    // Clear focus after stream closes â€” the layout shift from removing StreamView
+    // Clear focus after stream closes — the layout shift from removing StreamView
     // can cause the TextField to regain focus and open the keyboard.
     LaunchedEffect(currentStream) {
         if (currentStream == null) {
