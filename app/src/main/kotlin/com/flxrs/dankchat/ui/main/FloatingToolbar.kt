@@ -433,7 +433,6 @@ fun FloatingToolbar(
                                             modifier = Modifier.align(Alignment.BottomStart),
                                         )
                                     }
-
                                 }
                             }
                         }
