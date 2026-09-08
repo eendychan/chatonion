@@ -18,6 +18,7 @@ data class ChannelTabUiState(
 data class ChannelTabItem(
     val channel: UserName,
     val displayName: String,
+    val avatarUrl: String? = null,
     val isSelected: Boolean,
     val hasUnread: Boolean,
     val mentionCount: Int,
