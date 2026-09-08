@@ -43,4 +43,12 @@ sealed interface ToolbarAction {
     data object OpenSettings : ToolbarAction
 
     data object TogglePinnedMessage : ToolbarAction
+
+    data object OpenSearch : ToolbarAction
+
+    data object LastMessage : ToolbarAction
+
+    data object OpenModActions : ToolbarAction
+
+    data object ToggleStream : ToolbarAction
 }
