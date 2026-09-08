@@ -4,7 +4,7 @@ English | [Russian](README.md)
 
 [![Build status](https://github.com/eendychan/chatonion/actions/workflows/android.yml/badge.svg?branch=develop)](https://github.com/eendychan/chatonion/actions)
 
-### **Download chatonion [here](https://github.com/eendychan/chatonion/releases/tag/release)**
+### **Download chatonion [here](https://github.com/eendychan/chatonion/releases)**
 
 *· Make sure to tap "Install anyway" if you seen a warning during installation.*
 
