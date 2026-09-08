@@ -256,9 +256,11 @@ private fun PrivMessageText(
                 }
 
                 // Badges (using appendInlineContent for proper rendering)
-                message.badges.forEach { badge ->
-                    appendInlineContent("BADGE_${badge.position}", "[badge]")
-                    append(" ") // Space between badges
+                if (showHeader) {
+                    message.badges.forEach { badge ->
+                        appendInlineContent("BADGE_${badge.position}", "[badge]")
+                        append(" ") // Space between badges
+                    }
                 }
 
                 // Username with click annotation (only if nameText is not empty)
