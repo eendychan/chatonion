@@ -14,7 +14,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -45,7 +45,6 @@ import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -67,10 +66,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.flxrs.dankchat.R
-import com.flxrs.dankchat.ui.theme.toolbarPillColor
 import com.flxrs.dankchat.utils.compose.predictiveBackScale
 import kotlinx.coroutines.CancellationException
 
@@ -123,9 +120,9 @@ private val OVERFLOW_ITEM_ICON_SIZE = 20.dp
 /**
  * Everything that used to live as separate icons/pills next to the channel tabs (add channel,
  * mentions, pinned/quick actions) plus the actions that used to sit below the message input
- * (search, last message, moderation, stream toggle) is collapsed into this single menu. It
- * expands left-to-right next to the trigger button and scrolls horizontally, mirroring the
- * channel tab strip instead of the old top-to-bottom dropdown.
+ * (search, last message, moderation, stream toggle) is collapsed into this single menu. It's
+ * embedded directly in the toolbar pill (replacing the channel avatar strip in place while open)
+ * and scrolls horizontally instead of the old top-to-bottom dropdown.
  */
 @Composable
 fun InlineOverflowMenu(
@@ -135,8 +132,8 @@ fun InlineOverflowMenu(
     mentionCount: Int,
     onDismiss: () -> Unit,
     onAction: (ToolbarAction) -> Unit,
+    modifier: Modifier = Modifier,
     initialMenu: AppBarMenu = AppBarMenu.Main,
-    maxHeightDp: Dp = 0.dp,
 ) {
     var currentMenu by remember(initialMenu) { mutableStateOf(initialMenu) }
     var backProgress by remember { mutableFloatStateOf(0f) }
@@ -164,55 +161,50 @@ fun InlineOverflowMenu(
     val scrollState = rememberScrollState()
     LaunchedEffect(currentMenu) { scrollState.scrollTo(0) }
 
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.toolbarPillColor,
-        modifier = Modifier.predictiveBackScale(backProgress),
-    ) {
-        AnimatedContent(
-            targetState = currentMenu,
-            transitionSpec = {
-                if (targetState != AppBarMenu.Main) {
-                    (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
-                } else {
-                    (slideInHorizontally { -it } + fadeIn()).togetherWith(slideOutHorizontally { it } + fadeOut())
-                }.using(SizeTransform(clip = false))
-            },
-            label = "InlineMenuTransition",
-        ) { menu ->
-            Row(
-                modifier =
-                    Modifier
-                        .heightIn(max = maxHeightDp.takeIf { it > 0.dp } ?: OVERFLOW_ITEM_SIZE + 8.dp)
-                        .horizontalScroll(scrollState)
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                when (menu) {
-                    AppBarMenu.Main -> MainMenuContent(
-                        isLoggedIn = isLoggedIn,
-                        isModerator = isModerator,
-                        hasActiveStream = hasActiveStream,
-                        mentionCount = mentionCount,
-                        onAction = onAction,
-                        onDismiss = onDismiss,
-                        onNavigateToUpload = { currentMenu = AppBarMenu.Upload },
-                        onNavigateToChannel = { currentMenu = AppBarMenu.Channel },
-                    )
+    AnimatedContent(
+        targetState = currentMenu,
+        transitionSpec = {
+            if (targetState != AppBarMenu.Main) {
+                (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
+            } else {
+                (slideInHorizontally { -it } + fadeIn()).togetherWith(slideOutHorizontally { it } + fadeOut())
+            }.using(SizeTransform(clip = false))
+        },
+        modifier = modifier.predictiveBackScale(backProgress),
+        label = "InlineMenuTransition",
+    ) { menu ->
+        Row(
+            modifier =
+                Modifier
+                    .height(OVERFLOW_ITEM_SIZE)
+                    .horizontalScroll(scrollState)
+                    .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            when (menu) {
+                AppBarMenu.Main -> MainMenuContent(
+                    isLoggedIn = isLoggedIn,
+                    isModerator = isModerator,
+                    hasActiveStream = hasActiveStream,
+                    mentionCount = mentionCount,
+                    onAction = onAction,
+                    onDismiss = onDismiss,
+                    onNavigateToUpload = { currentMenu = AppBarMenu.Upload },
+                    onNavigateToChannel = { currentMenu = AppBarMenu.Channel },
+                )
 
-                    AppBarMenu.Upload -> UploadMenuContent(
-                        onAction = onAction,
-                        onDismiss = onDismiss,
-                        onBack = { currentMenu = AppBarMenu.Main },
-                    )
+                AppBarMenu.Upload -> UploadMenuContent(
+                    onAction = onAction,
+                    onDismiss = onDismiss,
+                    onBack = { currentMenu = AppBarMenu.Main },
+                )
 
-                    AppBarMenu.Channel -> ChannelMenuContent(
-                        isLoggedIn = isLoggedIn,
-                        onAction = onAction,
-                        onDismiss = onDismiss,
-                        onBack = { currentMenu = AppBarMenu.Main },
-                    )
-                }
+                AppBarMenu.Channel -> ChannelMenuContent(
+                    isLoggedIn = isLoggedIn,
+                    onAction = onAction,
+                    onDismiss = onDismiss,
+                    onBack = { currentMenu = AppBarMenu.Main },
+                )
             }
         }
     }
@@ -295,7 +287,7 @@ private fun RowScope.MainMenuContent(
         },
     )
 
-    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
     InlineMenuIconItem(
         key = "add_channel",
@@ -319,7 +311,7 @@ private fun RowScope.MainMenuContent(
         )
     }
 
-    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
     InlineMenuIconItem(
         key = "search",
@@ -361,7 +353,7 @@ private fun RowScope.MainMenuContent(
         },
     )
 
-    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
     if (!isLoggedIn) {
         InlineMenuIconItem(
@@ -394,7 +386,7 @@ private fun RowScope.MainMenuContent(
         )
     }
 
-    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
     InlineMenuIconItem(
         key = "manage_channels",
@@ -433,7 +425,7 @@ private fun RowScope.MainMenuContent(
         },
     )
 
-    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
     InlineMenuIconItem(
         key = "upload_media",
@@ -456,7 +448,7 @@ private fun RowScope.UploadMenuContent(
     onBack: () -> Unit,
 ) {
     InlineSubMenuHeaderIcon(onBack = onBack)
-    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
     InlineMenuIconItem(
         key = "take_picture",
         icon = Icons.Default.CameraAlt,
@@ -494,7 +486,7 @@ private fun RowScope.ChannelMenuContent(
     onBack: () -> Unit,
 ) {
     InlineSubMenuHeaderIcon(onBack = onBack)
-    VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
     InlineMenuIconItem(
         key = "open_channel",
         icon = Icons.Default.OpenInBrowser,
