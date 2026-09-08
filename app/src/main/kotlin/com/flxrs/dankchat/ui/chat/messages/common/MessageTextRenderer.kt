@@ -167,8 +167,8 @@ fun timestampSpanStyle(
 ) = SpanStyle(
     fontFamily = FontFamily.Monospace,
     fontWeight = FontWeight.Bold,
-    fontSize = (fontSize * 0.95f).sp,
-    color = color,
+    fontSize = (fontSize * 0.8f).sp,
+    color = color.copy(alpha = color.alpha * 0.6f),
     letterSpacing = (-0.03).em,
 )
 
