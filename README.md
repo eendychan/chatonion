@@ -18,3 +18,4 @@
 Оригинальное приложение https://github.com/flex3r/DankChat    
 Поддержите разработку https://streamelements.com/flex3rs/tip    
 *· Заданотив разработчику - вы получаете DankChat баджик возле ника*
+
