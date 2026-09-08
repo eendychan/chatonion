@@ -2,8 +2,10 @@ package com.flxrs.dankchat.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -17,6 +19,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flxrs.dankchat.preferences.appearance.AppearanceSettings
 import com.flxrs.dankchat.preferences.appearance.AppearanceSettingsDataStore
@@ -109,12 +112,23 @@ fun DankChatTheme(content: @Composable () -> Unit) {
     val colors = if (darkTheme) darkColorScheme else lightColorScheme
     MaterialExpressiveTheme(
         colorScheme = colors,
+        shapes = DankChatShapes,
     ) {
         CompositionLocalProvider(LocalAdaptiveColors provides adaptiveColors) {
             content()
         }
     }
 }
+
+// Slightly squarer than the stock Material Expressive shapes (which lean very "pill"-shaped),
+// while still keeping rounded, non-sharp corners throughout the app.
+private val DankChatShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(20.dp),
+)
 
 val ColorScheme.toolbarPillColor: Color
     get() = surfaceContainerHigh
