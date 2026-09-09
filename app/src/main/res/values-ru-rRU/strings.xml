@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name">DankChat</string>
-    <string name="app_name_dank">DankChat (Dank)</string>
+    <string name="app_name">chatonion</string>
+    <string name="app_name_dank">chatonion (Dank)</string>
     <string name="send_hint">Отправить сообщение</string>
     <string name="login">Войти</string>
     <string name="reload_emotes">Обновить смайлы</string>
@@ -44,7 +44,7 @@
     <string name="snackbar_error_copied">Информация об ошибке скопирована</string>
     <string name="notification_stop">Стоп</string>
     <string name="notification_title">FeelsDankMan</string>
-    <string name="notification_message">DankChat работает в фоновом режиме</string>
+    <string name="notification_message">chatonion работает в фоновом режиме</string>
     <string name="emote_menu_hint">Открыть меню смайлов</string>
     <string name="no_recent_emotes">Нет недавних эмоутов</string>
     <string name="login_title">Войти в Twitch.tv</string>
@@ -269,8 +269,8 @@
     <string name="multi_entry_add_entry">Добавить запись</string>
     <string name="login_expired">Сеанс входа истёк! Попробуйте войти ещё раз.</string>
     <string name="message_history_disclaimer_title">Примечание об истории сообщений</string>
-    <string name="message_history_disclaimer_message">DankChat загружает историю сообщений, используя сторонний ресурс.
-Чтобы получить сообщения, DankChat отсылает имена открытых каналов этому ресурсу.
+    <string name="message_history_disclaimer_message">chatonion загружает историю сообщений, используя сторонний ресурс.
+Чтобы получить сообщения, chatonion отсылает имена открытых каналов этому ресурсу.
 Ресурс временно хранит сообщения каналов, которые вы (и другие пользователи) отсылаете ресурсу.
 
 - Чтобы не использовать эту функцию, нажмите Отклонить, или выключите историю сообщений позже.
@@ -312,23 +312,23 @@
     <string name="uploader_headers">Заголовок</string>
     <string name="uploader_image_link">Шаблон медиа ссылки</string>
     <string name="uploader_deletion_link">Шаблон для удаления ссылки</string>
-    <string name="uploader_description">Вы можете настроить собственный хостинг для загрузки медиа, например imgur.com или s-ul.eu. DankChat использует схожий с Chatterino формат настройки.\nПосмотрите здесь, если хотите узнать подробнее (на английском): https://wiki.chatterino.com/Image%20Uploader/</string>
+    <string name="uploader_description">Вы можете настроить собственный хостинг для загрузки медиа, например imgur.com или s-ul.eu. chatonion использует схожий с Chatterino формат настройки.\nПосмотрите здесь, если хотите узнать подробнее (на английском): https://wiki.chatterino.com/Image%20Uploader/</string>
     <string name="toggle_fullscreen">Полноэкранный режим</string>
     <string name="toggle_stream">Вкл/выкл трансляцию</string>
     <string name="menu_show_stream">Показать трансляцию</string>
     <string name="menu_hide_stream">Скрыть трансляцию</string>
-    <string name="menu_audio_only">Только аудио</string>
-    <string name="menu_exit_audio_only">Выйти из режима аудио</string>
+    <string name="menu_audio_only">Аудио</string>
+    <string name="menu_exit_audio_only">Аудио</string>
     <string name="input_action_theater">Режим театра</string>
-    <string name="menu_theater_mode">Режим театра</string>
-    <string name="menu_exit_theater_mode">Выйти из режима театра</string>
+    <string name="menu_theater_mode">Театр</string>
+    <string name="menu_exit_theater_mode">Театр</string>
     <string name="menu_show_theater_chat">Показать чат</string>
     <string name="menu_hide_theater_chat">Скрыть чат</string>
     <string name="menu_theater_chat_side_by_side">Показать чат рядом с трансляцией</string>
     <string name="menu_theater_chat_overlay">Показать чат поверх трансляции</string>
-    <string name="menu_fullscreen">На весь экран</string>
-    <string name="menu_exit_fullscreen">Выйти из полноэкранного режима</string>
-    <string name="menu_hide_input">Скрыть ввод</string>
+    <string name="menu_fullscreen">Фулл</string>
+    <string name="menu_exit_fullscreen">Фулл</string>
+    <string name="menu_hide_input">Скрыть</string>
     <string name="menu_show_input">Показать ввод</string>
     <string name="preference_fullscreen_button_opacity_title">Прозрачность кнопок в полноэкранном режиме</string>
     <string name="preference_fullscreen_button_opacity_summary">Кнопки, отображаемые в полноэкранном режиме или при скрытом вводе: %d%%</string>
@@ -357,13 +357,13 @@
     <string name="input_action_debug">Отладка</string>
     <string name="input_action_configure">Настроить действия</string>
     <string name="input_action_hide_all">Скрыть все действия</string>
-    <string name="room_state_emote_only">Только эмоуты</string>
-    <string name="room_state_subscriber_only">Только подписчики</string>
-    <string name="room_state_slow_mode">Медленный режим</string>
-    <string name="room_state_slow_mode_duration">Медленный режим (%1$s)</string>
-    <string name="room_state_unique_chat">Уникальный чат (R9K)</string>
-    <string name="room_state_follower_only">Только фолловеры</string>
-    <string name="room_state_follower_only_duration">Только фолловеры (%1$s)</string>
+    <string name="room_state_emote_only">Эмоуты</string>
+    <string name="room_state_subscriber_only">Саб-чат</string>
+    <string name="room_state_slow_mode">Слоу-мод</string>
+    <string name="room_state_slow_mode_duration">Слоу-мод (%1$s)</string>
+    <string name="room_state_unique_chat">R9K</string>
+    <string name="room_state_follower_only">Фоллоу-мод</string>
+    <string name="room_state_follower_only_duration">Фоллоу-мод (%1$s)</string>
     <string name="room_state_preset_custom">Другое</string>
     <string name="room_state_follower_any">Любой</string>
     <string name="room_state_duration_seconds">%1$ds</string>
@@ -440,7 +440,7 @@
     <string name="custom_login_show_scopes">Показать требуемые области</string>
     <string name="custom_login_required_scopes">Требуемые области</string>
     <string name="custom_login_missing_scopes_title">Пропущенные области</string>
-    <string name="custom_login_missing_scopes_text">Некоторые области, требуемые DankChat, отсутствуют в токене, и некоторые функции могут работать не так, как ожидалось. Вы хотите продолжить использование этого токена?\nПропущено: %1$s</string>
+    <string name="custom_login_missing_scopes_text">Некоторые области, требуемые chatonion, отсутствуют в токене, и некоторые функции могут работать не так, как ожидалось. Вы хотите продолжить использование этого токена?\nПропущено: %1$s</string>
     <string name="custom_login_missing_scopes_continue">Продолжить</string>
     <string name="custom_login_error_missing_scopes">Пропущенные области: %1$s</string>
     <string name="custom_login_error_fallback">Ошибка: %1$s</string>
@@ -476,6 +476,7 @@
     <string name="preference_about_header">О программе</string>
     <string name="preference_appearance_header">Внешний вид</string>
     <string name="preference_about_summary">DankChat %1$s создан @flex3rs и другими участниками</string>
+    <string name="preference_about_chatonion_summary">«chatonion» — создан @endychan, при помощи ИИ:</string>
     <string name="preference_show_input_title">Отображать строку ввода</string>
     <string name="preference_show_input_summary">Отображать строку для ввода сообщений</string>
     <string name="preference_follow_system_title">В соответствии с системой</string>
@@ -627,7 +628,7 @@
     <string name="preference_stream_extensions_title">Показывать расширения трансляции</string>
     <string name="preference_stream_extensions_summary">Показывает наложения расширений в проигрывателе трансляции</string>
     <string name="preference_retain_webview_title">Предотвратить перезагрузку трансляции</string>
-    <string name="preference_retain_webview_summary">Включить экспериментальное предотвращение перезагрузки трансляции после изменения ориентации или повторного открытия DankChat.</string>
+    <string name="preference_retain_webview_summary">Включить экспериментальное предотвращение перезагрузки трансляции после изменения ориентации или повторного открытия chatonion.</string>
     <string name="preference_show_changelogs">Отображать список изменений после обновления</string>
     <string name="preference_whats_new_header">Список изменений</string>
     <string name="preference_custom_login_title">Пользовательский логин</string>
@@ -797,7 +798,7 @@
     <string name="emote_sheet_created_by">Создан %1$s</string>
     <string name="emote_sheet_zero_width_emote">(Нулевая ширина)</string>
     <string name="emote_copied">Смайл скопирован</string>
-    <string name="changelog_sheet_title">DankChat был обновлён!</string>
+    <string name="changelog_sheet_title">chatonion был обновлён!</string>
     <string name="changelog_sheet_subtitle">Что нового в v%1$s:</string>
     <string name="confirm_login_cancel_title">Подтвердить отмену входа</string>
     <string name="confirm_login_cancel_message">Вы уверены, что хотите отменить процесс входа?</string>
@@ -846,22 +847,22 @@
     <string name="error_with_message">Ошибка: %s</string>
     <string name="something_went_wrong">Что-то пошло не так</string>
     <!-- Onboarding -->
-    <string name="onboarding_welcome_title">DankChat</string>
+    <string name="onboarding_welcome_title">chatonion</string>
     <string name="onboarding_welcome_body">Давайте настроим всё.</string>
     <string name="onboarding_get_started">Начать</string>
     <string name="onboarding_login_title">Войти через Twitch</string>
     <string name="onboarding_login_body">Войдите, чтобы отправлять сообщения, использовать свои эмоуты, получать личные сообщения и разблокировать все функции.</string>
-    <string name="onboarding_login_disclaimer">Вам будет предложено предоставить сразу несколько разрешений Twitch, чтобы вам не пришлось повторно авторизоваться при использовании различных функций. DankChat выполняет действия по модерации и управлению трансляцией только по вашему запросу.</string>
+    <string name="onboarding_login_disclaimer">Вам будет предложено предоставить сразу несколько разрешений Twitch, чтобы вам не пришлось повторно авторизоваться при использовании различных функций. chatonion выполняет действия по модерации и управлению трансляцией только по вашему запросу.</string>
     <string name="onboarding_login_button">Войти через Twitch</string>
     <string name="onboarding_login_success">Вход выполнен</string>
     <string name="onboarding_skip">Пропустить</string>
     <string name="onboarding_continue">Продолжить</string>
     <string name="onboarding_history_title">История сообщений</string>
-    <string name="onboarding_history_body">DankChat загружает историю сообщений из стороннего сервиса при запуске. Для получения сообщений DankChat отправляет названия открытых каналов этому сервису. Сервис временно хранит сообщения посещённых каналов.\n\nВы можете изменить это позже в настройках или узнать больше на https://recent-messages.robotty.de/</string>
+    <string name="onboarding_history_body">chatonion загружает историю сообщений из стороннего сервиса при запуске. Для получения сообщений chatonion отправляет названия открытых каналов этому сервису. Сервис временно хранит сообщения посещённых каналов.\n\nВы можете изменить это позже в настройках или узнать больше на https://recent-messages.robotty.de/</string>
     <string name="onboarding_history_enable">Включить</string>
     <string name="onboarding_history_disable">Отключить</string>
     <string name="onboarding_notifications_title">Уведомления</string>
-    <string name="onboarding_notifications_body">DankChat может уведомлять вас, когда кто-то упоминает вас в чате, пока приложение работает в фоне.</string>
+    <string name="onboarding_notifications_body">chatonion может уведомлять вас, когда кто-то упоминает вас в чате, пока приложение работает в фоне.</string>
     <string name="onboarding_notifications_allow">Разрешить уведомления</string>
     <string name="onboarding_notifications_rationale">Без уведомлений вы не узнаете, когда кто-то упоминает вас в чате, пока приложение работает в фоне.</string>
     <string name="onboarding_notifications_open_settings">Открыть настройки уведомлений</string>
