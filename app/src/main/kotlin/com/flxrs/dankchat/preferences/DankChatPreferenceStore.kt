@@ -108,18 +108,15 @@ class DankChatPreferenceStore(
         viewers: Int,
         uptime: String,
         category: String?,
-    ): String = when (category) {
-        null -> context.resources.getQuantityString(R.plurals.viewers_and_uptime, viewers, viewers, uptime)
-        else -> context.resources.getQuantityString(R.plurals.viewers_and_uptime_with_cateogry, viewers, viewers, category, uptime)
-    }
+    ): String = formatViewersStringCompact(viewers, uptime, category)
 
     fun formatViewersStringCompact(
         viewers: Int,
         uptime: String,
         category: String?,
     ): String = when (category) {
-        null -> context.getString(R.string.viewers_and_uptime_compact, viewers, uptime)
-        else -> context.getString(R.string.viewers_and_uptime_with_category_compact, viewers, category, uptime)
+        null -> "$LIVE_DOT $uptime · $viewers"
+        else -> "$LIVE_DOT $uptime · $viewers · $category"
     }
 
     fun removeChannel(channel: UserName): List<UserName> {
@@ -215,5 +212,8 @@ class DankChatPreferenceStore(
         private const val LAST_INSTALLED_VERSION_KEY = "lastInstalledVersionKey"
 
         private const val SECRET_DANKER_MODE_CLICKS = 5
+
+        // Rendered as a colored dot by the UI layer instead of a "Live"/"В эфире" label.
+        const val LIVE_DOT = "\u25CF"
     }
 }
