@@ -93,8 +93,6 @@ import com.flxrs.dankchat.ui.tour.FeatureTourViewModel
 import com.flxrs.dankchat.ui.tour.PostOnboardingStep
 import com.flxrs.dankchat.ui.tour.TourStep
 import com.flxrs.dankchat.utils.compose.rememberRoundedCornerBottomPadding
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -545,49 +543,9 @@ fun MainScreen(
                     isUploading = dialogState.isUploading,
                     isLoading = tabState.loading,
                     isFullscreen = isFullscreen,
-                    isModerator = mainScreenViewModel.isModeratorInChannel(inputState.activeChannel),
                     isStreamActive = currentStream != null,
                     isAudioOnly = isAudioOnly,
-                    hasStreamData = hasStreamData,
                     isSheetOpen = isSheetOpen,
-                    inputActions =
-                        when (fullScreenSheetState) {
-                            is FullScreenSheetState.Replies -> {
-                                persistentListOf(InputAction.LastMessage)
-                            }
-
-                            is FullScreenSheetState.Whisper,
-                            is FullScreenSheetState.Mention,
-                            -> {
-                                when {
-                                    inputState.isWhisperTabActive && inputState.overlay is InputOverlay.Whisper -> persistentListOf(InputAction.LastMessage)
-                                    else -> persistentListOf()
-                                }
-                            }
-
-                            is FullScreenSheetState.History,
-                            is FullScreenSheetState.Closed,
-                            -> {
-                                // Search, last message, mod actions and stream toggle now live in the
-                                // top toolbar's overflow menu instead of duplicating them here.
-                                val hiddenToToolbar =
-                                    persistentListOf(
-                                        InputAction.Search,
-                                        InputAction.LastMessage,
-                                        InputAction.ModActions,
-                                        InputAction.Stream,
-                                    )
-                                when {
-                                    // Theater mode is already fullscreen, so toggling chat fullscreen makes no sense there
-                                    useTheaterLayout ->
-                                        mainState.inputActions
-                                            .filterNot { it == InputAction.Fullscreen || it in hiddenToToolbar }
-                                            .toImmutableList()
-
-                                    else -> mainState.inputActions.filterNot { it in hiddenToToolbar }.toImmutableList()
-                                }
-                            }
-                        },
                     onInputHeightChange = { inputHeightPx = it },
                     debugMode = mainState.debugMode,
                     overflowExpanded = inputOverflowExpanded,
@@ -607,9 +565,6 @@ fun MainScreen(
                     onHelperTextHeightChange = { helperTextHeightPx = it },
                     isInSplitLayout = useWideSplitLayout,
                     isTheaterMode = useTheaterLayout,
-                    showTheaterDockToggle = useTheaterLayout && canDockTheaterChat,
-                    isTheaterChatDocked = streamVmState.isTheaterChatDocked,
-                    onToggleTheaterChatMode = { streamViewModel.toggleTheaterChatMode() },
                     instantHide = isHistorySheet,
                     isRepeatedSendEnabled = mainState.isRepeatedSendEnabled,
                     overflowMenuMaxHeightDp = menuMaxHeightDp,
