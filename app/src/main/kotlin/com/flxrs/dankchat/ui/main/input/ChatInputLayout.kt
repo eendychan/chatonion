@@ -11,12 +11,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,7 +21,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,7 +31,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -44,27 +39,18 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddComment
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.FullscreenExit
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Theaters
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -73,7 +59,6 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -82,12 +67,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -98,12 +80,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -114,15 +97,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flxrs.dankchat.R
+import com.flxrs.dankchat.preferences.DankChatPreferenceStore
 import com.flxrs.dankchat.preferences.appearance.InputAction
 import com.flxrs.dankchat.ui.main.InputState
 import com.flxrs.dankchat.ui.main.QuickActionsMenu
-import com.flxrs.dankchat.ui.main.TheaterChatModeIcon
 import com.flxrs.dankchat.utils.compose.predictiveBackScale
 import com.flxrs.dankchat.utils.resolve
-import com.materialkolor.ktx.blend
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.StateFlow
 
@@ -136,16 +116,10 @@ fun ChatInputLayout(
     isUploading: Boolean,
     isLoading: Boolean,
     isFullscreen: Boolean,
-    isModerator: Boolean,
     isStreamActive: Boolean,
     isAudioOnly: Boolean,
-    hasStreamData: Boolean,
-    inputActions: ImmutableList<InputAction>,
     modifier: Modifier = Modifier,
     isTheaterMode: Boolean = false,
-    showTheaterDockToggle: Boolean = false,
-    isTheaterChatDocked: Boolean = false,
-    onToggleTheaterChatMode: () -> Unit = {},
     debugMode: Boolean = false,
     overflowExpanded: Boolean = false,
     onOverflowExpandedChange: (Boolean) -> Unit = {},
@@ -157,7 +131,6 @@ fun ChatInputLayout(
 ) {
     val inputState = uiState.inputState
     val enabled = uiState.enabled
-    val hasLastMessage = uiState.hasLastMessage
     val canSend = uiState.canSend
     val isEmoteMenuOpen = uiState.isEmoteMenuOpen
     val helperText = if (isSheetOpen) HelperText() else uiState.helperText
@@ -175,7 +148,6 @@ fun ChatInputLayout(
     val onToggleInput = callbacks.onToggleInput
     val onToggleStream = callbacks.onToggleStream
     val onModActions = callbacks.onModActions
-    val onInputActionsChange = callbacks.onInputActionsChange
     val onSearchClick = callbacks.onSearchClick
     val onDebugInfoClick = callbacks.onDebugInfoClick
     val onNewWhisper = callbacks.onNewWhisper
@@ -210,26 +182,10 @@ fun ChatInputLayout(
             defaultColors.disabledContainerColor
         }
 
-    // Filter to actions that would actually render based on current state
-    val effectiveActions =
-        remember(inputActions, isModerator, hasStreamData, isStreamActive, debugMode) {
-            inputActions
-                .filter { action ->
-                    when (action) {
-                        InputAction.Stream -> hasStreamData || isStreamActive
-                        InputAction.ModActions -> isModerator
-                        InputAction.Debug -> debugMode
-                        else -> true
-                    }
-                }.toImmutableList()
-        }
-
     val view = LocalView.current
     val inputMethodManager = remember(view) { view.context.getSystemService(InputMethodManager::class.java) }
     val keyboardController = LocalSoftwareKeyboardController.current
-    var visibleActions by remember { mutableStateOf(effectiveActions) }
     val quickActionsExpanded = overflowExpanded || tourState.forceOverflowOpen
-    var showConfigSheet by remember { mutableStateOf(false) }
     val topEndRadius by animateDpAsState(
         targetValue = if (quickActionsExpanded || recentMessagesExpanded) 0.dp else 24.dp,
         label = "topEndCornerRadius",
@@ -303,53 +259,49 @@ fun ChatInputLayout(
                     )
                 }
 
-                if (uiState.isCompactMode) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(start = 8.dp, end = 4.dp),
-                    ) {
-                        EmoteKeyboardButton(
-                            isEmoteMenuOpen = isEmoteMenuOpen,
-                            enabled = textFieldEnabled,
-                            focusRequester = focusRequester,
-                            onEmoteClick = onEmoteClick,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 8.dp, end = 4.dp),
+                ) {
+                    chatTextField(Modifier.weight(1f), TextFieldDefaults.contentPaddingWithoutLabel(end = 8.dp))
+                    if (onNewWhisper != null) {
+                        IconButton(
+                            onClick = onNewWhisper,
                             modifier = Modifier.size(40.dp),
-                        )
-                        chatTextField(Modifier.weight(1f), TextFieldDefaults.contentPaddingWithoutLabel(end = 8.dp))
-                        if (onNewWhisper != null) {
-                            IconButton(
-                                onClick = onNewWhisper,
-                                modifier = Modifier.size(40.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AddComment,
-                                    contentDescription = stringResource(R.string.whisper_new),
-                                )
-                            }
-                        }
-                        if (showQuickActions) {
-                            OverflowButton(
-                                quickActionsExpanded = quickActionsExpanded,
-                                tourState = tourState,
-                                onOverflowExpandedChange = onOverflowExpandedChange,
-                                modifier = Modifier.size(40.dp),
-                            )
-                        }
-                        if (uiState.showSendButton) {
-                            SendButton(
-                                enabled = canSend,
-                                isRepeatedSendEnabled = isRepeatedSendEnabled,
-                                onSend = {
-                                    onSend()
-                                    inputMethodManager?.restartInput(view)
-                                },
-                                onRepeatedSendChange = onRepeatedSendChange,
-                                modifier = Modifier.size(44.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddComment,
+                                contentDescription = stringResource(R.string.whisper_new),
                             )
                         }
                     }
-                } else {
-                    chatTextField(Modifier.fillMaxWidth(), null)
+                    EmoteKeyboardButton(
+                        isEmoteMenuOpen = isEmoteMenuOpen,
+                        enabled = textFieldEnabled,
+                        focusRequester = focusRequester,
+                        onEmoteClick = onEmoteClick,
+                        modifier = Modifier.size(40.dp),
+                    )
+                    if (showQuickActions) {
+                        OverflowButton(
+                            quickActionsExpanded = quickActionsExpanded,
+                            tourState = tourState,
+                            onOverflowExpandedChange = onOverflowExpandedChange,
+                            modifier = Modifier.size(40.dp),
+                        )
+                    }
+                    if (uiState.showSendButton) {
+                        SendButton(
+                            enabled = canSend,
+                            isRepeatedSendEnabled = isRepeatedSendEnabled,
+                            onSend = {
+                                onSend()
+                                inputMethodManager?.restartInput(view)
+                            },
+                            onRepeatedSendChange = onRepeatedSendChange,
+                            modifier = Modifier.size(44.dp),
+                        )
+                    }
                 }
 
                 HelperTextRow(helperText = helperText)
@@ -365,51 +317,6 @@ fun ChatInputLayout(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = !uiState.isCompactMode,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut(),
-                ) {
-                    InputActionsRow(
-                        inputActions = inputActions,
-                        effectiveActions = effectiveActions,
-                        showTheaterDockToggle = showTheaterDockToggle,
-                        isTheaterChatDocked = isTheaterChatDocked,
-                        onToggleTheaterChatMode = onToggleTheaterChatMode,
-                        isEmoteMenuOpen = isEmoteMenuOpen,
-                        enabled = enabled,
-                        showQuickActions = showQuickActions,
-                        showSendButton = uiState.showSendButton,
-                        tourState = tourState,
-                        quickActionsExpanded = quickActionsExpanded,
-                        canSend = canSend,
-                        hasLastMessage = hasLastMessage,
-                        isStreamActive = isStreamActive,
-                        isFullscreen = isFullscreen,
-                        isTheaterMode = isTheaterMode,
-                        focusRequester = focusRequester,
-                        onEmoteClick = onEmoteClick,
-                        onOverflowExpandedChange = onOverflowExpandedChange,
-                        onNewWhisper = onNewWhisper,
-                        onSearchClick = onSearchClick,
-                        onLastMessageClick = onLastMessageClick,
-                        onLastMessageLongClick = { onRecentMessagesExpandedChange(true) },
-                        onToggleStream = onToggleStream,
-                        onModActions = onModActions,
-                        onToggleFullscreen = onToggleFullscreen,
-                        onToggleTheater = onToggleTheater,
-                        onToggleInput = onToggleInput,
-                        onDebugInfoClick = onDebugInfoClick,
-                        onSend = {
-                            onSend()
-                            inputMethodManager?.restartInput(view)
-                        },
-                        isRepeatedSendEnabled = isRepeatedSendEnabled,
-                        onRepeatedSendChange = onRepeatedSendChange,
-                        onVisibleActionsChange = { visibleActions = it },
                     )
                 }
             }
@@ -504,17 +411,12 @@ fun ChatInputLayout(
                     .predictiveBackScale(backProgress)
                     .heightIn(max = overflowMenuMaxHeightDp),
                 surfaceColor = surfaceColor,
-                visibleActions = visibleActions,
                 enabled = enabled,
-                hasLastMessage = hasLastMessage,
                 isStreamActive = isStreamActive,
                 isAudioOnly = isAudioOnly,
-                hasStreamData = hasStreamData,
                 isFullscreen = isFullscreen,
                 isTheaterMode = isTheaterMode,
-                isModerator = isModerator,
-                tourState = tourState,
-                hasAnyConfiguredActions = inputActions.isNotEmpty(),
+                debugMode = debugMode,
                 onActionClick = { action ->
                     when (action) {
                         InputAction.Search -> onSearchClick()
@@ -532,27 +434,10 @@ fun ChatInputLayout(
                     callbacks.onAudioOnly()
                     onOverflowExpandedChange(false)
                 },
-                onHideAllActions = {
-                    onInputActionsChange(emptyList<InputAction>().toImmutableList())
-                    onOverflowExpandedChange(false)
-                },
-                onConfigureClick = {
-                    onOverflowExpandedChange(false)
-                    keyboardController?.hide()
-                    showConfigSheet = true
-                },
             )
         }
     }
 
-    if (showConfigSheet) {
-        InputActionConfigSheet(
-            inputActions = inputActions,
-            debugMode = debugMode,
-            onInputActionsChange = onInputActionsChange,
-            onDismiss = { showConfigSheet = false },
-        )
-    }
 }
 
 @Composable
@@ -613,154 +498,6 @@ private fun SendButton(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun InputActionButton(
-    action: InputAction,
-    enabled: Boolean,
-    hasLastMessage: Boolean,
-    isStreamActive: Boolean,
-    isFullscreen: Boolean,
-    isTheaterMode: Boolean,
-    onSearchClick: () -> Unit,
-    onLastMessageClick: () -> Unit,
-    onLastMessageLongClick: () -> Unit,
-    onToggleStream: () -> Unit,
-    onModActions: () -> Unit,
-    onToggleFullscreen: () -> Unit,
-    onToggleTheater: () -> Unit,
-    onToggleInput: () -> Unit,
-    modifier: Modifier = Modifier,
-    onDebugInfoClick: () -> Unit = {},
-) {
-    val primary = MaterialTheme.colorScheme.primary
-    val contextualTint = when {
-        !isSystemInDarkTheme() -> primary
-        else -> primary.blend(to = MaterialTheme.colorScheme.onSurface, amount = 0.2f)
-    }
-
-    val icon: ImageVector
-    val contentDescription: Int
-    val onClick: () -> Unit
-    val tint: Color?
-    when (action) {
-        InputAction.Search -> {
-            icon = Icons.Default.Search
-            contentDescription = R.string.message_history
-            onClick = onSearchClick
-            tint = null
-        }
-
-        InputAction.LastMessage -> {
-            icon = Icons.Default.History
-            contentDescription = R.string.resume_scroll
-            onClick = onLastMessageClick
-            tint = null
-        }
-
-        InputAction.Stream -> {
-            icon = if (isStreamActive) Icons.Outlined.VideocamOff else Icons.Outlined.Videocam
-            contentDescription = R.string.toggle_stream
-            onClick = onToggleStream
-            tint = contextualTint
-        }
-
-        InputAction.ModActions -> {
-            icon = Icons.Outlined.Shield
-            contentDescription = R.string.menu_mod_actions
-            onClick = onModActions
-            tint = contextualTint
-        }
-
-        InputAction.Fullscreen -> {
-            icon = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen
-            contentDescription = R.string.toggle_fullscreen
-            onClick = onToggleFullscreen
-            tint = null
-        }
-
-        InputAction.Theater -> {
-            icon = Icons.Default.Theaters
-            contentDescription =
-                when {
-                    isTheaterMode -> R.string.menu_exit_theater_mode
-                    else -> R.string.input_action_theater
-                }
-            onClick = onToggleTheater
-            tint = contextualTint
-        }
-
-        InputAction.HideInput -> {
-            icon = Icons.Default.VisibilityOff
-            contentDescription = R.string.menu_hide_input
-            onClick = onToggleInput
-            tint = null
-        }
-
-        InputAction.Debug -> {
-            icon = Icons.Default.BugReport
-            contentDescription = R.string.input_action_debug
-            onClick = onDebugInfoClick
-            tint = null
-        }
-    }
-
-    val actionEnabled =
-        when (action) {
-            InputAction.Search, InputAction.Fullscreen, InputAction.HideInput, InputAction.Debug -> true
-            InputAction.LastMessage -> enabled && hasLastMessage
-            InputAction.Stream, InputAction.ModActions -> enabled
-            InputAction.Theater -> enabled && isStreamActive
-        }
-
-    when (action) {
-        InputAction.LastMessage -> {
-            val haptics = LocalHapticFeedback.current
-            val contentColor = tint ?: LocalContentColor.current
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier =
-                    modifier
-                        .clip(CircleShape)
-                        .combinedClickable(
-                            enabled = actionEnabled,
-                            role = Role.Button,
-                            onClick = onClick,
-                            onLongClickLabel = stringResource(R.string.input_action_recent_messages),
-                            onLongClick = {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onLastMessageLongClick()
-                            },
-                        ),
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = stringResource(contentDescription),
-                    tint =
-                        when {
-                            actionEnabled -> contentColor
-                            else -> contentColor.copy(alpha = 0.38f)
-                        },
-                )
-            }
-        }
-
-        else -> {
-            IconButton(
-                onClick = onClick,
-                enabled = actionEnabled,
-                modifier = modifier,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = stringResource(contentDescription),
-                    tint = tint ?: LocalContentColor.current,
-                )
-            }
-        }
-    }
-}
-
 @Composable
 private fun InputOverlayHeader(
     text: String,
@@ -806,224 +543,6 @@ private fun InputOverlayHeader(
         HorizontalDivider(
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
             modifier = Modifier.padding(horizontal = 16.dp),
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun InputActionsRow(
-    inputActions: ImmutableList<InputAction>,
-    effectiveActions: ImmutableList<InputAction>,
-    isEmoteMenuOpen: Boolean,
-    enabled: Boolean,
-    showQuickActions: Boolean,
-    showSendButton: Boolean,
-    showTheaterDockToggle: Boolean,
-    isTheaterChatDocked: Boolean,
-    onToggleTheaterChatMode: () -> Unit,
-    tourState: TourOverlayState,
-    quickActionsExpanded: Boolean,
-    canSend: Boolean,
-    hasLastMessage: Boolean,
-    isStreamActive: Boolean,
-    isFullscreen: Boolean,
-    isTheaterMode: Boolean,
-    focusRequester: FocusRequester,
-    onEmoteClick: () -> Unit,
-    onOverflowExpandedChange: (Boolean) -> Unit,
-    onNewWhisper: (() -> Unit)?,
-    onSearchClick: () -> Unit,
-    onLastMessageClick: () -> Unit,
-    onLastMessageLongClick: () -> Unit,
-    onToggleStream: () -> Unit,
-    onModActions: () -> Unit,
-    onToggleFullscreen: () -> Unit,
-    onToggleTheater: () -> Unit,
-    onToggleInput: () -> Unit,
-    onSend: () -> Unit,
-    onVisibleActionsChange: (ImmutableList<InputAction>) -> Unit,
-    onDebugInfoClick: () -> Unit = {},
-    isRepeatedSendEnabled: Boolean = false,
-    onRepeatedSendChange: (Boolean) -> Unit = {},
-) {
-    BoxWithConstraints(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
-    ) {
-        val iconSize = 40.dp
-        // Fixed slots: emote button + conditionally dock toggle, overflow, whisper, send
-        val fixedSlots = 1 + listOf(showTheaterDockToggle, showQuickActions, onNewWhisper != null, showSendButton).count { it }
-        val availableForActions = maxWidth - iconSize * fixedSlots
-        val maxVisibleActions = (availableForActions / iconSize).toInt().coerceAtLeast(0)
-        val allActions = inputActions.take(maxVisibleActions).toImmutableList()
-        val visibleActions = effectiveActions.take(maxVisibleActions).toImmutableList()
-        SideEffect {
-            onVisibleActionsChange(visibleActions)
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            EmoteKeyboardButton(
-                isEmoteMenuOpen = isEmoteMenuOpen,
-                enabled = enabled && !tourState.isTourActive,
-                focusRequester = focusRequester,
-                onEmoteClick = onEmoteClick,
-                modifier = Modifier.size(iconSize),
-            )
-
-            if (showTheaterDockToggle) {
-                IconButton(
-                    onClick = onToggleTheaterChatMode,
-                    modifier = Modifier.size(iconSize),
-                ) {
-                    TheaterChatModeIcon(isDocked = isTheaterChatDocked)
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // End-aligned group: overflow + actions + whisper + send
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                EndAlignedActionGroup(
-                    allActions = allActions,
-                    visibleActions = visibleActions,
-                    iconSize = iconSize,
-                    showQuickActions = showQuickActions,
-                    showSendButton = showSendButton,
-                    tourState = tourState,
-                    quickActionsExpanded = quickActionsExpanded,
-                    canSend = canSend,
-                    enabled = enabled,
-                    hasLastMessage = hasLastMessage,
-                    isStreamActive = isStreamActive,
-                    isFullscreen = isFullscreen,
-                    isTheaterMode = isTheaterMode,
-                    onOverflowExpandedChange = onOverflowExpandedChange,
-                    onNewWhisper = onNewWhisper,
-                    onSearchClick = onSearchClick,
-                    onLastMessageClick = onLastMessageClick,
-                    onLastMessageLongClick = onLastMessageLongClick,
-                    onToggleStream = onToggleStream,
-                    onModActions = onModActions,
-                    onToggleFullscreen = onToggleFullscreen,
-                    onToggleTheater = onToggleTheater,
-                    onToggleInput = onToggleInput,
-                    onDebugInfoClick = onDebugInfoClick,
-                    onSend = onSend,
-                    isRepeatedSendEnabled = isRepeatedSendEnabled,
-                    onRepeatedSendChange = onRepeatedSendChange,
-                )
-            }
-        }
-    }
-}
-
-@Suppress("MultipleEmitters")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun EndAlignedActionGroup(
-    allActions: ImmutableList<InputAction>,
-    visibleActions: ImmutableList<InputAction>,
-    iconSize: Dp,
-    showQuickActions: Boolean,
-    showSendButton: Boolean,
-    tourState: TourOverlayState,
-    quickActionsExpanded: Boolean,
-    canSend: Boolean,
-    enabled: Boolean,
-    hasLastMessage: Boolean,
-    isStreamActive: Boolean,
-    isFullscreen: Boolean,
-    isTheaterMode: Boolean,
-    onOverflowExpandedChange: (Boolean) -> Unit,
-    onNewWhisper: (() -> Unit)?,
-    onSearchClick: () -> Unit,
-    onLastMessageClick: () -> Unit,
-    onLastMessageLongClick: () -> Unit,
-    onToggleStream: () -> Unit,
-    onModActions: () -> Unit,
-    onToggleFullscreen: () -> Unit,
-    onToggleTheater: () -> Unit,
-    onToggleInput: () -> Unit,
-    onSend: () -> Unit,
-    onDebugInfoClick: () -> Unit = {},
-    isRepeatedSendEnabled: Boolean = false,
-    onRepeatedSendChange: (Boolean) -> Unit = {},
-) {
-    if (showQuickActions) {
-        OverflowButton(
-            quickActionsExpanded = quickActionsExpanded,
-            tourState = tourState,
-            onOverflowExpandedChange = onOverflowExpandedChange,
-            modifier = Modifier.size(iconSize),
-        )
-    }
-
-    // New Whisper Button (only on whisper tab)
-    if (onNewWhisper != null) {
-        IconButton(
-            onClick = onNewWhisper,
-            modifier = Modifier.size(iconSize),
-        ) {
-            Icon(
-                imageVector = Icons.Default.AddComment,
-                contentDescription = stringResource(R.string.whisper_new),
-            )
-        }
-    }
-
-    // Configurable action icons with animated visibility
-    OptionalTourTooltip(
-        tooltipState = tourState.inputActionsTooltipState,
-        text = stringResource(R.string.tour_input_actions),
-        onAdvance = tourState.onAdvance,
-        onSkip = tourState.onSkip,
-        focusable = true,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            for (action in allActions) {
-                AnimatedVisibility(
-                    visible = action in visibleActions,
-                    enter = expandHorizontally() + fadeIn(),
-                    exit = shrinkHorizontally() + fadeOut(),
-                ) {
-                    InputActionButton(
-                        action = action,
-                        enabled = enabled,
-                        hasLastMessage = hasLastMessage,
-                        isStreamActive = isStreamActive,
-                        isFullscreen = isFullscreen,
-                        isTheaterMode = isTheaterMode,
-                        onSearchClick = onSearchClick,
-                        onLastMessageClick = onLastMessageClick,
-                        onLastMessageLongClick = onLastMessageLongClick,
-                        onToggleStream = onToggleStream,
-                        onModActions = onModActions,
-                        onToggleFullscreen = onToggleFullscreen,
-                        onToggleTheater = onToggleTheater,
-                        onToggleInput = onToggleInput,
-                        onDebugInfoClick = onDebugInfoClick,
-                        modifier = Modifier.size(iconSize),
-                    )
-                }
-            }
-        }
-    }
-
-    // Send Button (Right)
-    if (showSendButton) {
-        Spacer(modifier = Modifier.width(4.dp))
-        SendButton(
-            enabled = canSend,
-            isRepeatedSendEnabled = isRepeatedSendEnabled,
-            onSend = onSend,
-            onRepeatedSendChange = onRepeatedSendChange,
-            modifier = Modifier.size(44.dp),
         )
     }
 }
@@ -1215,7 +734,7 @@ internal fun ExpandableHelperText(
     when {
         helperText.isCompact -> {
             Text(
-                text = combinedText,
+                text = coloredHelperText(combinedText, MaterialTheme.colorScheme.error),
                 style = style,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -1277,7 +796,7 @@ private fun ExpandableMarqueeHelperText(
                             modifier = Modifier.fillMaxWidth().basicMarquee(),
                         )
                         Text(
-                            text = streamInfoText,
+                            text = streamInfoText.orEmpty().let { coloredHelperText(it, MaterialTheme.colorScheme.error) },
                             style = style,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -1288,7 +807,7 @@ private fun ExpandableMarqueeHelperText(
 
                 else -> {
                     Text(
-                        text = combinedText,
+                        text = coloredHelperText(combinedText, MaterialTheme.colorScheme.error),
                         style = style,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1296,6 +815,20 @@ private fun ExpandableMarqueeHelperText(
                     )
                 }
             }
+        }
+    }
+}
+
+/** Colors the "●" live indicator (see [DankChatPreferenceStore.LIVE_DOT]) instead of showing a "Live"/"is live" label. */
+private fun coloredHelperText(
+    text: String,
+    dotColor: Color,
+): AnnotatedString {
+    val dotIndex = text.indexOf(DankChatPreferenceStore.LIVE_DOT)
+    return buildAnnotatedString {
+        append(text)
+        if (dotIndex >= 0) {
+            addStyle(SpanStyle(color = dotColor), dotIndex, dotIndex + DankChatPreferenceStore.LIVE_DOT.length)
         }
     }
 }
