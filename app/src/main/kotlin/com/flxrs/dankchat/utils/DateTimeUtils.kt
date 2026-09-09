@@ -108,16 +108,10 @@ object DateTimeUtils {
         val startedAt = Instant.parse(startedAtString).atZone(ZoneId.systemDefault()).toEpochSecond()
         val now = ZonedDateTime.now().toEpochSecond()
 
-        val duration = now.seconds - startedAt.seconds
-        val uptime =
-            duration.toComponents { days, hours, minutes, _, _ ->
-                buildString {
-                    if (days > 0) append("${days}d ")
-                    if (hours > 0) append("${hours}h ")
-                    append("${minutes}m")
-                }
-            }
-
-        return uptime
+        val duration = (now - startedAt).seconds
+        // Always accumulate into hours - streams can run well past 24h and should never wrap into "days".
+        return duration.toComponents { hours, minutes, seconds, _ ->
+            "%02dh%02dm%02ds".format(hours, minutes, seconds)
+        }
     }
 }
