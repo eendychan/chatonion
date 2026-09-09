@@ -25,9 +25,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.flxrs.dankchat.preferences.appearance.InputAction
 import com.flxrs.dankchat.utils.compose.rememberRoundedCornerHorizontalPadding
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -41,12 +39,9 @@ fun ChatBottomBar(
     isUploading: Boolean,
     isLoading: Boolean,
     isFullscreen: Boolean,
-    isModerator: Boolean,
     isStreamActive: Boolean,
     isAudioOnly: Boolean,
-    hasStreamData: Boolean,
     isSheetOpen: Boolean,
-    inputActions: ImmutableList<InputAction>,
     onInputHeightChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
     debugMode: Boolean = false,
@@ -57,9 +52,6 @@ fun ChatBottomBar(
     onHelperTextHeightChange: (Int) -> Unit = {},
     isInSplitLayout: Boolean = false,
     isTheaterMode: Boolean = false,
-    showTheaterDockToggle: Boolean = false,
-    isTheaterChatDocked: Boolean = false,
-    onToggleTheaterChatMode: () -> Unit = {},
     instantHide: Boolean = false,
     tourState: TourOverlayState = TourOverlayState(),
     isRepeatedSendEnabled: Boolean = false,
@@ -88,15 +80,9 @@ fun ChatBottomBar(
                 isUploading = isUploading,
                 isLoading = isLoading,
                 isFullscreen = isFullscreen,
-                isModerator = isModerator,
                 isStreamActive = isStreamActive,
                 isAudioOnly = isAudioOnly,
-                hasStreamData = hasStreamData,
-                inputActions = inputActions,
                 isTheaterMode = isTheaterMode,
-                showTheaterDockToggle = showTheaterDockToggle,
-                isTheaterChatDocked = isTheaterChatDocked,
-                onToggleTheaterChatMode = onToggleTheaterChatMode,
                 debugMode = debugMode,
                 overflowExpanded = overflowExpanded,
                 onOverflowExpandedChange = onOverflowExpandedChange,
