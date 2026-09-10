@@ -24,7 +24,7 @@ import org.koin.core.annotation.Single
 
 @Single
 class DankChatPreferenceStore(
-    private val context: Context,
+    context: Context,
     private val json: Json,
     private val appearanceSettingsDataStore: AppearanceSettingsDataStore,
     private val authDataStore: AuthDataStore,
