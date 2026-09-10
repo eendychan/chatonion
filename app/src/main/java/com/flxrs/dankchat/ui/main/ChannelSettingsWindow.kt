@@ -153,8 +153,7 @@ fun ChannelSettingsWindow(
                                 val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
                                 val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
                                 dragOffset = IntOffset(newX, newY)
-                            }
-                            .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                            }.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.manage_channels),
@@ -251,13 +250,12 @@ fun ChannelSettingsWindow(
     }
 }
 
-private fun Modifier.pointerInputDragHeader(onDrag: (Offset) -> Unit): Modifier =
-    this.pointerInput(Unit) {
-        detectDragGestures { change, dragAmount ->
-            change.consume()
-            onDrag(dragAmount)
-        }
+private fun Modifier.pointerInputDragHeader(onDrag: (Offset) -> Unit): Modifier = this.pointerInput(Unit) {
+    detectDragGestures { change, dragAmount ->
+        change.consume()
+        onDrag(dragAmount)
     }
+}
 
 @Composable
 private fun ChannelSettingsRow(
