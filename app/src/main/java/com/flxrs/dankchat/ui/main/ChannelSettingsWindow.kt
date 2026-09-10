@@ -192,7 +192,7 @@ fun ChannelSettingsWindow(
                                                 ChannelSettingsRow(
                                                     channelWithRename = channelWithRename,
                                                     avatarUrl = avatarUrls[channelWithRename.channel],
-                                                    modifier =
+                                                    dragHandleModifier =
                                                         Modifier.longPressDraggableHandle(
                                                             onDragStarted = {},
                                                             onDragStopped = {},
@@ -263,6 +263,7 @@ private fun Modifier.pointerInputDragHeader(onDrag: (Offset) -> Unit): Modifier 
 private fun ChannelSettingsRow(
     channelWithRename: ChannelWithRename,
     avatarUrl: String?,
+    dragHandleModifier: Modifier,
     onSwitchTo: () -> Unit,
     onOpenInBrowser: () -> Unit,
     onReport: () -> Unit,
@@ -273,7 +274,7 @@ private fun ChannelSettingsRow(
 ) {
     var isEditing by remember(channelWithRename.channel) { mutableStateOf(false) }
 
-    Column {
+    Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
@@ -282,7 +283,7 @@ private fun ChannelSettingsRow(
                 imageVector = Icons.Default.DragHandle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = modifier.padding(6.dp).size(20.dp),
+                modifier = dragHandleModifier.padding(6.dp).size(20.dp),
             )
 
             Box(
