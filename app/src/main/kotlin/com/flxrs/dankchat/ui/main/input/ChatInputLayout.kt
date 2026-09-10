@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,9 +40,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -80,7 +77,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -184,7 +180,6 @@ fun ChatInputLayout(
 
     val view = LocalView.current
     val inputMethodManager = remember(view) { view.context.getSystemService(InputMethodManager::class.java) }
-    val keyboardController = LocalSoftwareKeyboardController.current
     val quickActionsExpanded = overflowExpanded || tourState.forceOverflowOpen
     val topEndRadius by animateDpAsState(
         targetValue = if (quickActionsExpanded || recentMessagesExpanded) 0.dp else 24.dp,
@@ -795,7 +790,7 @@ private fun ExpandableMarqueeHelperText(
                             modifier = Modifier.fillMaxWidth().basicMarquee(),
                         )
                         Text(
-                            text = streamInfoText.orEmpty().let { coloredHelperText(it, MaterialTheme.colorScheme.error) },
+                            text = streamInfoText.let { coloredHelperText(it, MaterialTheme.colorScheme.error) },
                             style = style,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
