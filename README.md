@@ -5,7 +5,7 @@
 [![Build status](https://github.com/eendychan/chatonion/actions/workflows/android.yml/badge.svg?branch=develop)](https://github.com/eendychan/chatonion/actions)  
 
 ### **Качай chatonion [здесь](https://github.com/eendychan/chatonion/releases)**
-*· Обязательно нажимай «Всё равно установить», когда во время установки появится диалоговое окно*
+*· Обязательно нажимай «Всё равно установить», когда во время установки появится диалоговое окно Google Play Защита*
 
 ### Скриншоты
 <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screen1.png" width="30%"/> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screen2.png" width="30%"/> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screen4.png" width="30%"/>
