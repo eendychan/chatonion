@@ -263,7 +263,6 @@ private fun Modifier.pointerInputDragHeader(onDrag: (Offset) -> Unit): Modifier 
 private fun ChannelSettingsRow(
     channelWithRename: ChannelWithRename,
     avatarUrl: String?,
-    dragHandleModifier: Modifier,
     onSwitchTo: () -> Unit,
     onOpenInBrowser: () -> Unit,
     onReport: () -> Unit,
@@ -271,6 +270,7 @@ private fun ChannelSettingsRow(
     onRename: (String?) -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    dragHandleModifier: Modifier = Modifier,
 ) {
     var isEditing by remember(channelWithRename.channel) { mutableStateOf(false) }
 
