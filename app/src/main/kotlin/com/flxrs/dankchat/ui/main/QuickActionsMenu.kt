@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Headphones
@@ -41,6 +42,7 @@ fun QuickActionsMenu(
     debugMode: Boolean,
     onActionClick: (InputAction) -> Unit,
     onAudioOnly: () -> Unit,
+    onUploadClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -109,6 +111,19 @@ fun QuickActionsMenu(
                     },
                 )
             }
+
+            // Second-to-last, right before Debug - this used to live in the top toolbar's overflow menu.
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.upload_media)) },
+                onClick = onUploadClick,
+                enabled = enabled,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.CloudUpload,
+                        contentDescription = null,
+                    )
+                },
+            )
 
             if (debugMode) {
                 DropdownMenuItem(
