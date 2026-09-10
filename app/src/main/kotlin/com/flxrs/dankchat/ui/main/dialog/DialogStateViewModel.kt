@@ -1,6 +1,7 @@
 package com.flxrs.dankchat.ui.main.dialog
 
 import androidx.lifecycle.ViewModel
+import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.repo.crash.CrashRepository
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
 import com.flxrs.dankchat.preferences.developer.DeveloperSettingsDataStore
@@ -48,20 +49,20 @@ class DialogStateViewModel(
         update { copy(showManageChannels = false) }
     }
 
-    fun showRemoveChannel() {
-        update { copy(showRemoveChannel = true) }
+    fun showRemoveChannel(channel: UserName? = null) {
+        update { copy(showRemoveChannel = true, removeChannelTarget = channel) }
     }
 
     fun dismissRemoveChannel() {
-        update { copy(showRemoveChannel = false) }
+        update { copy(showRemoveChannel = false, removeChannelTarget = null) }
     }
 
-    fun showBlockChannel() {
-        update { copy(showBlockChannel = true) }
+    fun showBlockChannel(channel: UserName? = null) {
+        update { copy(showBlockChannel = true, blockChannelTarget = channel) }
     }
 
     fun dismissBlockChannel() {
-        update { copy(showBlockChannel = false) }
+        update { copy(showBlockChannel = false, blockChannelTarget = null) }
     }
 
     // Auth dialogs
