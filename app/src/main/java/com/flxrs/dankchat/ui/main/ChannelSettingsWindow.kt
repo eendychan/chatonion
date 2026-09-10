@@ -147,13 +147,15 @@ fun ChannelSettingsWindow(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .pointerInputDragHeader { delta ->
-                                val maxX = (screenWidthPx / 2).roundToInt()
-                                val maxY = (screenHeightPx / 2).roundToInt()
-                                val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
-                                val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
-                                dragOffset = IntOffset(newX, newY)
-                            }.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                            .pointerInputDragHeader(
+                                onDrag = { delta ->
+                                    val maxX = (screenWidthPx / 2).roundToInt()
+                                    val maxY = (screenHeightPx / 2).roundToInt()
+                                    val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
+                                    val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
+                                    dragOffset = IntOffset(newX, newY)
+                                },
+                            ).padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.manage_channels),
@@ -190,7 +192,7 @@ fun ChannelSettingsWindow(
                                                 ChannelSettingsRow(
                                                     channelWithRename = channelWithRename,
                                                     avatarUrl = avatarUrls[channelWithRename.channel],
-                                                    dragModifier =
+                                                    modifier =
                                                         Modifier.longPressDraggableHandle(
                                                             onDragStarted = {},
                                                             onDragStopped = {},
@@ -261,13 +263,13 @@ private fun Modifier.pointerInputDragHeader(onDrag: (Offset) -> Unit): Modifier 
 private fun ChannelSettingsRow(
     channelWithRename: ChannelWithRename,
     avatarUrl: String?,
-    dragModifier: Modifier,
     onSwitchTo: () -> Unit,
     onOpenInBrowser: () -> Unit,
     onReport: () -> Unit,
     onBlock: () -> Unit,
     onRename: (String?) -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var isEditing by remember(channelWithRename.channel) { mutableStateOf(false) }
 
@@ -280,7 +282,7 @@ private fun ChannelSettingsRow(
                 imageVector = Icons.Default.DragHandle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = dragModifier.padding(6.dp).size(20.dp),
+                modifier = modifier.padding(6.dp).size(20.dp),
             )
 
             Box(
