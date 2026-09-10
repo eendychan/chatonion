@@ -1,13 +1,6 @@
 package com.flxrs.dankchat.ui.main
 
 import androidx.activity.compose.PredictiveBackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -22,21 +15,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.EmojiEmotions
-import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Videocam
@@ -49,7 +32,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -74,10 +56,6 @@ import kotlinx.coroutines.CancellationException
 @Immutable
 sealed interface AppBarMenu {
     data object Main : AppBarMenu
-
-    data object Upload : AppBarMenu
-
-    data object Channel : AppBarMenu
 }
 
 internal const val RESTING_SCROLLBAR_ALPHA = 0.6f
@@ -133,9 +111,7 @@ fun InlineOverflowMenu(
     onDismiss: () -> Unit,
     onAction: (ToolbarAction) -> Unit,
     modifier: Modifier = Modifier,
-    initialMenu: AppBarMenu = AppBarMenu.Main,
 ) {
-    var currentMenu by remember(initialMenu) { mutableStateOf(initialMenu) }
     var backProgress by remember { mutableFloatStateOf(0f) }
 
     PredictiveBackHandler { progress ->
@@ -143,70 +119,31 @@ fun InlineOverflowMenu(
             progress.collect { event ->
                 backProgress = event.progress
             }
-            when (currentMenu) {
-                AppBarMenu.Main -> {
-                    onDismiss()
-                }
-
-                else -> {
-                    backProgress = 0f
-                    currentMenu = AppBarMenu.Main
-                }
-            }
+            onDismiss()
         } catch (_: CancellationException) {
             backProgress = 0f
         }
     }
 
     val scrollState = rememberScrollState()
-    LaunchedEffect(currentMenu) { scrollState.scrollTo(0) }
 
-    AnimatedContent(
-        targetState = currentMenu,
-        transitionSpec = {
-            if (targetState != AppBarMenu.Main) {
-                (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
-            } else {
-                (slideInHorizontally { -it } + fadeIn()).togetherWith(slideOutHorizontally { it } + fadeOut())
-            }.using(SizeTransform(clip = false))
-        },
-        modifier = modifier.predictiveBackScale(backProgress),
-        label = "InlineMenuTransition",
-    ) { menu ->
-        Row(
-            modifier =
-                Modifier
-                    .height(OVERFLOW_ITEM_SIZE)
-                    .horizontalScroll(scrollState)
-                    .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            when (menu) {
-                AppBarMenu.Main -> MainMenuContent(
-                    isLoggedIn = isLoggedIn,
-                    isModerator = isModerator,
-                    hasActiveStream = hasActiveStream,
-                    mentionCount = mentionCount,
-                    onAction = onAction,
-                    onDismiss = onDismiss,
-                    onNavigateToUpload = { currentMenu = AppBarMenu.Upload },
-                    onNavigateToChannel = { currentMenu = AppBarMenu.Channel },
-                )
-
-                AppBarMenu.Upload -> UploadMenuContent(
-                    onAction = onAction,
-                    onDismiss = onDismiss,
-                    onBack = { currentMenu = AppBarMenu.Main },
-                )
-
-                AppBarMenu.Channel -> ChannelMenuContent(
-                    isLoggedIn = isLoggedIn,
-                    onAction = onAction,
-                    onDismiss = onDismiss,
-                    onBack = { currentMenu = AppBarMenu.Main },
-                )
-            }
-        }
+    Row(
+        modifier =
+            modifier
+                .predictiveBackScale(backProgress)
+                .height(OVERFLOW_ITEM_SIZE)
+                .horizontalScroll(scrollState)
+                .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        MainMenuContent(
+            isLoggedIn = isLoggedIn,
+            isModerator = isModerator,
+            hasActiveStream = hasActiveStream,
+            mentionCount = mentionCount,
+            onAction = onAction,
+            onDismiss = onDismiss,
+        )
     }
 }
 
@@ -274,9 +211,8 @@ private fun RowScope.MainMenuContent(
     mentionCount: Int,
     onAction: (ToolbarAction) -> Unit,
     onDismiss: () -> Unit,
-    onNavigateToUpload: () -> Unit,
-    onNavigateToChannel: () -> Unit,
 ) {
+    // Group 1: settings
     InlineMenuIconItem(
         key = "settings",
         icon = Icons.Default.Settings,
@@ -289,45 +225,13 @@ private fun RowScope.MainMenuContent(
 
     VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
+    // Group 2: this channel - settings (the draggable channel window), moderation, stream toggle
     InlineMenuIconItem(
-        key = "add_channel",
-        icon = Icons.Default.Add,
-        contentDescription = stringResource(R.string.add_channel),
+        key = "channel_settings",
+        icon = Icons.Default.EditNote,
+        contentDescription = stringResource(R.string.manage_channels),
         onClick = {
-            onAction(ToolbarAction.AddChannel)
-            onDismiss()
-        },
-    )
-    if (isLoggedIn) {
-        InlineMenuIconItem(
-            key = "mentions",
-            icon = if (mentionCount > 0) Icons.Default.Notifications else Icons.Outlined.Notifications,
-            contentDescription = stringResource(R.string.mentions_title),
-            tint = if (mentionCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            onClick = {
-                onAction(ToolbarAction.OpenMentions)
-                onDismiss()
-            },
-        )
-    }
-
-    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
-
-    InlineMenuIconItem(
-        key = "search",
-        icon = Icons.Default.Search,
-        contentDescription = stringResource(R.string.input_action_search),
-        onClick = {
-            onAction(ToolbarAction.OpenSearch)
-            onDismiss()
-        },
-    )
-    InlineMenuIconItem(
-        key = "last_message",
-        icon = Icons.Default.History,
-        contentDescription = stringResource(R.string.input_action_last_message),
-        onClick = {
-            onAction(ToolbarAction.LastMessage)
+            onAction(ToolbarAction.ManageChannels)
             onDismiss()
         },
     )
@@ -355,54 +259,47 @@ private fun RowScope.MainMenuContent(
 
     VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
-    if (!isLoggedIn) {
+    // Group 3: mentions, search, last message
+    if (isLoggedIn) {
         InlineMenuIconItem(
-            key = "login",
-            icon = Icons.AutoMirrored.Filled.Login,
-            contentDescription = stringResource(R.string.login),
+            key = "mentions",
+            icon = if (mentionCount > 0) Icons.Default.Notifications else Icons.Outlined.Notifications,
+            contentDescription = stringResource(R.string.mentions_title),
+            tint = if (mentionCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = {
-                onAction(ToolbarAction.Login)
-                onDismiss()
-            },
-        )
-    } else {
-        InlineMenuIconItem(
-            key = "relogin",
-            icon = Icons.Default.Refresh,
-            contentDescription = stringResource(R.string.relogin),
-            onClick = {
-                onAction(ToolbarAction.Relogin)
-                onDismiss()
-            },
-        )
-        InlineMenuIconItem(
-            key = "logout",
-            icon = Icons.AutoMirrored.Filled.Logout,
-            contentDescription = stringResource(R.string.logout),
-            onClick = {
-                onAction(ToolbarAction.Logout)
+                onAction(ToolbarAction.OpenMentions)
                 onDismiss()
             },
         )
     }
-
-    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
-
     InlineMenuIconItem(
-        key = "manage_channels",
-        icon = Icons.Default.EditNote,
-        contentDescription = stringResource(R.string.manage_channels),
+        key = "search",
+        icon = Icons.Default.Search,
+        contentDescription = stringResource(R.string.input_action_search),
         onClick = {
-            onAction(ToolbarAction.ManageChannels)
+            onAction(ToolbarAction.OpenSearch)
             onDismiss()
         },
     )
     InlineMenuIconItem(
-        key = "remove_channel",
-        icon = Icons.Default.RemoveCircleOutline,
-        contentDescription = stringResource(R.string.remove_channel),
+        key = "last_message",
+        icon = Icons.Default.History,
+        contentDescription = stringResource(R.string.input_action_last_message),
         onClick = {
-            onAction(ToolbarAction.RemoveChannel)
+            onAction(ToolbarAction.LastMessage)
+            onDismiss()
+        },
+    )
+
+    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
+
+    // Group 4: reconnect, reload emotes
+    InlineMenuIconItem(
+        key = "reconnect",
+        icon = Icons.Default.Autorenew,
+        contentDescription = stringResource(R.string.reconnect),
+        onClick = {
+            onAction(ToolbarAction.Reconnect)
             onDismiss()
         },
     )
@@ -415,103 +312,27 @@ private fun RowScope.MainMenuContent(
             onDismiss()
         },
     )
-    InlineMenuIconItem(
-        key = "reconnect",
-        icon = Icons.Default.Autorenew,
-        contentDescription = stringResource(R.string.reconnect),
-        onClick = {
-            onAction(ToolbarAction.Reconnect)
-            onDismiss()
-        },
-    )
 
     VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
 
-    InlineMenuIconItem(
-        key = "upload_media",
-        icon = Icons.Default.CloudUpload,
-        contentDescription = stringResource(R.string.upload_media),
-        onClick = onNavigateToUpload,
-    )
-    InlineMenuIconItem(
-        key = "channel_info",
-        icon = Icons.Default.Info,
-        contentDescription = stringResource(R.string.channel),
-        onClick = onNavigateToChannel,
-    )
-}
-
-@Composable
-private fun RowScope.UploadMenuContent(
-    onAction: (ToolbarAction) -> Unit,
-    onDismiss: () -> Unit,
-    onBack: () -> Unit,
-) {
-    InlineSubMenuHeaderIcon(onBack = onBack)
-    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
-    InlineMenuIconItem(
-        key = "take_picture",
-        icon = Icons.Default.CameraAlt,
-        contentDescription = stringResource(R.string.take_picture),
-        onClick = {
-            onAction(ToolbarAction.CaptureImage)
-            onDismiss()
-        },
-    )
-    InlineMenuIconItem(
-        key = "record_video",
-        icon = Icons.Default.Videocam,
-        contentDescription = stringResource(R.string.record_video),
-        onClick = {
-            onAction(ToolbarAction.CaptureVideo)
-            onDismiss()
-        },
-    )
-    InlineMenuIconItem(
-        key = "choose_media",
-        icon = Icons.Default.Image,
-        contentDescription = stringResource(R.string.choose_media),
-        onClick = {
-            onAction(ToolbarAction.ChooseMedia)
-            onDismiss()
-        },
-    )
-}
-
-@Composable
-private fun RowScope.ChannelMenuContent(
-    isLoggedIn: Boolean,
-    onAction: (ToolbarAction) -> Unit,
-    onDismiss: () -> Unit,
-    onBack: () -> Unit,
-) {
-    InlineSubMenuHeaderIcon(onBack = onBack)
-    VerticalDivider(modifier = Modifier.height(28.dp).padding(vertical = 2.dp))
-    InlineMenuIconItem(
-        key = "open_channel",
-        icon = Icons.Default.OpenInBrowser,
-        contentDescription = stringResource(R.string.open_channel),
-        onClick = {
-            onAction(ToolbarAction.OpenChannel)
-            onDismiss()
-        },
-    )
-    InlineMenuIconItem(
-        key = "report_channel",
-        icon = Icons.Default.Flag,
-        contentDescription = stringResource(R.string.report_channel),
-        onClick = {
-            onAction(ToolbarAction.ReportChannel)
-            onDismiss()
-        },
-    )
-    if (isLoggedIn) {
+    // Group 5: log out (or log in, when signed out)
+    if (!isLoggedIn) {
         InlineMenuIconItem(
-            key = "block_channel",
-            icon = Icons.Default.Block,
-            contentDescription = stringResource(R.string.block_channel),
+            key = "login",
+            icon = Icons.AutoMirrored.Filled.Login,
+            contentDescription = stringResource(R.string.login),
             onClick = {
-                onAction(ToolbarAction.BlockChannel)
+                onAction(ToolbarAction.Login)
+                onDismiss()
+            },
+        )
+    } else {
+        InlineMenuIconItem(
+            key = "logout",
+            icon = Icons.AutoMirrored.Filled.Logout,
+            contentDescription = stringResource(R.string.logout),
+            onClick = {
+                onAction(ToolbarAction.Logout)
                 onDismiss()
             },
         )
