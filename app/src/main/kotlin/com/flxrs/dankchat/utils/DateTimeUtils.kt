@@ -4,6 +4,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
 object DateTimeUtils {
@@ -111,7 +112,7 @@ object DateTimeUtils {
         val duration = (now - startedAt).seconds
         // Always accumulate into hours - streams can run well past 24h and should never wrap into "days".
         return duration.toComponents { hours, minutes, seconds, _ ->
-            "%02dh%02dm%02ds".format(hours, minutes, seconds)
+            String.format(Locale.US, "%02dh%02dm%02ds", hours, minutes, seconds)
         }
     }
 }
