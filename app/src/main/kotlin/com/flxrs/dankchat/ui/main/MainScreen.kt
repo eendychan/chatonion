@@ -498,6 +498,9 @@ fun MainScreen(
                             onSend = chatInputViewModel::sendMessage,
                             onLastMessageClick = chatInputViewModel::getLastMessage,
                             onRecentMessageClick = chatInputViewModel::setInputFromHistory,
+                            onChooseMedia = {
+                                if (preferenceStore.hasExternalHostingAcknowledged) onChooseMedia() else dialogViewModel.setPendingUploadAction(onChooseMedia)
+                            },
                             onEmoteClick = {
                                 if (!inputState.isEmoteMenuOpen) {
                                     keyboardController?.hide()
