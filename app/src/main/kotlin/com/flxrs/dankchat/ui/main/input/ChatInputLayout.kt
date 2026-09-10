@@ -434,10 +434,13 @@ fun ChatInputLayout(
                     callbacks.onAudioOnly()
                     onOverflowExpandedChange(false)
                 },
+                onUploadClick = {
+                    callbacks.onChooseMedia()
+                    onOverflowExpandedChange(false)
+                },
             )
         }
     }
-
 }
 
 @Composable
