@@ -58,6 +58,7 @@ import com.flxrs.dankchat.data.repo.crash.CrashEntry
 import com.flxrs.dankchat.data.repo.crash.CrashRepository
 import com.flxrs.dankchat.data.repo.log.LogRepository
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
+import com.flxrs.dankchat.ui.main.ChannelSettingsWindow
 import com.flxrs.dankchat.ui.main.channel.ChannelManagementViewModel
 import com.flxrs.dankchat.ui.main.input.ChatInputViewModel
 import com.flxrs.dankchat.ui.main.sheet.DebugInfoSheet
@@ -106,10 +107,17 @@ fun MainScreenDialogs(
 
     if (dialogState.showManageChannels) {
         val channels by channelManagementViewModel.channels.collectAsStateWithLifecycle()
-        ManageChannelsDialog(
+        val avatarUrls by channelManagementViewModel.avatarUrls.collectAsStateWithLifecycle()
+        ChannelSettingsWindow(
             channels = channels,
+            avatarUrls = avatarUrls,
+            activeChannel = activeChannel,
             onApplyChanges = channelManagementViewModel::applyChanges,
-            onChannelSelect = channelManagementViewModel::selectChannel,
+            onSwitchToChannel = channelManagementViewModel::selectChannel,
+            onOpenChannelInBrowser = { channel -> onOpenUrl("https://twitch.tv/${channel.value}") },
+            onReportChannel = { channel -> onOpenUrl("https://twitch.tv/${channel.value}/report") },
+            onBlockChannel = { channel -> dialogViewModel.showBlockChannel(channel) },
+            onAddChannel = dialogViewModel::showAddChannel,
             onDismiss = dialogViewModel::dismissManageChannels,
         )
     }
@@ -118,30 +126,36 @@ fun MainScreenDialogs(
         ModActionsSheetContainer(isStreamActive = isStreamActive)
     }
 
-    if (dialogState.showRemoveChannel && activeChannel != null) {
-        ConfirmationDialog(
-            title = stringResource(R.string.confirm_channel_removal_message_named, activeChannel),
-            confirmText = stringResource(R.string.confirm_channel_removal_positive_button),
-            confirmColors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            onConfirm = {
-                channelManagementViewModel.removeChannel(activeChannel)
-                dialogViewModel.dismissRemoveChannel()
-            },
-            onDismiss = dialogViewModel::dismissRemoveChannel,
-        )
+    if (dialogState.showRemoveChannel) {
+        val target = dialogState.removeChannelTarget ?: activeChannel
+        if (target != null) {
+            ConfirmationDialog(
+                title = stringResource(R.string.confirm_channel_removal_message_named, target),
+                confirmText = stringResource(R.string.confirm_channel_removal_positive_button),
+                confirmColors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                onConfirm = {
+                    channelManagementViewModel.removeChannel(target)
+                    dialogViewModel.dismissRemoveChannel()
+                },
+                onDismiss = dialogViewModel::dismissRemoveChannel,
+            )
+        }
     }
 
-    if (dialogState.showBlockChannel && activeChannel != null) {
-        ConfirmationDialog(
-            title = stringResource(R.string.confirm_channel_block_message_named, activeChannel),
-            confirmText = stringResource(R.string.confirm_user_block_positive_button),
-            confirmColors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            onConfirm = {
-                channelManagementViewModel.blockChannel(activeChannel)
-                dialogViewModel.dismissBlockChannel()
-            },
-            onDismiss = dialogViewModel::dismissBlockChannel,
-        )
+    if (dialogState.showBlockChannel) {
+        val target = dialogState.blockChannelTarget ?: activeChannel
+        if (target != null) {
+            ConfirmationDialog(
+                title = stringResource(R.string.confirm_channel_block_message_named, target),
+                confirmText = stringResource(R.string.confirm_user_block_positive_button),
+                confirmColors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                onConfirm = {
+                    channelManagementViewModel.blockChannel(target)
+                    dialogViewModel.dismissBlockChannel()
+                },
+                onDismiss = dialogViewModel::dismissBlockChannel,
+            )
+        }
     }
 
     if (dialogState.showLogout) {
@@ -595,7 +609,7 @@ private fun sendCrashEmail(
     val userId = preferenceStore.userIdString?.value
     val body = crashRepository.buildEmailBody(crashEntry, userName, userId)
     val exceptionType = crashEntry.exceptionHeader.substringBefore(':').substringAfterLast('.')
-    val subject = "DankChat Crash Report [${userName.orEmpty()}] - $exceptionType"
+    val subject = "chatonion Crash Report [${userName.orEmpty()}] - $exceptionType"
 
     val emailIntent = Intent(Intent.ACTION_SEND).apply {
         putExtra(Intent.EXTRA_EMAIL, arrayOf(CRASH_REPORT_EMAIL))
