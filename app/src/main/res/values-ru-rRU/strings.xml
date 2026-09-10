@@ -21,6 +21,7 @@
     <string name="block_channel">Заблокировать канал</string>
     <string name="channel">Канал</string>
     <string name="open_channel">Открыть канал</string>
+    <string name="switch_to_channel">Перейти на канал</string>
     <string name="remove_channel">Удалить канал</string>
     <string name="channel_blocked_message">Канал заблокирован</string>
     <string name="no_channels_added">Нет добавленных каналов</string>
