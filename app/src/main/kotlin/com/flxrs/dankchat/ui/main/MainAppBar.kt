@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Autorenew
@@ -181,24 +180,6 @@ private fun InlineMenuIconItem(
             contentDescription = contentDescription,
             tint = tint,
             modifier = Modifier.size(OVERFLOW_ITEM_ICON_SIZE),
-        )
-    }
-}
-
-@Composable
-private fun InlineSubMenuHeaderIcon(onBack: () -> Unit) {
-    Row(
-        modifier =
-            Modifier
-                .size(OVERFLOW_ITEM_SIZE)
-                .clickable(onClick = onBack),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = stringResource(R.string.back),
-            tint = MaterialTheme.colorScheme.primary,
         )
     }
 }
