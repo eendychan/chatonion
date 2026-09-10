@@ -15,6 +15,7 @@ data class ChatInputCallbacks(
     val onToggleTheater: () -> Unit,
     val onModActions: () -> Unit,
     val onInputActionsChange: (ImmutableList<InputAction>) -> Unit,
+    val onChooseMedia: () -> Unit = {},
     val onRecentMessageClick: (String) -> Unit = {},
     val onSearchClick: () -> Unit = {},
     val onDebugInfoClick: () -> Unit = {},
