@@ -16,8 +16,10 @@ import com.flxrs.dankchat.preferences.model.ChannelWithRename
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -40,6 +42,21 @@ class ChannelManagementViewModel(
             .getChannelsWithRenamesFlow()
             .map { it.toImmutableList() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), persistentListOf())
+
+    // Best-effort avatar cache for the channel-settings window - a missing entry just falls back
+    // to a plain circle placeholder instead of blocking the list.
+    private val _avatarUrls = MutableStateFlow<Map<UserName, String?>>(emptyMap())
+    val avatarUrls: StateFlow<Map<UserName, String?>> = _avatarUrls.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            channels.collect { current ->
+                if (current.isEmpty()) return@collect
+                val fetched = channelRepository.getChannels(current.map { it.channel })
+                _avatarUrls.value = _avatarUrls.value + fetched.associate { it.name to it.avatarUrl }
+            }
+        }
+    }
 
     init {
         // Restore persisted channel selection, falling back to first channel
