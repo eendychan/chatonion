@@ -94,7 +94,6 @@ import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.ui.main.channel.ChannelTabUiState
 import com.flxrs.dankchat.ui.main.stream.AudioOnlyBar
 import com.flxrs.dankchat.ui.theme.toolbarPillColor
-import com.flxrs.dankchat.utils.compose.PagerTabIndicator
 import com.flxrs.dankchat.utils.compose.rememberPagerTabIndicatorState
 import com.flxrs.dankchat.utils.compose.reportPosition
 import kotlinx.coroutines.flow.dropWhile
@@ -133,7 +132,6 @@ fun FloatingToolbar(
 ) {
     val density = LocalDensity.current
     var showOverflowMenu by remember { mutableStateOf(false) }
-    var overflowInitialMenu by remember { mutableStateOf<AppBarMenu>(AppBarMenu.Main) }
     var toolbarRowHeight by remember { mutableFloatStateOf(0f) }
 
     val statusBarTopPx = WindowInsets.statusBars.getTop(density)
@@ -188,7 +186,6 @@ fun FloatingToolbar(
                         interactionSource = remember { MutableInteractionSource() },
                     ) {
                         showOverflowMenu = false
-                        overflowInitialMenu = AppBarMenu.Main
                     },
         )
     }
@@ -363,14 +360,11 @@ fun FloatingToolbar(
                                                     mentionCount = totalMentionCount,
                                                     onDismiss = {
                                                         showOverflowMenu = false
-                                                        overflowInitialMenu = AppBarMenu.Main
                                                     },
-                                                    initialMenu = overflowInitialMenu,
                                                     onAction = onAction,
                                                 )
                                             }
                                         } else {
-                                            val indicatorColor = MaterialTheme.colorScheme.primary
                                             Box(
                                                 modifier =
                                                     Modifier
@@ -438,13 +432,6 @@ fun FloatingToolbar(
                                                         }
                                                     }
                                                 }
-
-                                                PagerTabIndicator(
-                                                    pagerState = composePagerState,
-                                                    state = tabLayoutState,
-                                                    color = indicatorColor,
-                                                    modifier = Modifier.align(Alignment.BottomStart),
-                                                )
                                             }
                                         }
                                     }
@@ -497,7 +484,6 @@ fun FloatingToolbar(
                                                             showOverflowMenu = false
                                                             return@awaitEachGesture
                                                         }
-                                                        overflowInitialMenu = AppBarMenu.Main
                                                         showOverflowMenu = true
                                                         keyboardController?.hide()
                                                         onCloseEmoteMenu()
