@@ -267,7 +267,6 @@ fun ChatInputLayout(
                     if (onNewWhisper != null) {
                         IconButton(
                             onClick = onNewWhisper,
-                            modifier = Modifier.size(40.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.AddComment,
@@ -280,14 +279,12 @@ fun ChatInputLayout(
                         enabled = textFieldEnabled,
                         focusRequester = focusRequester,
                         onEmoteClick = onEmoteClick,
-                        modifier = Modifier.size(40.dp),
                     )
                     if (showQuickActions) {
                         OverflowButton(
                             quickActionsExpanded = quickActionsExpanded,
                             tourState = tourState,
                             onOverflowExpandedChange = onOverflowExpandedChange,
-                            modifier = Modifier.size(40.dp),
                         )
                     }
                     if (uiState.showSendButton) {
@@ -524,7 +521,6 @@ private fun InputOverlayHeader(
             )
             IconButton(
                 onClick = onDismiss,
-                modifier = Modifier.size(24.dp),
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
