@@ -34,8 +34,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -144,12 +146,13 @@ fun ChannelSettingsWindow(
                         Modifier
                             .fillMaxWidth()
                             .pointerInputDragHeader { delta ->
-                                val newX = (dragOffset.x + delta.x.roundToInt())
-                                    .coerceIn(-(screenWidthPx / 2).roundToInt(), (screenWidthPx / 2).roundToInt())
-                                val newY = (dragOffset.y + delta.y.roundToInt())
-                                    .coerceIn(-(screenHeightPx / 2).roundToInt(), (screenHeightPx / 2).roundToInt())
+                                val maxX = (screenWidthPx / 2).roundToInt()
+                                val maxY = (screenHeightPx / 2).roundToInt()
+                                val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
+                                val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
                                 dragOffset = IntOffset(newX, newY)
-                            }.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                            }
+                            .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.manage_channels),
@@ -292,7 +295,11 @@ private fun ChannelSettingsRow(
                         modifier = Modifier.size(32.dp).clip(CircleShape),
                     )
                 } else {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(32.dp)) {}
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        modifier = Modifier.size(32.dp),
+                    ) {}
                 }
             }
 
@@ -304,22 +311,46 @@ private fun ChannelSettingsRow(
             )
 
             IconButton(onClick = { isEditing = !isEditing }, modifier = Modifier.size(32.dp)) {
-                Icon(painter = painterResource(R.drawable.ic_edit), contentDescription = stringResource(R.string.edit_dialog_title), modifier = Modifier.size(18.dp))
+                Icon(
+                    painter = painterResource(R.drawable.ic_edit),
+                    contentDescription = stringResource(R.string.edit_dialog_title),
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onSwitchTo, modifier = Modifier.size(32.dp)) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = stringResource(R.string.switch_to_channel), modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = stringResource(R.string.switch_to_channel),
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onOpenInBrowser, modifier = Modifier.size(32.dp)) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.Launch, contentDescription = stringResource(R.string.open_channel), modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Launch,
+                    contentDescription = stringResource(R.string.open_channel),
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                Icon(painter = painterResource(R.drawable.ic_delete_outline), contentDescription = stringResource(R.string.remove_channel), modifier = Modifier.size(18.dp))
+                Icon(
+                    painter = painterResource(R.drawable.ic_delete_outline),
+                    contentDescription = stringResource(R.string.remove_channel),
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onReport, modifier = Modifier.size(32.dp)) {
-                Icon(imageVector = Icons.Default.Flag, contentDescription = stringResource(R.string.report_channel), modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.Default.Flag,
+                    contentDescription = stringResource(R.string.report_channel),
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onBlock, modifier = Modifier.size(32.dp)) {
-                Icon(imageVector = Icons.Default.Block, contentDescription = stringResource(R.string.block_channel), modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.Default.Block,
+                    contentDescription = stringResource(R.string.block_channel),
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
 
@@ -347,14 +378,14 @@ private fun ChannelSettingsRenameField(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(start = 56.dp, end = 8.dp, bottom = 8.dp),
     ) {
-        androidx.compose.material3.OutlinedTextField(
+        OutlinedTextField(
             value = renameText,
             onValueChange = { renameText = it },
             placeholder = { Text(channelWithRename.channel.value) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
-        androidx.compose.material3.TextButton(onClick = { onRename(renameText) }) {
+        TextButton(onClick = { onRename(renameText) }) {
             Text(stringResource(R.string.save))
         }
     }
