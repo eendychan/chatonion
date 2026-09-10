@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -307,50 +309,54 @@ private fun ChannelSettingsRow(
                 text = channelWithRename.rename?.value ?: channelWithRename.channel.value,
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
-                modifier = Modifier.weight(1f).padding(start = 8.dp, end = 4.dp),
+                modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp, end = 4.dp),
             )
 
-            IconButton(onClick = { isEditing = !isEditing }, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_edit),
-                    contentDescription = stringResource(R.string.edit_dialog_title),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            IconButton(onClick = onSwitchTo, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                    contentDescription = stringResource(R.string.switch_to_channel),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            IconButton(onClick = onOpenInBrowser, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Launch,
-                    contentDescription = stringResource(R.string.open_channel),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_delete_outline),
-                    contentDescription = stringResource(R.string.remove_channel),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            IconButton(onClick = onReport, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    imageVector = Icons.Default.Flag,
-                    contentDescription = stringResource(R.string.report_channel),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            IconButton(onClick = onBlock, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    imageVector = Icons.Default.Block,
-                    contentDescription = stringResource(R.string.block_channel),
-                    modifier = Modifier.size(18.dp),
-                )
+            // Kept at the default (accessible) IconButton touch target size - the row scrolls
+            // horizontally instead of shrinking the touch targets to fit.
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                IconButton(onClick = { isEditing = !isEditing }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_edit),
+                        contentDescription = stringResource(R.string.edit_dialog_title),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                IconButton(onClick = onSwitchTo) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = stringResource(R.string.switch_to_channel),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                IconButton(onClick = onOpenInBrowser) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Launch,
+                        contentDescription = stringResource(R.string.open_channel),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_delete_outline),
+                        contentDescription = stringResource(R.string.remove_channel),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                IconButton(onClick = onReport) {
+                    Icon(
+                        imageVector = Icons.Default.Flag,
+                        contentDescription = stringResource(R.string.report_channel),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                IconButton(onClick = onBlock) {
+                    Icon(
+                        imageVector = Icons.Default.Block,
+                        contentDescription = stringResource(R.string.block_channel),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
         }
 
