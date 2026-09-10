@@ -44,7 +44,7 @@
     <string name="snackbar_link_copied">Ссылка скопирована</string>
     <string name="snackbar_error_copied">Информация об ошибке скопирована</string>
     <string name="notification_stop">Стоп</string>
-    <string name="notification_title">FeelsDankMan</string>
+    <string name="notification_title">peepoOnion</string>
     <string name="notification_message">chatonion работает в фоновом режиме</string>
     <string name="emote_menu_hint">Открыть меню смайлов</string>
     <string name="no_recent_emotes">Нет недавних эмоутов</string>
