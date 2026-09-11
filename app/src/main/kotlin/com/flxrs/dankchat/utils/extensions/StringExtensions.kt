@@ -150,6 +150,22 @@ fun String.codePointSlice(
     }.getOrNull()
 }
 
+/**
+ * Same idea as [codePointSlice], but returns the char (UTF-16) index range instead of the
+ * substring itself - useful for highlighting/annotating a code-point range in place.
+ */
+fun String.codePointRange(
+    begin: Int,
+    end: Int,
+): IntRange? {
+    if (begin < 0 || end <= begin) return null
+    return runCatching {
+        val startIndex = offsetByCodePoints(0, begin)
+        val endIndex = offsetByCodePoints(startIndex, end - begin)
+        startIndex until endIndex
+    }.getOrNull()
+}
+
 val String.withoutOAuthPrefix: String
     get() = removePrefix("oauth:")
 
