@@ -518,6 +518,7 @@ class ChatMessageMapper(
             reason = reason,
             status = uiStatus,
             isUserSide = isUserSide,
+            flaggedRanges = flaggedRanges.toImmutableList(),
         )
     }
 
