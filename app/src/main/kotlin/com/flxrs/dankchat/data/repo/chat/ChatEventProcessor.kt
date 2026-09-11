@@ -40,6 +40,7 @@ import com.flxrs.dankchat.data.twitch.pubsub.PubSubMessage
 import com.flxrs.dankchat.di.DispatchersProvider
 import com.flxrs.dankchat.preferences.chat.ChatSettingsDataStore
 import com.flxrs.dankchat.utils.TextResource
+import com.flxrs.dankchat.utils.extensions.codePointRange
 import com.flxrs.dankchat.utils.extensions.codePointSlice
 import com.flxrs.dankchat.utils.extensions.runCatchingCancellable
 import com.flxrs.dankchat.utils.extensions.withoutInvisibleChar
@@ -261,6 +262,7 @@ class ChatEventProcessor(
             return
         }
         val reason = formatAutomodReason(data.reason, data.automod, data.blockedTerm, data.message.text)
+        val flaggedRanges = formatAutomodFlaggedRanges(data.reason, data.blockedTerm, data.message.text)
         val userColor = usersRepository.getCachedUserColor(data.userLogin)
         val automodBadge =
             Badge.GlobalBadge(
@@ -282,6 +284,7 @@ class ChatEventProcessor(
                 reason = reason,
                 badges = listOf(automodBadge),
                 color = userColor,
+                flaggedRanges = flaggedRanges,
             )
         chatMessageRepository.addMessages(eventMessage.channelName, listOf(ChatItem(automodMsg, importance = ChatImportance.SYSTEM)))
     }
@@ -708,6 +711,25 @@ class ChatEventProcessor(
         else -> {
             TextResource.Plain(reason)
         }
+    }
+
+    /**
+     * Char-index ranges (UTF-16, not code points) within [messageText] for each blocked term found -
+     * used to highlight the offending fragment(s) directly in the held message instead of spelling
+     * them out in a separate explanation.
+     */
+    private fun formatAutomodFlaggedRanges(
+        reason: String,
+        blockedTerm: BlockedTermReasonDto?,
+        messageText: String,
+    ): List<IntRange> = when {
+        reason == "blocked_term" && blockedTerm != null -> {
+            blockedTerm.termsFound.mapNotNull { found ->
+                messageText.codePointRange(found.boundary.startPos, found.boundary.endPos + 1)
+            }
+        }
+
+        else -> emptyList()
     }
 
     companion object {
