@@ -199,6 +199,7 @@ sealed interface ChatMessageUiState {
         val reason: TextResource,
         val status: AutomodMessageStatus,
         val isUserSide: Boolean = false,
+        val flaggedRanges: ImmutableList<IntRange> = persistentListOf(),
     ) : ChatMessageUiState {
         enum class AutomodMessageStatus { Pending, Approved, Denied, Expired }
     }
