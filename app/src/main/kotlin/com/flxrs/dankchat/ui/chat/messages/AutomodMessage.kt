@@ -59,6 +59,7 @@ fun AutomodMessageComposable(
     val timestampColor = MaterialTheme.colorScheme.onSurface
     val flaggedColor = MaterialTheme.colorScheme.error
     val denyColor = MaterialTheme.colorScheme.error
+    val approvedColor = MaterialTheme.colorScheme.primary
     val textSize = fontSize.sp
     val isPending = message.status == AutomodMessageStatus.Pending
     val isCompleted = !message.isUserSide && message.status != AutomodMessageStatus.Pending
@@ -84,6 +85,7 @@ fun AutomodMessageComposable(
             message,
             headerTextColor,
             denyColor,
+            approvedColor,
             heldLabel,
             approvedText,
             deniedText,
@@ -127,7 +129,7 @@ fun AutomodMessageComposable(
                         when (message.status) {
                             AutomodMessageStatus.Approved -> {
                                 append(" ")
-                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)) {
+                                withStyle(SpanStyle(color = approvedColor.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)) {
                                     append(approvedText)
                                 }
                             }
