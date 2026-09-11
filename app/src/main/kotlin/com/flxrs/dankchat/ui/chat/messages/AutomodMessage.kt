@@ -1,11 +1,17 @@
 package com.flxrs.dankchat.ui.chat.messages
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -32,14 +38,11 @@ import com.flxrs.dankchat.ui.chat.messages.common.EmoteDimensions
 import com.flxrs.dankchat.ui.chat.messages.common.TextWithMeasuredInlineContent
 import com.flxrs.dankchat.ui.chat.messages.common.appendInlineSpacer
 import com.flxrs.dankchat.ui.chat.messages.common.rememberNormalizedColor
-import com.flxrs.dankchat.utils.resolve
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
 
 private val AutoModBlue = Color(0xFF448AFF)
 
-private const val ALLOW_TAG = "ALLOW"
-private const val DENY_TAG = "DENY"
 private const val BAN_TAG = "BAN"
 
 @Composable
@@ -54,7 +57,7 @@ fun AutomodMessageComposable(
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
     val timestampColor = MaterialTheme.colorScheme.onSurface
-    val allowColor = MaterialTheme.colorScheme.primary
+    val flaggedColor = MaterialTheme.colorScheme.error
     val denyColor = MaterialTheme.colorScheme.error
     val textSize = fontSize.sp
     val isPending = message.status == AutomodMessageStatus.Pending
@@ -62,14 +65,11 @@ fun AutomodMessageComposable(
     val backgroundColor = MaterialTheme.colorScheme.background
     val nameColor = rememberNormalizedColor(message.rawNameColor, backgroundColor)
 
-    // Faded colors for completed (approved/denied/expired) header — "Ban user" stays at full opacity
+    // Faded colors for completed (approved/denied/expired) header
     val headerTextColor = if (isCompleted) textColor.copy(alpha = 0.5f) else textColor
-    val headerTimestampColor = if (isCompleted) timestampColor.copy(alpha = 0.5f) else timestampColor
 
     // Resolve strings
-    val headerText = stringResource(R.string.automod_header, message.reason.resolve())
-    val allowText = stringResource(R.string.automod_allow)
-    val denyText = stringResource(R.string.automod_deny)
+    val heldLabel = stringResource(R.string.automod_message_held_label)
     val approvedText = stringResource(R.string.automod_status_approved)
     val deniedText = stringResource(R.string.automod_status_denied)
     val banUserText = stringResource(R.string.automod_ban_user)
@@ -78,18 +78,13 @@ fun AutomodMessageComposable(
     val userAcceptedText = stringResource(R.string.automod_user_accepted)
     val userDeniedText = stringResource(R.string.automod_user_denied)
 
-    // Header line: [badge] "AutoMod: ..."
+    // Header line: [badge] "AutoMod: Message held:" (+ status word once resolved)
     val headerString =
         remember(
             message,
             headerTextColor,
-            headerTimestampColor,
-            allowColor,
             denyColor,
-            textSize,
-            headerText,
-            allowText,
-            denyText,
+            heldLabel,
             approvedText,
             deniedText,
             expiredText,
@@ -99,22 +94,6 @@ fun AutomodMessageComposable(
             banUserText,
         ) {
             buildAnnotatedString {
-                // Timestamp
-                if (message.timestamp.isNotEmpty()) {
-                    withStyle(
-                        SpanStyle(
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = textSize * 0.95f,
-                            color = headerTimestampColor,
-                            letterSpacing = (-0.03).em,
-                        ),
-                    ) {
-                        append(message.timestamp)
-                    }
-                    appendInlineSpacer(6.dp)
-                }
-
                 // Badges
                 message.badges.forEach { badge ->
                     appendInlineContent("BADGE_${badge.position}", "[badge]")
@@ -128,7 +107,7 @@ fun AutomodMessageComposable(
                 }
 
                 when {
-                    // User-side: simple status messages, no Allow/Deny
+                    // User-side: simple status messages
                     message.isUserSide -> {
                         when (message.status) {
                             AutomodMessageStatus.Pending -> withStyle(SpanStyle(color = headerTextColor)) { append(userHeldText) }
@@ -138,34 +117,23 @@ fun AutomodMessageComposable(
                         }
                     }
 
-                    // Mod-side: reason text + Allow/Deny buttons or status
+                    // Mod-side: short fixed label - the flagged phrase is highlighted in the message itself,
+                    // Allow/Deny are separate buttons below rather than inline text
                     else -> {
                         withStyle(SpanStyle(color = headerTextColor)) {
-                            append("$headerText ")
+                            append(heldLabel)
                         }
 
                         when (message.status) {
-                            AutomodMessageStatus.Pending -> {
-                                pushStringAnnotation(tag = ALLOW_TAG, annotation = message.heldMessageId)
-                                withStyle(SpanStyle(color = allowColor, fontWeight = FontWeight.Bold)) {
-                                    append(allowText)
-                                }
-                                pop()
-
-                                pushStringAnnotation(tag = DENY_TAG, annotation = message.heldMessageId)
-                                withStyle(SpanStyle(color = denyColor, fontWeight = FontWeight.Bold)) {
-                                    append("  $denyText")
-                                }
-                                pop()
-                            }
-
                             AutomodMessageStatus.Approved -> {
-                                withStyle(SpanStyle(color = allowColor.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)) {
+                                append(" ")
+                                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)) {
                                     append(approvedText)
                                 }
                             }
 
                             AutomodMessageStatus.Denied -> {
+                                append(" ")
                                 withStyle(SpanStyle(color = denyColor.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)) {
                                     append(deniedText)
                                 }
@@ -178,19 +146,22 @@ fun AutomodMessageComposable(
                             }
 
                             AutomodMessageStatus.Expired -> {
+                                append(" ")
                                 withStyle(SpanStyle(color = textColor.copy(alpha = 0.5f), fontWeight = FontWeight.Bold)) {
                                     append(expiredText)
                                 }
                             }
+
+                            AutomodMessageStatus.Pending -> Unit
                         }
                     }
                 }
             }
         }
 
-    // Body line: "timestamp {displayName}: {message}"
+    // Body line: "timestamp {displayName}: {message}" - the flagged fragment(s), if any, are highlighted
     val bodyString =
-        remember(message, textColor, nameColor, timestampColor, textSize) {
+        remember(message, textColor, nameColor, timestampColor, flaggedColor, textSize) {
             message.messageText?.let { text ->
                 buildAnnotatedString {
                     // Timestamp for alignment
@@ -199,8 +170,8 @@ fun AutomodMessageComposable(
                             SpanStyle(
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = textSize * 0.95f,
-                                color = timestampColor,
+                                fontSize = textSize * 0.8f,
+                                color = timestampColor.copy(alpha = timestampColor.alpha * 0.6f),
                                 letterSpacing = (-0.03).em,
                             ),
                         ) {
@@ -214,9 +185,28 @@ fun AutomodMessageComposable(
                         append("${message.userDisplayName}: ")
                     }
 
-                    // Message text
-                    withStyle(SpanStyle(color = textColor)) {
-                        append(text)
+                    // Message text, with the flagged fragment(s) highlighted in red
+                    var cursor = 0
+                    val sortedRanges = message.flaggedRanges.sortedBy { it.first }
+                    for (range in sortedRanges) {
+                        val start = range.first.coerceIn(0, text.length)
+                        val end = (range.last + 1).coerceIn(start, text.length)
+                        if (start > cursor) {
+                            withStyle(SpanStyle(color = textColor)) {
+                                append(text.substring(cursor, start))
+                            }
+                        }
+                        if (end > start) {
+                            withStyle(SpanStyle(color = flaggedColor, fontWeight = FontWeight.Bold)) {
+                                append(text.substring(start, end))
+                            }
+                        }
+                        cursor = end
+                    }
+                    if (cursor < text.length) {
+                        withStyle(SpanStyle(color = textColor)) {
+                            append(text.substring(cursor))
+                        }
                     }
                 }
             }
@@ -260,7 +250,7 @@ fun AutomodMessageComposable(
                 .wrapContentHeight()
                 .padding(horizontal = 6.dp, vertical = 3.dp),
     ) {
-        // Header line with badge inline content (alpha handled via span colors, not modifier)
+        // Header line with badge inline content
         TextWithMeasuredInlineContent(
             text = headerString,
             inlineContentProviders = inlineContentProviders,
@@ -268,20 +258,6 @@ fun AutomodMessageComposable(
             knownDimensions = knownDimensions,
             modifier = Modifier.fillMaxWidth(),
             onTextClick = { offset ->
-                if (isPending) {
-                    headerString
-                        .getStringAnnotations(ALLOW_TAG, offset, offset)
-                        .firstOrNull()
-                        ?.let {
-                            onAllow(message.heldMessageId, message.channel)
-                        }
-                    headerString
-                        .getStringAnnotations(DENY_TAG, offset, offset)
-                        .firstOrNull()
-                        ?.let {
-                            onDeny(message.heldMessageId, message.channel)
-                        }
-                }
                 headerString
                     .getStringAnnotations(BAN_TAG, offset, offset)
                     .firstOrNull()
@@ -291,6 +267,24 @@ fun AutomodMessageComposable(
             },
             onTextLongClick = { onMessageLongClick() },
         )
+
+        // Allow/Deny as real, easy-to-tap buttons between the AutoMod line and the held message
+        if (isPending && !message.isUserSide) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { onDeny(message.heldMessageId, message.channel) },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = denyColor),
+                ) {
+                    Text(stringResource(R.string.automod_deny))
+                }
+                Button(onClick = { onAllow(message.heldMessageId, message.channel) }) {
+                    Text(stringResource(R.string.automod_allow))
+                }
+            }
+        }
 
         // Body line with held message text
         bodyString?.let {
