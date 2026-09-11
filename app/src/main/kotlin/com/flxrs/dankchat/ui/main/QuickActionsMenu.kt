@@ -57,34 +57,33 @@ fun QuickActionsMenu(
                 .width(IntrinsicSize.Max)
                 .verticalScroll(scrollState),
         ) {
-            // Theater mode is already fullscreen, so toggling chat fullscreen makes no sense there
-            if (!isTheaterMode) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(if (isFullscreen) R.string.menu_exit_fullscreen else R.string.menu_fullscreen)) },
-                    onClick = { onActionClick(InputAction.Fullscreen) },
-                    enabled = enabled,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
-                            contentDescription = null,
-                        )
-                    },
-                )
-            }
+            // Theater mode is already fullscreen, so toggling chat fullscreen makes no sense there -
+            // still shown per the fixed order, just disabled.
+            DropdownMenuItem(
+                text = { Text(stringResource(if (isFullscreen) R.string.menu_exit_fullscreen else R.string.menu_fullscreen)) },
+                onClick = { onActionClick(InputAction.Fullscreen) },
+                enabled = enabled && !isTheaterMode,
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
+                        contentDescription = null,
+                    )
+                },
+            )
 
-            if (isStreamActive) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(if (isTheaterMode) R.string.menu_exit_theater_mode else R.string.menu_theater_mode)) },
-                    onClick = { onActionClick(InputAction.Theater) },
-                    enabled = enabled,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Theaters,
-                            contentDescription = null,
-                        )
-                    },
-                )
-            }
+            // Always visible per the fixed 5-item order - disabled rather than hidden when there's
+            // no stream to switch modes for.
+            DropdownMenuItem(
+                text = { Text(stringResource(if (isTheaterMode) R.string.menu_exit_theater_mode else R.string.menu_theater_mode)) },
+                onClick = { onActionClick(InputAction.Theater) },
+                enabled = enabled && isStreamActive,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Theaters,
+                        contentDescription = null,
+                    )
+                },
+            )
 
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.menu_hide_input)) },
@@ -98,19 +97,17 @@ fun QuickActionsMenu(
                 },
             )
 
-            if (isStreamActive) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(if (isAudioOnly) R.string.menu_exit_audio_only else R.string.menu_audio_only)) },
-                    onClick = onAudioOnly,
-                    enabled = enabled,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (isAudioOnly) Icons.Outlined.Videocam else Icons.Default.Headphones,
-                            contentDescription = null,
-                        )
-                    },
-                )
-            }
+            DropdownMenuItem(
+                text = { Text(stringResource(if (isAudioOnly) R.string.menu_exit_audio_only else R.string.menu_audio_only)) },
+                onClick = onAudioOnly,
+                enabled = enabled && isStreamActive,
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (isAudioOnly) Icons.Outlined.Videocam else Icons.Default.Headphones,
+                        contentDescription = null,
+                    )
+                },
+            )
 
             // Second-to-last, right before Debug - this used to live in the top toolbar's overflow menu.
             DropdownMenuItem(
