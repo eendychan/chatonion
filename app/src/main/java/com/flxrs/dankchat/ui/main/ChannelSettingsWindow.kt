@@ -22,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
@@ -96,9 +95,14 @@ fun ChannelSettingsWindow(
 
     val localChannels = remember { mutableStateListOf<ChannelWithRename>() }
     LaunchedEffect(channels) {
-        if (localChannels.isEmpty() && channels.isNotEmpty()) {
-            localChannels.addAll(channels)
-        }
+        // Merge instead of a one-shot copy: a channel added elsewhere (e.g. via the "+" button,
+        // which persists immediately) while this window is open must show up here too, or it gets
+        // treated as "removed" and wiped out again as soon as onApplyChanges runs on dismiss.
+        val upstreamChannels = channels.map { it.channel }.toSet()
+        localChannels.removeAll { it.channel !in upstreamChannels }
+        val trackedChannels = localChannels.map { it.channel }.toSet()
+        val newlyAdded = channels.filter { it.channel !in trackedChannels }
+        localChannels.addAll(newlyAdded)
     }
 
     val lazyListState = rememberLazyListState()
@@ -129,7 +133,7 @@ fun ChannelSettingsWindow(
     Popup(
         alignment = Alignment.Center,
         offset = dragOffset,
-        properties = PopupProperties(focusable = true, usePlatformDefaultWidth = false),
+        properties = PopupProperties(focusable = true, usePlatformDefaultWidth = false, clippingEnabled = false),
         onDismissRequest = {
             onApplyChanges(localChannels.toList())
             onDismiss()
@@ -205,9 +209,8 @@ fun ChannelSettingsWindow(
                                                     onOpenInBrowser = { onOpenChannelInBrowser(channelWithRename.channel) },
                                                     onReport = { onReportChannel(channelWithRename.channel) },
                                                     onBlock = { onBlockChannel(channelWithRename.channel) },
-                                                    onRename = { newName ->
-                                                        val rename = newName?.ifBlank { null }?.let { UserName(it) }
-                                                        localChannels[index] = localChannels[index].copy(rename = rename)
+                                                    onChangeChannel = { newChannel ->
+                                                        localChannels[index] = ChannelWithRename(channel = UserName(newChannel), rename = null)
                                                     },
                                                     onDelete = { channelToDelete = channelWithRename.channel },
                                                 )
@@ -267,7 +270,7 @@ private fun ChannelSettingsRow(
     onOpenInBrowser: () -> Unit,
     onReport: () -> Unit,
     onBlock: () -> Unit,
-    onRename: (String?) -> Unit,
+    onChangeChannel: (String) -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     dragHandleModifier: Modifier = Modifier,
@@ -293,7 +296,7 @@ private fun ChannelSettingsRow(
                 if (avatarUrl != null) {
                     AsyncImage(
                         model = avatarUrl,
-                        contentDescription = null,
+                        contentDescription = channelWithRename.channel.value,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.size(32.dp).clip(CircleShape),
                     )
@@ -302,16 +305,19 @@ private fun ChannelSettingsRow(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier.size(32.dp),
-                    ) {}
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = channelWithRename.channel.value.take(1).uppercase(),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
 
-            Text(
-                text = channelWithRename.rename?.value ?: channelWithRename.channel.value,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp, end = 4.dp),
-            )
+            Spacer(modifier = Modifier.weight(1f))
 
             // Kept at the default (accessible) IconButton touch target size - the row scrolls
             // horizontally instead of shrinking the touch targets to fit.
@@ -319,7 +325,7 @@ private fun ChannelSettingsRow(
                 IconButton(onClick = { isEditing = !isEditing }) {
                     Icon(
                         painter = painterResource(R.drawable.ic_edit),
-                        contentDescription = stringResource(R.string.edit_dialog_title),
+                        contentDescription = stringResource(R.string.change_channel),
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -332,7 +338,7 @@ private fun ChannelSettingsRow(
                 }
                 IconButton(onClick = onOpenInBrowser) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Launch,
+                        painter = painterResource(R.drawable.ic_twitch),
                         contentDescription = stringResource(R.string.open_channel),
                         modifier = Modifier.size(20.dp),
                     )
@@ -362,10 +368,10 @@ private fun ChannelSettingsRow(
         }
 
         if (isEditing) {
-            ChannelSettingsRenameField(
+            ChannelSettingsChangeChannelField(
                 channelWithRename = channelWithRename,
-                onRename = {
-                    onRename(it)
+                onChangeChannel = {
+                    onChangeChannel(it)
                     isEditing = false
                 },
             )
@@ -374,25 +380,32 @@ private fun ChannelSettingsRow(
 }
 
 @Composable
-private fun ChannelSettingsRenameField(
+private fun ChannelSettingsChangeChannelField(
     channelWithRename: ChannelWithRename,
-    onRename: (String?) -> Unit,
+    onChangeChannel: (String) -> Unit,
 ) {
-    var renameText by remember(channelWithRename.channel) {
-        mutableStateOf(channelWithRename.rename?.value.orEmpty())
+    var channelText by remember(channelWithRename.channel) {
+        mutableStateOf(channelWithRename.rename?.value ?: channelWithRename.channel.value)
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(start = 56.dp, end = 8.dp, bottom = 8.dp),
     ) {
         OutlinedTextField(
-            value = renameText,
-            onValueChange = { renameText = it },
+            value = channelText,
+            onValueChange = { channelText = it },
             placeholder = { Text(channelWithRename.channel.value) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
-        TextButton(onClick = { onRename(renameText) }) {
+        TextButton(
+            onClick = {
+                val trimmed = channelText.trim()
+                if (trimmed.isNotEmpty()) {
+                    onChangeChannel(trimmed)
+                }
+            },
+        ) {
             Text(stringResource(R.string.save))
         }
     }
