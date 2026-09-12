@@ -30,6 +30,9 @@ object CustomCommandsSettings
 object UserDisplaySettings
 
 @Serializable
+object ModerationSettings
+
+@Serializable
 object StreamsSettings
 
 @Serializable
