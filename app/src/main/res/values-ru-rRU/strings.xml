@@ -428,6 +428,9 @@
     <string name="command_trigger_duplicate">Этот триггер уже используется другой командой</string>
     <string name="command__hint">Команда</string>
     <string name="commands_title">Пользовательские команды</string>
+    <string name="moderation_settings_title">Модерация</string>
+    <string name="moderation_timeout_label">Таймаут %1$d</string>
+    <string name="moderation_timeout_seconds_hint">Секунды</string>
     <string name="user_popup_report">Пожаловаться</string>
     <string name="tts_ignore_list_add_user">Добавить пользователя</string>
     <string name="tts_ignore_list_remove_user">Удалить пользователя</string>

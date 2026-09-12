@@ -414,6 +414,9 @@
     <string name="command_trigger_duplicate">This trigger is already used by another command</string>
     <string name="command__hint">Command</string>
     <string name="commands_title">Custom commands</string>
+    <string name="moderation_settings_title">Moderation</string>
+    <string name="moderation_timeout_label">Timeout %1$d</string>
+    <string name="moderation_timeout_seconds_hint">Seconds</string>
     <string name="user_popup_report">Report</string>
     <string name="tts_ignore_list_add_user">Add a user</string>
     <string name="tts_ignore_list_remove_user">Remove the user</string>
