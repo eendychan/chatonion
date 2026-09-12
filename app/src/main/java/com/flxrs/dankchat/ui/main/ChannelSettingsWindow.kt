@@ -308,7 +308,9 @@ private fun ChannelSettingsRow(
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = channelWithRename.channel.value.take(1).uppercase(),
+                                text = channelWithRename.channel.value
+                                    .take(1)
+                                    .uppercase(),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
