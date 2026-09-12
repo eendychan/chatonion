@@ -63,6 +63,7 @@ import com.flxrs.dankchat.preferences.appearance.ThemePreference
 import com.flxrs.dankchat.preferences.battery.BatterySettingsScreen
 import com.flxrs.dankchat.preferences.chat.ChatSettingsScreen
 import com.flxrs.dankchat.preferences.chat.commands.CustomCommandsScreen
+import com.flxrs.dankchat.preferences.chat.moderation.ModerationSettingsScreen
 import com.flxrs.dankchat.preferences.chat.userdisplay.UserDisplayScreen
 import com.flxrs.dankchat.preferences.developer.DeveloperSettingsScreen
 import com.flxrs.dankchat.preferences.notifications.NotificationsSettingsScreen
@@ -389,6 +390,7 @@ class MainActivity : ComponentActivity() {
                             ChatSettingsScreen(
                                 onNavToCommands = { navController.navigate(CustomCommandsSettings) },
                                 onNavToUserDisplays = { navController.navigate(UserDisplaySettings) },
+                                onNavToModeration = { navController.navigate(ModerationSettings) },
                                 onNavToBattery = { navController.navigate(BatterySettings) },
                                 onNavBack = { navController.popBackStack() },
                             )
@@ -410,6 +412,16 @@ class MainActivity : ComponentActivity() {
                             popExitTransition = subPopExit,
                         ) {
                             UserDisplayScreen(
+                                onNavBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<ModerationSettings>(
+                            enterTransition = subEnter,
+                            exitTransition = subExit,
+                            popEnterTransition = subPopEnter,
+                            popExitTransition = subPopExit,
+                        ) {
+                            ModerationSettingsScreen(
                                 onNavBack = { navController.popBackStack() },
                             )
                         }
