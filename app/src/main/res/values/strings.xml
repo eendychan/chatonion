@@ -44,7 +44,7 @@
     <string name="snackbar_link_copied">Link copied</string>
     <string name="snackbar_error_copied">Error information copied</string>
     <string name="notification_stop">Stop</string>
-    <string name="notification_title">peepoOnion</string>
+    <string name="notification_title">FeelsDankMan</string>
     <string name="notification_message">chatonion running in the background</string>
     <string name="emote_menu_hint">Open the emote menu</string>
     <string name="no_recent_emotes">No recent emotes</string>
@@ -166,6 +166,7 @@
 
     <!-- AutoMod -->
     <string name="automod_header" comment="AutoMod: Held a message for reason: aggressive (level 2). Allow will post it in chat.">Held a message for reason: %1$s. Allow will post it in chat.</string>
+    <string name="automod_message_held_label">Message held:</string>
     <string name="automod_allow">Allow</string>
     <string name="automod_deny">Deny</string>
     <string name="automod_status_approved">Approved</string>

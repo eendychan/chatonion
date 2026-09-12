@@ -44,7 +44,7 @@
     <string name="snackbar_link_copied">Ссылка скопирована</string>
     <string name="snackbar_error_copied">Информация об ошибке скопирована</string>
     <string name="notification_stop">Стоп</string>
-    <string name="notification_title">peepoOnion</string>
+    <string name="notification_title">FeelsDankMan</string>
     <string name="notification_message">chatonion работает в фоновом режиме</string>
     <string name="emote_menu_hint">Открыть меню смайлов</string>
     <string name="no_recent_emotes">Нет недавних эмоутов</string>
@@ -171,7 +171,8 @@
     <string name="system_message_pin_already_pinned">Не удалось закрепить сообщение - другое сообщение уже закреплено</string>
     <!-- AutoMod -->
     <string name="automod_header" comment="AutoMod: Held a message for reason: aggressive (level 2). Allow will post it in chat.">Сообщение задержано по причине: %1$s. Разрешение опубликует его в чате.</string>
-    <string name="automod_allow">Разрешить</string>
+    <string name="automod_message_held_label">Сообщение задержано:</string>
+    <string name="automod_allow">Отправить</string>
     <string name="automod_deny">Отклонить</string>
     <string name="automod_status_approved">Одобрено</string>
     <string name="automod_status_denied">Отклонено</string>
