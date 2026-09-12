@@ -57,6 +57,7 @@ import kotlin.math.roundToInt
 fun ChatSettingsScreen(
     onNavToCommands: () -> Unit,
     onNavToUserDisplays: () -> Unit,
+    onNavToModeration: () -> Unit,
     onNavToBattery: () -> Unit,
     onNavBack: () -> Unit,
 ) {
@@ -90,6 +91,7 @@ fun ChatSettingsScreen(
         onInteraction = { viewModel.onInteraction(it) },
         onNavToCommands = onNavToCommands,
         onNavToUserDisplays = onNavToUserDisplays,
+        onNavToModeration = onNavToModeration,
         onNavToBattery = onNavToBattery,
         onNavBack = onNavBack,
     )
@@ -102,6 +104,7 @@ private fun ChatSettingsScreen(
     onInteraction: (ChatSettingsInteraction) -> Unit,
     onNavToCommands: () -> Unit,
     onNavToUserDisplays: () -> Unit,
+    onNavToModeration: () -> Unit,
     onNavToBattery: () -> Unit,
     onNavBack: () -> Unit,
 ) {
@@ -150,6 +153,7 @@ private fun ChatSettingsScreen(
                 userLongClickBehavior = settings.userLongClickBehavior,
                 colorizeNicknames = settings.colorizeNicknames,
                 onNavToUserDisplays = onNavToUserDisplays,
+                onNavToModeration = onNavToModeration,
                 onInteraction = onInteraction,
             )
             HorizontalDivider(thickness = Dp.Hairline)
@@ -282,6 +286,7 @@ private fun UsersCategory(
     userLongClickBehavior: UserLongClickBehavior,
     colorizeNicknames: Boolean,
     onNavToUserDisplays: () -> Unit,
+    onNavToModeration: () -> Unit,
     onInteraction: (ChatSettingsInteraction) -> Unit,
 ) {
     PreferenceCategory(title = stringResource(R.string.preference_users_header)) {
@@ -311,6 +316,11 @@ private fun UsersCategory(
             title = stringResource(R.string.custom_user_display_title),
             summary = stringResource(R.string.custom_user_display_summary),
             onClick = onNavToUserDisplays,
+            trailingIcon = Icons.AutoMirrored.Filled.ArrowForward,
+        )
+        PreferenceItem(
+            title = stringResource(R.string.moderation_settings_title),
+            onClick = onNavToModeration,
             trailingIcon = Icons.AutoMirrored.Filled.ArrowForward,
         )
     }
