@@ -242,6 +242,10 @@ class ChatSettingsDataStore(
         settings
             .map { it.userLongClickBehavior }
             .distinctUntilChanged()
+    val moderationTimeoutDurationsSeconds =
+        settings
+            .map { it.moderationTimeoutDurationsSeconds }
+            .distinctUntilChanged()
 
     val debouncedScrollBack =
         settings
