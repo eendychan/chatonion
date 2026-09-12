@@ -33,6 +33,7 @@ data class ChatSettings(
     val alwaysShowPinnedMessage: Boolean = false,
     val showStreamTitleInLiveMessage: Boolean = false,
     val sharedChatMigration: Boolean = false,
+    val moderationTimeoutDurationsSeconds: List<Long> = DEFAULT_MODERATION_TIMEOUTS,
 ) {
     @Transient
     val visibleBadgeTypes = visibleBadges.map { BadgeType.entries[it.ordinal] }
@@ -42,6 +43,9 @@ data class ChatSettings(
 
     companion object {
         private const val DEFAULT_TIMESTAMP_FORMAT = "HH:mm"
+
+        // 10s, 10m, 30m, 1h, 2h, 1d, 1w, 2w
+        val DEFAULT_MODERATION_TIMEOUTS = listOf(10L, 600L, 1_800L, 3_600L, 7_200L, 86_400L, 604_800L, 1_209_600L)
     }
 }
 
