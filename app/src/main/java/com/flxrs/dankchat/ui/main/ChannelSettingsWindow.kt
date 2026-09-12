@@ -325,7 +325,7 @@ private fun ChannelSettingsRow(
                 IconButton(onClick = { isEditing = !isEditing }) {
                     Icon(
                         painter = painterResource(R.drawable.ic_edit),
-                        contentDescription = stringResource(R.string.change_channel),
+                        contentDescription = stringResource(R.string.edit_dialog_title),
                         modifier = Modifier.size(20.dp),
                     )
                 }
