@@ -173,10 +173,27 @@ fun UserPopupDialog(
                                         isOwnUser = isOwnUser,
                                         isSuccess = isSuccess,
                                         isBlocked = isBlocked,
-                                        onMention = onMention?.let { callback -> { callback(userName.value, displayName.value); onDismiss() } },
-                                        onWhisper = onWhisper?.let { callback -> { callback(userName.value); onDismiss() } },
+                                        onMention =
+                                            onMention?.let { callback ->
+                                                {
+                                                    callback(userName.value, displayName.value)
+                                                    onDismiss()
+                                                }
+                                            },
+                                        onWhisper =
+                                            onWhisper?.let { callback ->
+                                                {
+                                                    callback(userName.value)
+                                                    onDismiss()
+                                                }
+                                            },
                                         onHistory =
-                                            (onViewHistory ?: onMessageHistory)?.let { callback -> { callback(userName.value); onDismiss() } },
+                                            (onViewHistory ?: onMessageHistory)?.let { callback ->
+                                                {
+                                                    callback(userName.value)
+                                                    onDismiss()
+                                                }
+                                            },
                                         onBlockToggle = {
                                             when {
                                                 isBlocked -> onUnblockUser()
