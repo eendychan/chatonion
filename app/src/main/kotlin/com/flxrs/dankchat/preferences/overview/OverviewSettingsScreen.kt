@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -49,6 +50,7 @@ import com.flxrs.dankchat.utils.compose.buildClickableAnnotation
 import com.flxrs.dankchat.utils.compose.buildLinkAnnotation
 
 private const val GITHUB_URL = "https://github.com/flex3r/dankchat"
+private const val CHATONION_AUTHOR_URL = "https://t.me/echpzdzh"
 private const val TWITCH_TOS_URL = "https://www.twitch.tv/p/terms-of-service"
 
 sealed interface SettingsNavigation {
@@ -78,6 +80,7 @@ fun OverviewSettingsScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit,
     onNavigate: (SettingsNavigation) -> Unit,
+    onNavigateToSearch: () -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -95,6 +98,11 @@ fun OverviewSettingsScreen(
                         onClick = onBack,
                         content = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") },
                     )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.settings_search_hint))
+                    }
                 },
             )
         },
@@ -149,10 +157,18 @@ fun OverviewSettingsScreen(
                         )
                     },
                 ) {
+                    val chatonionAboutText = stringResource(R.string.preference_about_chatonion_summary)
                     val aboutSummary = stringResource(R.string.preference_about_summary, BuildConfig.VERSION_NAME)
                     val aboutTos = stringResource(R.string.preference_about_tos)
                     val annotated =
                         buildAnnotatedString {
+                            append(chatonionAboutText)
+                            appendLine()
+                            withLink(link = buildLinkAnnotation(CHATONION_AUTHOR_URL)) {
+                                append(CHATONION_AUTHOR_URL)
+                            }
+                            appendLine()
+                            appendLine()
                             append(aboutSummary)
                             appendLine()
                             withLink(link = buildLinkAnnotation(GITHUB_URL)) {
