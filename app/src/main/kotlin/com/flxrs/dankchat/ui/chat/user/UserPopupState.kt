@@ -27,6 +27,7 @@ sealed interface UserPopupState {
         val displayName: DisplayName,
         val created: String,
         val avatarUrl: String,
+        val offlineImageUrl: String? = null,
         val showFollowingSince: Boolean = false,
         val followingSince: String? = null,
         val isBlocked: Boolean = false,
