@@ -9,6 +9,9 @@ object Main
 object Settings
 
 @Serializable
+object SettingsSearch
+
+@Serializable
 object AppearanceSettings
 
 @Serializable
