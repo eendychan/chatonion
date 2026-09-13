@@ -6,7 +6,10 @@ import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.repo.IgnoresRepository
 import com.flxrs.dankchat.data.repo.channel.ChannelRepository
+import com.flxrs.dankchat.data.repo.chat.ChatRepository
 import com.flxrs.dankchat.data.repo.chat.UserStateRepository
+import com.flxrs.dankchat.data.repo.command.CommandRepository
+import com.flxrs.dankchat.data.repo.command.CommandResult
 import com.flxrs.dankchat.data.repo.data.DataRepository
 import com.flxrs.dankchat.data.twitch.badge.Badge
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
@@ -24,6 +27,7 @@ data class UserPopupUiState(
     val channel: UserName?,
     val badges: List<Badge>,
     val isOwnUser: Boolean,
+    val canModerate: Boolean,
 )
 
 @KoinViewModel
@@ -33,6 +37,8 @@ class UserPopupViewModel(
     private val ignoresRepository: IgnoresRepository,
     private val userStateRepository: UserStateRepository,
     private val preferenceStore: DankChatPreferenceStore,
+    private val chatRepository: ChatRepository,
+    private val commandRepository: CommandRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow<UserPopupUiState?>(null)
     val state: StateFlow<UserPopupUiState?> = _state.asStateFlow()
@@ -60,6 +66,37 @@ class UserPopupViewModel(
         ignoresRepository.removeUserBlock(targetUserId, targetUsername)
     }
 
+    fun banUser() = viewModelScope.launch {
+        val name = (_state.value?.popupState as? UserPopupState.Success)?.userName ?: return@launch
+        sendCommand(".ban $name")
+    }
+
+    fun unbanUser() = viewModelScope.launch {
+        val name = (_state.value?.popupState as? UserPopupState.Success)?.userName ?: return@launch
+        sendCommand(".unban $name")
+    }
+
+    fun timeoutUser(durationSeconds: Long) = viewModelScope.launch {
+        val name = (_state.value?.popupState as? UserPopupState.Success)?.userName ?: return@launch
+        sendCommand(".timeout $name $durationSeconds")
+    }
+
+    private suspend fun sendCommand(message: String) {
+        val channel = currentParams?.channel ?: return
+        val roomState = channelRepository.getRoomState(channel) ?: return
+        val userState = userStateRepository.userState.value
+        val result =
+            runCatching {
+                commandRepository.checkForCommands(message, channel, roomState, userState)
+            }.getOrNull() ?: return
+
+        when (result) {
+            is CommandResult.IrcCommand -> chatRepository.sendMessage(message, forceIrc = true)
+            is CommandResult.AcceptedTwitchCommand -> result.response?.let { chatRepository.makeAndPostCustomSystemMessage(it, channel) }
+            else -> Unit
+        }
+    }
+
     private fun emitState(
         params: UserPopupStateParams,
         popupState: UserPopupState,
@@ -69,6 +106,7 @@ class UserPopupViewModel(
             channel = params.channel,
             badges = params.badges,
             isOwnUser = params.targetUserId != null && preferenceStore.userIdString == params.targetUserId,
+            canModerate = params.channel != null && userStateRepository.isModeratorInChannel(params.channel),
         )
     }
 
@@ -99,6 +137,7 @@ class UserPopupViewModel(
                 userName = cachedUser.name,
                 displayName = cachedUser.displayName,
                 avatarUrl = cachedUser.avatarUrl,
+                offlineImageUrl = cachedUser.offlineImageUrl.ifBlank { null },
                 created = cachedUser.createdAt.asParsedZonedDateTime(),
             )
         }
@@ -131,6 +170,7 @@ class UserPopupViewModel(
                         userName = user.name,
                         displayName = user.displayName,
                         avatarUrl = user.avatarUrl,
+                        offlineImageUrl = user.offlineImageUrl.ifBlank { null },
                         created = user.createdAt.asParsedZonedDateTime(),
                         showFollowingSince = canLoadFollows,
                         followingSince = channelUserFollows
