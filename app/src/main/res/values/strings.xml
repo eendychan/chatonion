@@ -172,6 +172,7 @@
     <string name="automod_status_approved">Approved</string>
     <string name="automod_status_denied">Denied</string>
     <string name="automod_ban_user">Ban user</string>
+    <string name="unban_user">Unban user</string>
     <string name="automod_status_expired">Expired</string>
     <string name="automod_user_held">Hey! Your message is being checked by mods and has not been sent.</string>
     <string name="automod_user_accepted">Mods have accepted your message.</string>

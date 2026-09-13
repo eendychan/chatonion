@@ -177,6 +177,7 @@
     <string name="automod_status_approved">Одобрено</string>
     <string name="automod_status_denied">Отклонено</string>
     <string name="automod_ban_user">Заблокировать пользователя</string>
+    <string name="unban_user">Разбанить пользователя</string>
     <string name="automod_status_expired">Истекло</string>
     <string name="automod_user_held">Эй! Твоё сообщение проверяется модераторами и ещё не отправлено.</string>
     <string name="automod_user_accepted">Модераторы приняли твоё сообщение.</string>
@@ -298,8 +299,8 @@
     <string name="user_popup_unblock">Разблокировать</string>
     <string name="user_popup_mention">Упомянуть пользователя</string>
     <string name="user_popup_whisper">Написать личное сообщение</string>
-    <string name="user_popup_created">Канал создан: %1$s</string>
-    <string name="user_popup_following_since">Фолловит с %1$s</string>
+    <string name="user_popup_created">Создан %1$s</string>
+    <string name="user_popup_following_since">Фоллоу %1$s</string>
     <string name="user_popup_not_following">Не фолловит</string>
     <string name="user_popup_avatar_description">Аватар</string>
     <string name="user_popup_error">Невозможно загрузить данные пользователя: %1$s</string>
