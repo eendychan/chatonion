@@ -183,7 +183,10 @@ fun UserPopupDialog(
                                                 else -> showBlockConfirmation = true
                                             }
                                         },
-                                        onReport = { onReport(userName.value); onDismiss() },
+                                        onReport = {
+                                            onReport(userName.value)
+                                            onDismiss()
+                                        },
                                     )
 
                                     if (canModerate && isSuccess && !isOwnUser) {
