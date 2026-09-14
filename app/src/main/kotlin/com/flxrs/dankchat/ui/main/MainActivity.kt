@@ -91,13 +91,13 @@ import com.flxrs.dankchat.utils.extensions.keepScreenOn
 import com.flxrs.dankchat.utils.extensions.parcelable
 import com.flxrs.dankchat.utils.removeExifAttributes
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.io.IOException
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.IOException
 
 private val logger = KotlinLogging.logger("MainActivity")
 
