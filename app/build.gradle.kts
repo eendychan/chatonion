@@ -28,7 +28,7 @@ android {
         minSdk = 30
         targetSdk = 36
         versionCode = 676767
-        versionName = "4.3.0b"
+        versionName = "4.3.0"
     }
 
     androidResources { generateLocaleConfig = true }
@@ -81,7 +81,7 @@ android {
     }
 
     androidComponents.onVariants { variant ->
-        val renameTask = tasks.register<RenameApkTask>("renameApk${variant.name.replaceFirstChar { it.uppercase() }}") { apkName.set("DankChat-${variant.name}.apk") }
+        val renameTask = tasks.register<RenameApkTask>("renameApk${variant.name.replaceFirstChar { it.uppercase() }}") { apkName.set("Chatonion-${variant.name}.apk") }
         val transformationRequest =
             variant.artifacts
                 .use(renameTask)
