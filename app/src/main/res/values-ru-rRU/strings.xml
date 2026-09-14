@@ -37,6 +37,7 @@
     <string name="resume_scroll">Возобновить прокрутку</string>
     <string name="uploading_image">Загружается файл</string>
     <string name="settings">Настройки</string>
+    <string name="settings_search_hint">Поиск по настройкам</string>
     <string name="external_upload_disclaimer">Сторонний хостинг предоставлен %1$s, используйте на свой страх и риск.</string>
     <string name="nuuls_upload_title">Пользовательский загрузчик медиа</string>
     <string name="snackbar_message_copied">Сообщение скопировано</string>

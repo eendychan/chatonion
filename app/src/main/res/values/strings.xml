@@ -37,6 +37,7 @@
     <string name="resume_scroll">Resume scroll</string>
     <string name="uploading_image">Uploading file</string>
     <string name="settings">Settings</string>
+    <string name="settings_search_hint">Search settings</string>
     <string name="external_upload_disclaimer">External hosting provided by %1$s, use at your own risk.</string>
     <string name="nuuls_upload_title">Custom media upload</string>
     <string name="snackbar_message_copied">Message copied</string>
