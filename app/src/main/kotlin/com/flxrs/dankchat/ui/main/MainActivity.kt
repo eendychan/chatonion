@@ -65,6 +65,7 @@ import com.flxrs.dankchat.preferences.chat.ChatSettingsScreen
 import com.flxrs.dankchat.preferences.chat.commands.CustomCommandsScreen
 import com.flxrs.dankchat.preferences.chat.moderation.ModerationSettingsScreen
 import com.flxrs.dankchat.preferences.chat.userdisplay.UserDisplayScreen
+import com.flxrs.dankchat.preferences.search.SettingsSearchScreen
 import com.flxrs.dankchat.preferences.developer.DeveloperSettingsScreen
 import com.flxrs.dankchat.preferences.notifications.NotificationsSettingsScreen
 import com.flxrs.dankchat.preferences.notifications.highlights.HighlightsScreen
@@ -323,6 +324,7 @@ class MainActivity : ComponentActivity() {
                                         SettingsNavigation.About -> navController.navigate(AboutSettings)
                                     }
                                 },
+                                onNavigateToSearch = { navController.navigate(SettingsSearch) },
                             )
                         }
 
@@ -423,6 +425,17 @@ class MainActivity : ComponentActivity() {
                         ) {
                             ModerationSettingsScreen(
                                 onNavBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<SettingsSearch>(
+                            enterTransition = subEnter,
+                            exitTransition = subExit,
+                            popEnterTransition = subPopEnter,
+                            popExitTransition = subPopExit,
+                        ) {
+                            SettingsSearchScreen(
+                                onNavBack = { navController.popBackStack() },
+                                onNavigateToRoute = { route -> navController.navigate(route) },
                             )
                         }
                         composable<StreamsSettings>(
