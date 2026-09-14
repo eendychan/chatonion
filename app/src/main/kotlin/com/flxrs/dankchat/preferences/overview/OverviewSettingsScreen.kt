@@ -208,6 +208,7 @@ private fun OverviewSettingsPreview() {
             onBack = { },
             onLogout = { },
             onNavigate = { },
+            onNavigateToSearch = { },
         )
     }
 }
