@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -39,6 +40,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,8 +71,8 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.math.roundToInt
 
-private val WINDOW_WIDTH = 340.dp
-private val WINDOW_MAX_HEIGHT = 420.dp
+private val WINDOW_WIDTH = 300.dp
+private val WINDOW_MAX_HEIGHT = 220.dp
 
 /**
  * The channel-settings surface used to be a bottom sheet ("manage channels"). It's now a small
@@ -280,18 +282,18 @@ private fun ChannelSettingsRow(
     Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 2.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.DragHandle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = dragHandleModifier.padding(6.dp).size(20.dp),
+                modifier = dragHandleModifier.padding(4.dp).size(18.dp),
             )
 
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.size(32.dp).clip(CircleShape).padding(start = 4.dp),
+                modifier = Modifier.padding(start = 2.dp, end = 4.dp).size(32.dp).clip(CircleShape),
             ) {
                 if (avatarUrl != null) {
                     AsyncImage(
@@ -308,9 +310,7 @@ private fun ChannelSettingsRow(
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = channelWithRename.channel.value
-                                    .take(1)
-                                    .uppercase(),
+                                text = channelWithRename.channel.value.take(1).uppercase(),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -321,16 +321,19 @@ private fun ChannelSettingsRow(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            IconButton(onClick = { isEditing = !isEditing }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_edit),
+                    contentDescription = stringResource(R.string.edit_dialog_title),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            VerticalDivider(modifier = Modifier.height(28.dp).padding(horizontal = 2.dp))
+
             // Kept at the default (accessible) IconButton touch target size - the row scrolls
             // horizontally instead of shrinking the touch targets to fit.
             Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                IconButton(onClick = { isEditing = !isEditing }) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_edit),
-                        contentDescription = stringResource(R.string.edit_dialog_title),
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
                 IconButton(onClick = onSwitchTo) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.OpenInNew,
