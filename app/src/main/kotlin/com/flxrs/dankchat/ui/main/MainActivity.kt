@@ -65,13 +65,13 @@ import com.flxrs.dankchat.preferences.chat.ChatSettingsScreen
 import com.flxrs.dankchat.preferences.chat.commands.CustomCommandsScreen
 import com.flxrs.dankchat.preferences.chat.moderation.ModerationSettingsScreen
 import com.flxrs.dankchat.preferences.chat.userdisplay.UserDisplayScreen
-import com.flxrs.dankchat.preferences.search.SettingsSearchScreen
 import com.flxrs.dankchat.preferences.developer.DeveloperSettingsScreen
 import com.flxrs.dankchat.preferences.notifications.NotificationsSettingsScreen
 import com.flxrs.dankchat.preferences.notifications.highlights.HighlightsScreen
 import com.flxrs.dankchat.preferences.notifications.ignores.IgnoresScreen
 import com.flxrs.dankchat.preferences.overview.OverviewSettingsScreen
 import com.flxrs.dankchat.preferences.overview.SettingsNavigation
+import com.flxrs.dankchat.preferences.search.SettingsSearchScreen
 import com.flxrs.dankchat.preferences.stream.StreamsSettingsScreen
 import com.flxrs.dankchat.preferences.tools.ToolsSettingsScreen
 import com.flxrs.dankchat.preferences.tools.tts.TTSUserIgnoreListScreen
@@ -91,13 +91,13 @@ import com.flxrs.dankchat.utils.extensions.keepScreenOn
 import com.flxrs.dankchat.utils.extensions.parcelable
 import com.flxrs.dankchat.utils.removeExifAttributes
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.io.IOException
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.io.IOException
 
 private val logger = KotlinLogging.logger("MainActivity")
 
