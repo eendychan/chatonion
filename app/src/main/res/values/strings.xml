@@ -422,7 +422,7 @@
     <string name="moderation_timeout_format_hint">Formats: 10s, 10m, 2h, 1w (max 2 weeks) — currently %1$s</string>
     <string name="moderation_timeout_invalid">Invalid duration. Use e.g. 10s, 10m, 2h or 1w</string>
     <string name="donation_settings_title">Donation display</string>
-    <string name="donation_settings_summary">Add rows with a channel name and a donation widget link (DonationAlerts, DonateX, DonatePay) or a StreamElements JWT token. The service is detected automatically from the link. Donations from all widgets are merged into a single player with history, opened via the Donations menu item.</string>
+    <string name="donation_settings_summary">Add rows with a channel name and a donation widget link (DonationAlerts, DonateX, DonatePay) or a StreamElements JWT token. The service is detected automatically from the link. Widgets open in an embedded browser via the Donations menu item.</string>
     <string name="donation_provider_donationalerts">DonationAlerts</string>
     <string name="donation_provider_donatex">DonateX</string>
     <string name="donation_provider_donatepay">DonatePay</string>
@@ -433,11 +433,11 @@
     <string name="donation_widget_url_label">Widget link or JWT token</string>
     <string name="donation_widget_url_hint">Widget URL including the token, or a StreamElements JWT token</string>
     <string name="donation_widget_channel_label">Channel (optional)</string>
-    <string name="donations_empty">No donations yet</string>
-    <string name="donations_previous">Previous donation</string>
-    <string name="donations_skip">Next donation</string>
-    <string name="donations_pause">Pause</string>
-    <string name="donations_resume">Resume</string>
+    <string name="donation_widget_refresh">Reload</string>
+    <string name="donation_widget_open_browser">Open in browser</string>
+    <string name="donation_widget_load_error">Failed to load the widget: %1$s</string>
+    <string name="donation_widget_retry">Retry</string>
+    <string name="donation_widget_webview_version">WebView version: %1$s</string>
     <string name="donations_menu_item">Donations</string>
     <string name="donations_dialog_title">Donations</string>
     <string name="image_preview_enabled_title">Show images from links</string>
