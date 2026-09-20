@@ -494,6 +494,16 @@ class MainActivity : ComponentActivity() {
                                 onNavBack = { navController.popBackStack() },
                             )
                         }
+                        composable<EmoteCacheSettings>(
+                            enterTransition = subEnter,
+                            exitTransition = subExit,
+                            popEnterTransition = subPopEnter,
+                            popExitTransition = subPopExit,
+                        ) {
+                            EmoteCacheSettingsScreen(
+                                onNavBack = { navController.popBackStack() },
+                            )
+                        }
                         composable<TTSUserIgnoreListSettings>(
                             enterTransition = subEnter,
                             exitTransition = subExit,
