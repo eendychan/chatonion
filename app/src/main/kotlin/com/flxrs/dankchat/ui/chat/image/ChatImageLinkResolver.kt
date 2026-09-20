@@ -50,7 +50,7 @@ object ChatImageLinkResolver {
     // Post ids are generated base62-like tokens (e.g. RJQC8hq). Site sections (eblo.id/videos,
     // chat.eblo.id) and user profiles (eblo.id/@name) must not be treated as media.
     private fun resolveEbloid(path: String): String? {
-        val postId = path.split('/').filter { it.isNotBlank() }.singleOrNull() ?: return null
+        val postId = path.split('/').singleOrNull { it.isNotBlank() } ?: return null
         if (postId.startsWith("@")) return null
         if (postId.lowercase() in EBLOID_RESERVED_SECTIONS) return null
         if (!EBLOID_POST_ID.matches(postId)) return null
