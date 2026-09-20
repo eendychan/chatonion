@@ -15,10 +15,12 @@ import com.flxrs.dankchat.data.twitch.message.Message
 import com.flxrs.dankchat.data.twitch.message.PrivMessage
 import com.flxrs.dankchat.di.DispatchersProvider
 import com.flxrs.dankchat.preferences.chat.ChatSettingsDataStore
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import kotlin.test.assertEquals
@@ -43,6 +45,13 @@ internal class EmoteRepositoryTest {
 
     @InjectMockKs
     lateinit var emoteRepository: EmoteRepository
+
+    @BeforeEach
+    fun setup() {
+        // Relaxed mocks return chained mocks instead of null for nullable reference types,
+        // so stub explicitly: no 7TV badges are assigned to any user in these tests
+        every { sevenTVCosmeticsRepository.getBadgeForUser(any()) } returns null
+    }
 
     // --- parseTwitchEmotes tests ---
 
