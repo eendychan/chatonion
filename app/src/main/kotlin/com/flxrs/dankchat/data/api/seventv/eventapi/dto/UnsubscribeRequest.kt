@@ -15,5 +15,12 @@ data class UnsubscribeRequest(
         fun emoteSetUpdates(emoteSetId: String) = UnsubscribeRequest(
             d = SubscriptionData(type = SubscriptionType.EmoteSetUpdates.type, condition = SubscriptionCondition(objectId = emoteSetId)),
         )
+
+        fun channelSubscription(
+            type: SubscriptionType,
+            channelId: String,
+        ) = UnsubscribeRequest(
+            d = SubscriptionData(type = type.type, condition = SubscriptionCondition.channel(channelId)),
+        )
     }
 }

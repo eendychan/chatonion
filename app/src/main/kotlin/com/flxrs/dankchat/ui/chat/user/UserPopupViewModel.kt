@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
+import com.flxrs.dankchat.data.api.ivr.IvrApiClient
 import com.flxrs.dankchat.data.repo.IgnoresRepository
 import com.flxrs.dankchat.data.repo.channel.ChannelRepository
 import com.flxrs.dankchat.data.repo.chat.ChatRepository
@@ -34,6 +35,7 @@ data class UserPopupUiState(
 class UserPopupViewModel(
     private val channelRepository: ChannelRepository,
     private val dataRepository: DataRepository,
+    private val ivrApiClient: IvrApiClient,
     private val ignoresRepository: IgnoresRepository,
     private val userStateRepository: UserStateRepository,
     private val preferenceStore: DankChatPreferenceStore,
@@ -165,12 +167,27 @@ class UserPopupViewModel(
 
                     user ?: return@runCatching UserPopupState.Error()
 
+                    // Profile banner and follower count are not part of the Helix user response, ivr.fi provides both
+                    val ivrUser = ivrApiClient.getUser(user.name).getOrNull()
+                    // Subscription info is channel-specific and hidden when the user chose to hide it
+                    val subage =
+                        params.channel
+                            ?.takeIf { it != user.name }
+                            ?.let { ivrApiClient.getSubAge(user.name, it).getOrNull() }
+                            ?.takeIf { !it.statusHidden }
+                    val subscriptionTier = subage?.meta?.tier
+                    val subscriptionMonths = subage?.cumulative?.months
+
                     UserPopupState.Success(
                         userId = user.id,
                         userName = user.name,
                         displayName = user.displayName,
                         avatarUrl = user.avatarUrl,
                         offlineImageUrl = user.offlineImageUrl.ifBlank { null },
+                        bannerUrl = ivrUser?.banner?.takeIf { it.isNotBlank() },
+                        followerCount = ivrUser?.followers,
+                        subscriptionTier = subscriptionTier,
+                        subscriptionMonths = subscriptionMonths,
                         created = user.createdAt.asParsedZonedDateTime(),
                         showFollowingSince = canLoadFollows,
                         followingSince = channelUserFollows

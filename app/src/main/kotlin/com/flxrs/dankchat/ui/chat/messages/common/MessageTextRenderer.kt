@@ -142,7 +142,7 @@ fun MessageTextWithInlineContent(
 }
 
 private fun EmoteUi.dimensionKey(baseHeightPx: Int): String = when {
-    urls.size == 1 -> singleEmoteCacheKey(urls.first(), baseHeightPx)
+    urls.size == 1 -> singleEmoteCacheKey(urls.first(), baseHeightPx, effects)
     else -> stackedCacheKey(baseHeightPx)
 }
 

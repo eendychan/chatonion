@@ -6,6 +6,7 @@ import com.flxrs.dankchat.data.api.seventv.dto.SevenTVEmoteDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 @SerialName("0")
@@ -16,11 +17,14 @@ data class DispatchMessage(
 @Serializable
 @JsonClassDiscriminator(discriminator = "type")
 sealed interface DispatchData : Data {
-    val body: ChangeMapData
+    val body: DispatchBody
 }
 
-interface ChangeMapData {
+interface DispatchBody {
     val id: String
+}
+
+interface ChangeMapData : DispatchBody {
     val actor: Actor
 }
 
@@ -93,4 +97,71 @@ data object EmoteSetIdChangeField : UserChangeField
 @Serializable
 data class EmoteSet(
     val id: String,
+)
+
+@Keep
+@Serializable
+@SerialName("cosmetic.create")
+data class CosmeticCreateDispatchData(
+    override val body: CosmeticCreateBody,
+) : DispatchData
+
+@Keep
+@Serializable
+data class CosmeticCreateBody(
+    override val id: String,
+    @SerialName("object") val cosmetic: CosmeticObject,
+) : DispatchBody
+
+@Keep
+@Serializable
+data class CosmeticObject(
+    val id: String,
+    val kind: String,
+    val data: JsonElement,
+)
+
+@Keep
+@Serializable
+@SerialName("entitlement.create")
+data class EntitlementCreateDispatchData(
+    override val body: EntitlementBody,
+) : DispatchData
+
+@Keep
+@Serializable
+@SerialName("entitlement.delete")
+data class EntitlementDeleteDispatchData(
+    override val body: EntitlementBody,
+) : DispatchData
+
+@Keep
+@Serializable
+data class EntitlementBody(
+    override val id: String,
+    @SerialName("object") val entitlement: EntitlementObject,
+) : DispatchBody
+
+@Keep
+@Serializable
+data class EntitlementObject(
+    val id: String,
+    val kind: String,
+    @SerialName("ref_id") val refId: String? = null,
+    val user: EntitlementUser? = null,
+)
+
+@Keep
+@Serializable
+data class EntitlementUser(
+    val id: String,
+    val connections: List<EntitlementConnection> = emptyList(),
+)
+
+@Keep
+@Serializable
+data class EntitlementConnection(
+    val id: String,
+    val platform: String,
+    val username: String,
 )

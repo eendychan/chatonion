@@ -3,7 +3,6 @@ package com.flxrs.dankchat.ui.chat.emote
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -27,6 +26,7 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.size.Size
 import com.flxrs.dankchat.data.twitch.emote.ChatMessageEmote
+import com.flxrs.dankchat.data.twitch.emote.EmoteEffect
 import com.flxrs.dankchat.ui.chat.EmoteUi
 import com.flxrs.dankchat.utils.extensions.forEachLayer
 import com.flxrs.dankchat.utils.extensions.setRunning
@@ -42,14 +42,16 @@ internal fun emoteScaleFactor(baseHeightPx: Int): Double = baseHeightPx * SCALE_
 
 // Cache key for a stacked emote's layer drawable and dimensions. Keyed by urls because
 // emote ids are not unique across services (Twitch and FFZ ids share a numeric namespace).
-internal fun EmoteUi.stackedCacheKey(baseHeightPx: Int): String = urls.joinToString(separator = "\n", postfix = "\n$baseHeightPx")
+// Effects are part of the key because they change the reserved dimensions.
+internal fun EmoteUi.stackedCacheKey(baseHeightPx: Int): String = urls.joinToString(separator = "\n", postfix = "\n$baseHeightPx\n$effects")
 
 // Cache key for a single emote's drawable and dimensions — includes the render height
 // because the drawable's bounds are baked for a specific font size at load time.
 internal fun singleEmoteCacheKey(
     url: String,
     baseHeightPx: Int,
-): String = "$url\n$baseHeightPx"
+    effects: Set<EmoteEffect> = emptySet(),
+): String = "$url\n$baseHeightPx\n$effects"
 
 @Composable
 fun StackedEmote(
@@ -72,6 +74,7 @@ fun StackedEmote(
         SingleEmoteDrawable(
             url = emote.urls.first(),
             chatEmote = emote.emotes.first(),
+            effects = emote.effects,
             fontSize = fontSize,
             scaleFactor = scaleFactor,
             emoteCoordinator = emoteCoordinator,
@@ -154,7 +157,7 @@ fun StackedEmote(
                     // Store dimensions for future placeholder sizing
                     emoteCoordinator.putDimensions(
                         cacheKey,
-                        layerDrawable.bounds.width() to layerDrawable.bounds.height(),
+                        effectAdjustedSize(layerDrawable.bounds.width(), layerDrawable.bounds.height(), emote.effects),
                     )
                 }
                 layerDrawableState.value = EmoteLoadState.Loaded(layerDrawable)
@@ -185,14 +188,15 @@ fun StackedEmote(
             }
             val painter = remember(state.drawable, isPageVisible) { EmoteDrawablePainter(state.drawable, emoteCoordinator, invalidationsEnabled = isPageVisible) }
 
-            Image(
+            EffectedEmoteImage(
                 painter = painter,
-                contentDescription = null,
+                width = widthDp,
+                height = heightDp,
+                effects = emote.effects,
+                animate = animateGifs,
                 alpha = alpha,
-                modifier =
-                    modifier
-                        .size(width = widthDp, height = heightDp)
-                        .clickable { onClick() },
+                onClick = onClick,
+                modifier = modifier,
             )
         }
 
@@ -226,6 +230,7 @@ fun StackedEmote(
 private fun SingleEmoteDrawable(
     url: String,
     chatEmote: ChatMessageEmote,
+    effects: Set<EmoteEffect>,
     fontSize: Float,
     scaleFactor: Double,
     emoteCoordinator: EmoteAnimationCoordinator,
@@ -237,7 +242,7 @@ private fun SingleEmoteDrawable(
     val context = LocalPlatformContext.current
     val density = LocalDensity.current
     val baseHeightPx = with(density) { emoteBaseHeight(fontSize).toPx().toInt() }
-    val cacheKey = singleEmoteCacheKey(url, baseHeightPx)
+    val cacheKey = singleEmoteCacheKey(url, baseHeightPx, effects)
 
     // Use dimension cache for instant placeholder sizing on repeat views
     val cachedDims = emoteCoordinator.getDimensions(cacheKey)
@@ -282,7 +287,7 @@ private fun SingleEmoteDrawable(
                         // Store dimensions for future placeholder sizing
                         emoteCoordinator.putDimensions(
                             cacheKey,
-                            it.bounds.width() to it.bounds.height(),
+                            effectAdjustedSize(it.bounds.width(), it.bounds.height(), effects),
                         )
                     }
                 }
@@ -319,14 +324,15 @@ private fun SingleEmoteDrawable(
             }
             val painter = remember(state.drawable, isPageVisible) { EmoteDrawablePainter(state.drawable, emoteCoordinator, invalidationsEnabled = isPageVisible) }
 
-            Image(
+            EffectedEmoteImage(
                 painter = painter,
-                contentDescription = null,
+                width = widthDp,
+                height = heightDp,
+                effects = effects,
+                animate = animateGifs,
                 alpha = alpha,
-                modifier =
-                    modifier
-                        .size(width = widthDp, height = heightDp)
-                        .clickable { onClick() },
+                onClick = onClick,
+                modifier = modifier,
             )
         }
 

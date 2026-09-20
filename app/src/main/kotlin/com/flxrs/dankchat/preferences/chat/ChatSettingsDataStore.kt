@@ -178,6 +178,21 @@ class ChatSettingsDataStore(
             override suspend fun cleanUp() = Unit
         }
 
+    private val thirdPartyBadgeMigration =
+        object : DataMigration<ChatSettings> {
+            override suspend fun shouldMigrate(currentData: ChatSettings): Boolean = !currentData.thirdPartyBadgeMigration
+
+            override suspend fun migrate(currentData: ChatSettings): ChatSettings = currentData.copy(
+                visibleBadges = currentData.visibleBadges
+                    .plus(VisibleBadges.SevenTV)
+                    .plus(VisibleBadges.Homies)
+                    .distinct(),
+                thirdPartyBadgeMigration = true,
+            )
+
+            override suspend fun cleanUp() = Unit
+        }
+
     @Suppress("DEPRECATION")
     private val suggestionTypeMigration =
         object : DataMigration<ChatSettings> {
@@ -210,7 +225,7 @@ class ChatSettingsDataStore(
             defaultValue = ChatSettings(),
             serializer = ChatSettings.serializer(),
             scope = CoroutineScope(dispatchersProvider.io + SupervisorJob()),
-            migrations = listOf(initialMigration, scrollbackResetMigration, sharedChatMigration, suggestionTypeMigration),
+            migrations = listOf(initialMigration, scrollbackResetMigration, sharedChatMigration, thirdPartyBadgeMigration, suggestionTypeMigration),
         )
 
     val settings = dataStore.safeData(ChatSettings())

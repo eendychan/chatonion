@@ -51,6 +51,7 @@ import com.flxrs.dankchat.ui.chat.messages.common.rememberAdaptiveTextColor
 import com.flxrs.dankchat.ui.chat.messages.common.rememberBackgroundColor
 import com.flxrs.dankchat.ui.chat.messages.common.rememberNormalizedColor
 import com.flxrs.dankchat.ui.chat.messages.common.timestampSpanStyle
+import com.flxrs.dankchat.ui.chat.messages.common.toNameSpanStyle
 import com.flxrs.dankchat.utils.resolve
 
 /**
@@ -231,6 +232,7 @@ private fun PrivMessageText(
             message.message,
             message.emotes,
             message.isAction,
+            message.namePaint,
             defaultTextColor,
             nameColor,
             showChannelPrefix,
@@ -269,12 +271,10 @@ private fun PrivMessageText(
 
                 // Username with click annotation (only if nameText is not empty)
                 if (showHeader && message.nameText.isNotEmpty()) {
-                    withStyle(
-                        SpanStyle(
-                            fontWeight = FontWeight.Bold,
-                            color = nameColor,
-                        ),
-                    ) {
+                    val nameSpanStyle =
+                        message.namePaint?.toNameSpanStyle(fallbackColor = nameColor)
+                            ?: SpanStyle(fontWeight = FontWeight.Bold, color = nameColor)
+                    withStyle(nameSpanStyle) {
                         pushStringAnnotation(
                             tag = "USER",
                             annotation = "${message.userId?.value.orEmpty()}|${message.userName.value}|${message.displayName.value}|${message.channel.value}",

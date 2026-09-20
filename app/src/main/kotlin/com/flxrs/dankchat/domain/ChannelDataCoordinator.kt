@@ -5,6 +5,7 @@ import com.flxrs.dankchat.data.auth.AuthDataStore
 import com.flxrs.dankchat.data.auth.StartupValidationHolder
 import com.flxrs.dankchat.data.repo.chat.ChatLoadingStep
 import com.flxrs.dankchat.data.repo.chat.ChatMessageRepository
+import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.repo.data.DataLoadingStep
 import com.flxrs.dankchat.data.repo.data.DataRepository
 import com.flxrs.dankchat.data.repo.data.DataUpdateEventMessage
@@ -23,10 +24,12 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Single
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.seconds
 
 @Single
 class ChannelDataCoordinator(
@@ -34,6 +37,7 @@ class ChannelDataCoordinator(
     private val globalDataLoader: GlobalDataLoader,
     private val chatMessageRepository: ChatMessageRepository,
     private val dataRepository: DataRepository,
+    private val sevenTVCosmeticsRepository: SevenTVCosmeticsRepository,
     private val authDataStore: AuthDataStore,
     private val preferenceStore: DankChatPreferenceStore,
     private val startupValidationHolder: StartupValidationHolder,
@@ -67,6 +71,14 @@ class ChannelDataCoordinator(
                     }
                 }
             }
+        }
+
+        // Reparse visible messages once the burst of replayed cosmetics settles,
+        // so freshly assigned 7TV name paints and badges show up
+        scope.launch {
+            sevenTVCosmeticsRepository.updates
+                .debounce(COSMETICS_REPARSE_DEBOUNCE)
+                .collect { chatMessageRepository.reparseAllEmotesAndBadges() }
         }
 
         scope.launch {
@@ -233,6 +245,10 @@ class ChannelDataCoordinator(
                                 globalDataLoader.loadDankChatBadges()
                             }
 
+                            is DataLoadingStep.HomiesBadges -> {
+                                globalDataLoader.loadHomiesBadges()
+                            }
+
                             is DataLoadingStep.TwitchEmotes -> {
                                 val userId = authDataStore.userIdString
                                 if (userId != null) {
@@ -295,5 +311,9 @@ class ChannelDataCoordinator(
                     else -> GlobalLoadingState.Failed(failures = remainingDataFailures, chatFailures = remainingChatFailures)
                 }
         }
+    }
+
+    private companion object {
+        val COSMETICS_REPARSE_DEBOUNCE = 1.seconds
     }
 }

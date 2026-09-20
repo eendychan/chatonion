@@ -10,12 +10,14 @@ import com.flxrs.dankchat.data.api.dankchat.DankChatApiClient
 import com.flxrs.dankchat.data.api.helix.HelixApiClient
 import com.flxrs.dankchat.data.api.helix.dto.StreamDto
 import com.flxrs.dankchat.data.api.helix.dto.UserFollowsDto
+import com.flxrs.dankchat.data.api.homies.HomiesApiClient
 import com.flxrs.dankchat.data.api.seventv.SevenTVApiClient
 import com.flxrs.dankchat.data.api.seventv.eventapi.SevenTVEventApiClient
 import com.flxrs.dankchat.data.api.seventv.eventapi.SevenTVEventMessage
 import com.flxrs.dankchat.data.api.upload.UploadClient
 import com.flxrs.dankchat.data.auth.AuthDataStore
 import com.flxrs.dankchat.data.repo.RecentUploadsRepository
+import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.repo.emote.EmoteRepository
 import com.flxrs.dankchat.data.repo.emote.Emotes
 import com.flxrs.dankchat.data.twitch.badge.toBadgeSets
@@ -26,6 +28,8 @@ import com.flxrs.dankchat.utils.extensions.measureTimeAndLog
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -39,6 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.annotation.Single
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger("DataRepository")
 
@@ -50,8 +55,10 @@ class DataRepository(
     private val cachedEmoteProvider: CachedEmoteProvider,
     private val sevenTVApiClient: SevenTVApiClient,
     private val sevenTVEventApiClient: SevenTVEventApiClient,
+    private val homiesApiClient: HomiesApiClient,
     private val uploadClient: UploadClient,
     private val emoteRepository: EmoteRepository,
+    private val sevenTVCosmeticsRepository: SevenTVCosmeticsRepository,
     private val recentUploadsRepository: RecentUploadsRepository,
     private val authDataStore: AuthDataStore,
     private val chatSettingsDataStore: ChatSettingsDataStore,
@@ -61,6 +68,7 @@ class DataRepository(
     private val _dataLoadingFailures = MutableStateFlow(emptySet<DataLoadingFailure>())
     private val _dataUpdateEvents = MutableSharedFlow<DataUpdateEventMessage>()
     private val serviceEventChannel = Channel<ServiceEvent>(Channel.BUFFERED)
+    private val cosmeticChannelSubscriptions = ConcurrentHashMap<UserName, UserId>()
 
     init {
         scope.launch {
@@ -85,6 +93,22 @@ class DataRepository(
                         val channel = emoteRepository.getChannelForSevenTVEmoteSet(event.emoteSetId) ?: return@collect
                         emoteRepository.updateSevenTVEmotes(channel, event)
                         _dataUpdateEvents.emit(DataUpdateEventMessage.EmoteSetUpdated(channel, event))
+                    }
+
+                    is SevenTVEventMessage.PaintCreated -> {
+                        sevenTVCosmeticsRepository.addPaint(event.paint)
+                    }
+
+                    is SevenTVEventMessage.BadgeCreated -> {
+                        sevenTVCosmeticsRepository.addBadge(event.badge)
+                    }
+
+                    is SevenTVEventMessage.EntitlementCreated -> {
+                        event.entitlement.assignTo(sevenTVCosmeticsRepository)
+                    }
+
+                    is SevenTVEventMessage.EntitlementDeleted -> {
+                        event.entitlement.unassignFrom(sevenTVCosmeticsRepository)
                     }
                 }
             }
@@ -121,6 +145,23 @@ class DataRepository(
             val details = emoteRepository.getSevenTVUserDetails(channel) ?: return@forEach
             sevenTVEventApiClient.unsubscribeUser(details.id)
             sevenTVEventApiClient.unsubscribeEmoteSet(details.activeEmoteSetId)
+            cosmeticChannelSubscriptions.remove(channel)?.let { channelId ->
+                sevenTVEventApiClient.unsubscribeChannelCosmetics(channelId.value)
+            }
+        }
+    }
+
+    private fun SevenTVEventMessage.Entitlement.assignTo(repository: SevenTVCosmeticsRepository) {
+        when (kind) {
+            ENTITLEMENT_KIND_PAINT -> twitchUserName?.let { repository.assignPaint(it, refId) }
+            ENTITLEMENT_KIND_BADGE -> twitchUserId?.let { repository.assignBadge(it, refId) }
+        }
+    }
+
+    private fun SevenTVEventMessage.Entitlement.unassignFrom(repository: SevenTVCosmeticsRepository) {
+        when (kind) {
+            ENTITLEMENT_KIND_PAINT -> twitchUserName?.let { repository.unassignPaint(it, refId) }
+            ENTITLEMENT_KIND_BADGE -> twitchUserId?.let { repository.unassignBadge(it, refId) }
         }
     }
 
@@ -148,6 +189,30 @@ class DataRepository(
                 .getOrEmitFailure { DataLoadingStep.DankChatBadges }
                 .onSuccess { emoteRepository.setDankChatBadges(it) }
                 .map { }
+        }
+    }
+
+    suspend fun loadHomiesBadges(): Result<Unit> = withContext(dispatchersProvider.io) {
+        measureTimeAndLog(logger, "Chatterino Homies badges") {
+            val results =
+                awaitAll(
+                    async { homiesApiClient.getHomiesBadges() },
+                    async { homiesApiClient.getItzAlexBadges() },
+                    async { homiesApiClient.getItzAlexBadges2() },
+                )
+
+            // The badge lists are independent sources, a partial failure still yields usable badges
+            when {
+                results.all { it.isFailure } -> {
+                    val error = results.firstNotNullOfOrNull { it.exceptionOrNull() } ?: IllegalStateException("All Homies badge requests failed")
+                    Result.failure<Unit>(error).getOrEmitFailure { DataLoadingStep.HomiesBadges }
+                }
+
+                else -> {
+                    emoteRepository.setHomiesBadges(results.mapNotNull { it.getOrNull() }.flatten())
+                    Result.success(Unit)
+                }
+            }
         }
     }
 
@@ -231,6 +296,8 @@ class DataRepository(
                         sevenTVEventApiClient.subscribeEmoteSet(result.emoteSet.id)
                     }
                     sevenTVEventApiClient.subscribeUser(result.user.id)
+                    cosmeticChannelSubscriptions[channel] = channelId
+                    sevenTVEventApiClient.subscribeChannelCosmetics(channelId.value)
                     emoteRepository.setSevenTVEmotes(channel, result)
                 },
                 onFailure = { getOrEmitFailure { DataLoadingStep.ChannelSevenTVEmotes(channel, channelId) } },
@@ -359,5 +426,7 @@ class DataRepository(
 
     companion object {
         private const val BADGES_SUNSET_MILLIS = 1685637000000L // 2023-06-01 16:30:00
+        private const val ENTITLEMENT_KIND_PAINT = "PAINT"
+        private const val ENTITLEMENT_KIND_BADGE = "BADGE"
     }
 }

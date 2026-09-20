@@ -7,6 +7,7 @@ import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.chat.ChatImportance
 import com.flxrs.dankchat.data.chat.ChatItem
 import com.flxrs.dankchat.data.repo.chat.UsersRepository
+import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.toUserId
 import com.flxrs.dankchat.data.toUserName
 import com.flxrs.dankchat.data.twitch.emote.ChatMessageEmoteType
@@ -51,6 +52,7 @@ import org.koin.core.annotation.Single
 @Single
 class ChatMessageMapper(
     private val usersRepository: UsersRepository,
+    private val sevenTVCosmeticsRepository: SevenTVCosmeticsRepository,
 ) {
     fun mapToUiState(
         item: ChatItem,
@@ -602,6 +604,7 @@ class ChatMessageMapper(
                         emotes = emoteGroup.toImmutableList(),
                         cheerAmount = firstEmote.cheerAmount,
                         cheerColor = firstEmote.cheerColor?.let { Color(it) },
+                        effects = emoteGroup.flatMap { it.effects }.toSet(),
                     )
                 }.toImmutableList()
 
@@ -658,6 +661,7 @@ class ChatMessageMapper(
             }
 
         val rawNameColor = resolveNameColor(userDisplay?.color, color, userId, chatSettings)
+        val namePaint = sevenTVCosmeticsRepository.getPaintForUser(name)
 
         val links = findLinks(message)
         val imageLinks =
@@ -682,6 +686,7 @@ class ChatMessageMapper(
             displayName = displayName,
             badges = badgeUis,
             rawNameColor = rawNameColor,
+            namePaint = namePaint,
             nameText = nameText,
             message = message,
             links = links.toImmutableList(),
@@ -793,6 +798,7 @@ class ChatMessageMapper(
                         emotes = emoteGroup.toImmutableList(),
                         cheerAmount = firstEmote.cheerAmount,
                         cheerColor = firstEmote.cheerColor?.let { Color(it) },
+                        effects = emoteGroup.flatMap { it.effects }.toSet(),
                     )
                 }.toImmutableList()
 

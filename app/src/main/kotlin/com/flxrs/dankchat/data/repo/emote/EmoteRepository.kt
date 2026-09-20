@@ -17,6 +17,7 @@ import com.flxrs.dankchat.data.api.helix.HelixApiClient
 import com.flxrs.dankchat.data.api.helix.dto.ChannelEmoteDto
 import com.flxrs.dankchat.data.api.helix.dto.CheermoteSetDto
 import com.flxrs.dankchat.data.api.helix.dto.UserEmoteDto
+import com.flxrs.dankchat.data.api.homies.dto.HomiesBadgeDto
 import com.flxrs.dankchat.data.api.seventv.SevenTVUserDetails
 import com.flxrs.dankchat.data.api.seventv.dto.SevenTVEmoteDto
 import com.flxrs.dankchat.data.api.seventv.dto.SevenTVEmoteFileDto
@@ -25,6 +26,7 @@ import com.flxrs.dankchat.data.api.seventv.dto.SevenTVUserConnection
 import com.flxrs.dankchat.data.api.seventv.dto.SevenTVUserDto
 import com.flxrs.dankchat.data.api.seventv.eventapi.SevenTVEventMessage
 import com.flxrs.dankchat.data.repo.channel.ChannelRepository
+import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.toUserId
 import com.flxrs.dankchat.data.twitch.badge.Badge
 import com.flxrs.dankchat.data.twitch.badge.BadgeSet
@@ -65,6 +67,7 @@ class EmoteRepository(
     private val helixApiClient: HelixApiClient,
     private val chatSettingsDataStore: ChatSettingsDataStore,
     private val channelRepository: ChannelRepository,
+    private val sevenTVCosmeticsRepository: SevenTVCosmeticsRepository,
     private val dispatchersProvider: DispatchersProvider,
 ) {
     private val ffzModBadges = ConcurrentHashMap<UserName, String>()
@@ -72,6 +75,7 @@ class EmoteRepository(
     private val channelBadges = ConcurrentHashMap<UserName, Map<String, BadgeSet>>()
     private val globalBadges = ConcurrentHashMap<String, BadgeSet>()
     private val dankChatBadges = CopyOnWriteArrayList<DankChatBadgeDto>()
+    private val homiesBadges = ConcurrentHashMap<UserId, CopyOnWriteArrayList<HomiesBadgeEntry>>()
 
     private val sevenTvChannelDetails = ConcurrentHashMap<UserName, SevenTVUserDetails>()
 
@@ -237,7 +241,8 @@ class EmoteRepository(
         )
         val emotes = twitchEmotes + thirdPartyEmotes + cheermotes
 
-        val (adjustedMessage, adjustedEmotes) = adjustOverlayEmotes(appendedSpaceAdjustedMessage, emotes)
+        val (effectAdjustedMessage, effectAdjustedEmotes) = applyEmoteEffects(appendedSpaceAdjustedMessage, emotes)
+        val (adjustedMessage, adjustedEmotes) = adjustOverlayEmotes(effectAdjustedMessage, effectAdjustedEmotes)
         val messageWithEmotes =
             when (message) {
                 is PrivMessage -> {
@@ -340,6 +345,14 @@ class EmoteRepository(
                 if (badge != null) {
                     add(Badge.DankChatBadge(title = badge.first, badgeTag = null, badgeInfo = null, url = badge.second, type = BadgeType.DankChat))
                 }
+                if (userId != null) {
+                    sevenTVCosmeticsRepository.getBadgeForUser(userId)?.let { sevenTVBadge ->
+                        add(Badge.SevenTVBadge(title = sevenTVBadge.tooltip ?: sevenTVBadge.name, url = sevenTVBadge.imageUrl))
+                    }
+                    homiesBadges[userId]?.forEach { homiesBadge ->
+                        add(Badge.HomiesBadge(title = homiesBadge.tooltip, url = homiesBadge.url))
+                    }
+                }
             }
 
         return when (message) {
@@ -362,6 +375,11 @@ class EmoteRepository(
             }
         }
     }
+
+    private data class HomiesBadgeEntry(
+        val url: String,
+        val tooltip: String?,
+    )
 
     private data class CachedEmoteMap(
         val globalState: GlobalEmoteState,
@@ -458,6 +476,17 @@ class EmoteRepository(
     fun setDankChatBadges(dto: List<DankChatBadgeDto>) {
         dankChatBadges.clear()
         dankChatBadges.addAll(dto)
+    }
+
+    fun setHomiesBadges(dto: List<HomiesBadgeDto>) {
+        homiesBadges.clear()
+        dto.forEach { badge ->
+            val url = badge.image3 ?: badge.image2 ?: badge.image1 ?: return@forEach
+            val userIds = badge.users + listOfNotNull(badge.userId)
+            userIds.forEach { userId ->
+                homiesBadges.getOrPut(userId) { CopyOnWriteArrayList() }.add(HomiesBadgeEntry(url = url, tooltip = badge.tooltip))
+            }
+        }
     }
 
     fun getChannelForSevenTVEmoteSet(emoteSetId: String): UserName? = sevenTvChannelDetails
@@ -829,6 +858,78 @@ class EmoteRepository(
             scale = 1,
             emoteType = type,
         )
+    }
+
+    /**
+     * Applies BTTV/FFZ-style emote modifiers (w!, c!, l!, r!, h!, v!, p!, s!, z!) to the emote
+     * that directly follows them. Modifier words that end up attached to an emote are removed
+     * from the visible message and the positions of all following emotes are shifted left.
+     * `z!` additionally turns the emote into a zero-width overlay of the previous emote.
+     */
+    @VisibleForTesting
+    internal fun applyEmoteEffects(
+        message: String,
+        emotes: List<ChatMessageEmote>,
+    ): Pair<String, List<ChatMessageEmote>> {
+        val emoteStartPositions = emotes.mapTo(hashSetOf()) { it.position.first }
+        if (emoteStartPositions.isEmpty()) {
+            return message to emotes
+        }
+
+        data class ModifierWord(
+            val effect: EmoteEffect,
+            val start: Int,
+            val length: Int,
+        )
+
+        val removedModifiers = mutableListOf<ModifierWord>() // modifier words attached to an emote
+        val effectsByEmoteStart = mutableMapOf<Int, Set<EmoteEffect>>()
+        val pendingModifiers = mutableListOf<ModifierWord>()
+
+        message.forEachWord { word, startIndex ->
+            val effect = EmoteEffect.fromPrefix(word)
+            when {
+                effect != null -> pendingModifiers += ModifierWord(effect, startIndex, word.length)
+
+                startIndex in emoteStartPositions -> {
+                    if (pendingModifiers.isNotEmpty()) {
+                        effectsByEmoteStart[startIndex] = pendingModifiers.mapTo(linkedSetOf()) { it.effect }
+                        removedModifiers += pendingModifiers
+                    }
+                    pendingModifiers.clear()
+                }
+
+                else -> pendingModifiers.clear()
+            }
+        }
+
+        if (removedModifiers.isEmpty()) {
+            return message to emotes
+        }
+
+        // Each removed modifier takes one trailing whitespace with it (guaranteed to exist,
+        // because an attached modifier is always followed by its emote)
+        val removalRanges = removedModifiers.map { it.start until (it.start + it.length + 1).coerceAtMost(message.length) }
+
+        var adjustedMessage = message
+        for (range in removalRanges.sortedByDescending { it.first }) {
+            adjustedMessage = adjustedMessage.removeRange(range)
+        }
+
+        val adjustedEmotes =
+            emotes.map { emote ->
+                val start = emote.position.first
+                val end = emote.position.last
+                val removedChars = removalRanges.filter { it.last < start }.sumOf { it.last - it.first + 1 }
+                val effects = effectsByEmoteStart[start].orEmpty()
+                emote.copy(
+                    position = (start - removedChars)..(end - removedChars),
+                    effects = effects,
+                    isOverlayEmote = emote.isOverlayEmote || EmoteEffect.ZeroWidth in effects,
+                )
+            }
+
+        return adjustedMessage to adjustedEmotes
     }
 
     @VisibleForTesting

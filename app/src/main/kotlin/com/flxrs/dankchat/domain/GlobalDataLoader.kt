@@ -19,6 +19,7 @@ class GlobalDataLoader(
         val results =
             awaitAll(
                 async { loadDankChatBadges() },
+                async { loadHomiesBadges() },
                 async { loadGlobalBTTVEmotes() },
                 async { loadGlobalFFZEmotes() },
                 async { loadGlobalSevenTVEmotes() },
@@ -35,6 +36,8 @@ class GlobalDataLoader(
     }
 
     suspend fun loadDankChatBadges(): Result<Unit> = dataRepository.loadDankChatBadges()
+
+    suspend fun loadHomiesBadges(): Result<Unit> = dataRepository.loadHomiesBadges()
 
     suspend fun loadGlobalBadges(): Result<Unit> = dataRepository.loadGlobalBadges()
 

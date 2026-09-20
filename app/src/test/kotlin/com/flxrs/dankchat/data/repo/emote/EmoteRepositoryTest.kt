@@ -3,6 +3,7 @@ package com.flxrs.dankchat.data.repo.emote
 import com.flxrs.dankchat.data.api.helix.HelixApiClient
 import com.flxrs.dankchat.data.irc.IrcMessage
 import com.flxrs.dankchat.data.repo.channel.ChannelRepository
+import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.toUserName
 import com.flxrs.dankchat.data.twitch.badge.Badge
 import com.flxrs.dankchat.data.twitch.badge.BadgeSet
@@ -33,6 +34,9 @@ internal class EmoteRepositoryTest {
 
     @MockK
     lateinit var channelRepository: ChannelRepository
+
+    @MockK(relaxed = true)
+    lateinit var sevenTVCosmeticsRepository: SevenTVCosmeticsRepository
 
     @MockK
     lateinit var dispatchersProvider: DispatchersProvider

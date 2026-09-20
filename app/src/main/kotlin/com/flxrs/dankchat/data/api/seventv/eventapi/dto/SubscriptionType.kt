@@ -5,4 +5,7 @@ enum class SubscriptionType(
 ) {
     UserUpdates(type = "user.update"),
     EmoteSetUpdates(type = "emote_set.update"),
+    CosmeticCreate(type = "cosmetic.create"),
+    EntitlementCreate(type = "entitlement.create"),
+    EntitlementDelete(type = "entitlement.delete"),
 }

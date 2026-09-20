@@ -8,6 +8,8 @@ import com.flxrs.dankchat.data.api.dankchat.DankChatApi
 import com.flxrs.dankchat.data.api.ffz.FFZApi
 import com.flxrs.dankchat.data.api.helix.HelixApi
 import com.flxrs.dankchat.data.api.helix.HelixApiStats
+import com.flxrs.dankchat.data.api.homies.HomiesApi
+import com.flxrs.dankchat.data.api.ivr.IvrApi
 import com.flxrs.dankchat.data.api.recentmessages.RecentMessagesApi
 import com.flxrs.dankchat.data.api.seventv.SevenTVApi
 import com.flxrs.dankchat.data.api.supibot.SupibotApi
@@ -55,6 +57,7 @@ class NetworkModule {
         const val FFZ_BASE_URL = "https://api.frankerfacez.com/v1/"
         const val BTTV_BASE_URL = "https://api.betterttv.net/3/cached/"
         const val SEVENTV_BASE_URL = "https://7tv.io/v3/"
+        const val IVR_BASE_URL = "https://api.ivr.fi/v2/"
 
         const val DEFAULT_TIMEOUT_MS = 30_000L
 
@@ -208,6 +211,31 @@ class NetworkModule {
         ktorClient.config {
             defaultRequest {
                 url(SEVENTV_BASE_URL)
+            }
+        },
+    )
+
+    @Single
+    fun provideIvrApi(ktorClient: HttpClient) = IvrApi(
+        ktorClient.config {
+            defaultRequest {
+                url(IVR_BASE_URL)
+            }
+            install(HttpTimeout) {
+                connectTimeoutMillis = BEST_EFFORT_TIMEOUT_MS
+                requestTimeoutMillis = BEST_EFFORT_TIMEOUT_MS
+                socketTimeoutMillis = BEST_EFFORT_TIMEOUT_MS
+            }
+        },
+    )
+
+    @Single
+    fun provideHomiesApi(ktorClient: HttpClient) = HomiesApi(
+        ktorClient.config {
+            install(HttpTimeout) {
+                connectTimeoutMillis = BEST_EFFORT_TIMEOUT_MS
+                requestTimeoutMillis = BEST_EFFORT_TIMEOUT_MS
+                socketTimeoutMillis = BEST_EFFORT_TIMEOUT_MS
             }
         },
     )

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Report
@@ -45,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -63,9 +65,16 @@ import com.flxrs.dankchat.data.DisplayName
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.utils.DateTimeUtils
 import com.flxrs.dankchat.utils.compose.SheetErrorContent
+import java.text.NumberFormat
 import kotlin.math.roundToInt
 
 private val CARD_WIDTH = 320.dp
+private val BANNER_HEIGHT = 64.dp
+private val BANNER_GRADIENT_HEIGHT = 52.dp
+
+// How far the identity row (avatar + name) reaches into the banner area,
+// so it sits right on the banner-to-card gradient
+private val IDENTITY_OVERLAP = 28.dp
 
 @Composable
 fun UserPopupDialog(
@@ -142,17 +151,45 @@ fun UserPopupDialog(
 
                     else -> {
                         Column {
-                            UserBannerHeader(
-                                state = state,
-                                onDismiss = onDismiss,
-                                onDrag = { delta ->
-                                    val maxX = (screenWidthPx / 2).roundToInt()
-                                    val maxY = (screenHeightPx / 2).roundToInt()
-                                    val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
-                                    val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
-                                    dragOffset = IntOffset(newX, newY)
-                                },
-                            )
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    UserBannerHeader(
+                                        state = state,
+                                        onDismiss = onDismiss,
+                                        onDrag = { delta ->
+                                            val maxX = (screenWidthPx / 2).roundToInt()
+                                            val maxY = (screenHeightPx / 2).roundToInt()
+                                            val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
+                                            val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
+                                            dragOffset = IntOffset(newX, newY)
+                                        },
+                                    )
+                                    // Soft shade transitioning from the banner into the solid card color
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .height(BANNER_GRADIENT_HEIGHT)
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        listOf(Color.Transparent, MaterialTheme.colorScheme.surfaceContainerHigh),
+                                                    ),
+                                                ),
+                                    )
+                                }
+
+                                // Avatar + name sit right on the banner-to-card gradient
+                                if (state !is UserPopupState.Error) {
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.TopCenter)
+                                                .padding(top = BANNER_HEIGHT - IDENTITY_OVERLAP),
+                                    ) {
+                                        UserIdentitySection(state = state, onOpenChannel = onOpenChannel)
+                                    }
+                                }
+                            }
 
                             when (state) {
                                 is UserPopupState.Error -> {
@@ -165,8 +202,6 @@ fun UserPopupDialog(
                                     val isSuccess = state is UserPopupState.Success
                                     val isLoggedIn = state !is UserPopupState.NotLoggedIn
                                     val isBlocked = (state as? UserPopupState.Success)?.isBlocked == true
-
-                                    UserIdentitySection(state = state, userName = userName, displayName = displayName, onOpenChannel = onOpenChannel)
 
                                     UserActionsRow(
                                         isLoggedIn = isLoggedIn,
@@ -232,13 +267,14 @@ private fun UserBannerHeader(
     onDismiss: () -> Unit,
     onDrag: (Offset) -> Unit,
 ) {
-    val bannerUrl = (state as? UserPopupState.Success)?.offlineImageUrl
+    // The Twitch profile banner comes from ivr.fi, the Helix offline image is the fallback
+    val bannerUrl = (state as? UserPopupState.Success)?.let { it.bannerUrl ?: it.offlineImageUrl }
 
     Box(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(BANNER_HEIGHT)
                 .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 .pointerInput(Unit) {
@@ -272,14 +308,15 @@ private fun UserBannerHeader(
 @Composable
 private fun UserIdentitySection(
     state: UserPopupState,
-    userName: UserName,
-    displayName: DisplayName,
     onOpenChannel: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    val userName = state.userName
+    val displayName = state.displayName
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = modifier.fillMaxWidth().padding(16.dp),
     ) {
         Crossfade(targetState = state, label = "Avatar") { targetState ->
             when (targetState) {
@@ -338,6 +375,24 @@ private fun UserIdentitySection(
 
             val successState = state as? UserPopupState.Success
             if (successState != null) {
+                val followerCount = successState.followerCount
+                if (followerCount != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = remember(followerCount) { NumberFormat.getIntegerInstance().format(followerCount) },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
                 Text(
                     text = stringResource(R.string.user_popup_created, successState.created),
                     style = MaterialTheme.typography.bodySmall,
@@ -350,6 +405,16 @@ private fun UserIdentitySection(
                             successState.followingSince?.let {
                                 stringResource(R.string.user_popup_following_since, it)
                             } ?: stringResource(R.string.user_popup_not_following),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                val subscriptionTier = successState.subscriptionTier
+                val subscriptionMonths = successState.subscriptionMonths
+                if (subscriptionTier != null && subscriptionMonths != null) {
+                    Text(
+                        text = stringResource(R.string.user_popup_subscription, subscriptionTier, subscriptionMonths),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,

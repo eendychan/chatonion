@@ -33,6 +33,7 @@ data class ChatSettings(
     val alwaysShowPinnedMessage: Boolean = false,
     val showStreamTitleInLiveMessage: Boolean = false,
     val sharedChatMigration: Boolean = false,
+    val thirdPartyBadgeMigration: Boolean = false,
     val moderationTimeoutDurationsSeconds: List<Long> = DEFAULT_MODERATION_TIMEOUTS,
 ) {
     @Transient
@@ -82,6 +83,8 @@ enum class VisibleBadges {
     Vanity,
     DankChat,
     SharedChat,
+    SevenTV,
+    Homies,
 }
 
 enum class VisibleThirdPartyEmotes {

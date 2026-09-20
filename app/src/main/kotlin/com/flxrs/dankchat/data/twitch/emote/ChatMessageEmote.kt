@@ -20,4 +20,5 @@ data class ChatMessageEmote(
     val isOverlayEmote: Boolean = false,
     val cheerAmount: Int? = null,
     val cheerColor: Int? = null,
+    val effects: Set<EmoteEffect> = emptySet(),
 ) : Parcelable

@@ -72,6 +72,7 @@
     <string name="snackbar_data_load_failed_cause">Ошибка загрузки данных: %1$s</string>
     <string name="snackbar_data_load_failed_multiple_causes">Загрузка данных не удалась из-за нескольких ошибок:\n%1$s</string>
     <string name="data_loading_step_dankchat_badges">Значки DankChat</string>
+    <string name="data_loading_step_homies_badges">Значки Chatterino Homies</string>
     <string name="data_loading_step_global_badges">Глобальные значки</string>
     <string name="data_loading_step_global_ffz_emotes">Глобальные FFZ-эмоуты</string>
     <string name="data_loading_step_global_bttv_emotes">Глобальные BTTV-эмоуты</string>
@@ -302,6 +303,7 @@
     <string name="user_popup_whisper">Написать личное сообщение</string>
     <string name="user_popup_created">Создан %1$s</string>
     <string name="user_popup_following_since">Фоллоу %1$s</string>
+    <string name="user_popup_subscription">Саб-тир %1$s — %2$d мес.</string>
     <string name="user_popup_not_following">Не фолловит</string>
     <string name="user_popup_avatar_description">Аватар</string>
     <string name="user_popup_error">Невозможно загрузить данные пользователя: %1$s</string>

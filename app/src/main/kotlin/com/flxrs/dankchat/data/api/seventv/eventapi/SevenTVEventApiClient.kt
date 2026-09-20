@@ -1,17 +1,26 @@
 package com.flxrs.dankchat.data.api.seventv.eventapi
 
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.AckMessage
+import com.flxrs.dankchat.data.api.seventv.eventapi.dto.CosmeticCreateDispatchData
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.DataMessage
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.DispatchMessage
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.EmoteSetChangeField
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.EmoteSetDispatchData
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.EndOfStreamMessage
+import com.flxrs.dankchat.data.api.seventv.eventapi.dto.EntitlementCreateDispatchData
+import com.flxrs.dankchat.data.api.seventv.eventapi.dto.EntitlementDeleteDispatchData
+import com.flxrs.dankchat.data.api.seventv.eventapi.dto.EntitlementObject
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.HeartbeatMessage
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.HelloMessage
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.ReconnectMessage
+import com.flxrs.dankchat.data.api.seventv.eventapi.dto.SevenTVBadgeDataDto
+import com.flxrs.dankchat.data.api.seventv.eventapi.dto.SevenTVPaintDataDto
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.SubscribeRequest
+import com.flxrs.dankchat.data.api.seventv.eventapi.dto.SubscriptionType
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.UnsubscribeRequest
 import com.flxrs.dankchat.data.api.seventv.eventapi.dto.UserDispatchData
+import com.flxrs.dankchat.data.toUserId
+import com.flxrs.dankchat.data.toUserName
 import com.flxrs.dankchat.di.DispatchersProvider
 import com.flxrs.dankchat.preferences.battery.BatterySettingsDataStore
 import com.flxrs.dankchat.preferences.chat.ChatSettingsDataStore
@@ -43,6 +52,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 import org.koin.core.annotation.Single
 import kotlin.random.Random
 import kotlin.random.nextLong
@@ -153,6 +163,31 @@ class SevenTVEventApiClient(
 
         val request = UnsubscribeRequest.emoteSetUpdates(emoteSetId)
         removeSubscription(request)
+    }
+
+    /**
+     * Subscribes to channel-scoped cosmetic/entitlement dispatches (name paints and badges).
+     * The server replays the current channel cosmetics and entitlements right after subscribing,
+     * followed by live deltas.
+     */
+    suspend fun subscribeChannelCosmetics(channelId: String) {
+        if (!chatSettingsDataStore.settings.first().sevenTVLiveEmoteUpdates) {
+            return
+        }
+
+        CHANNEL_COSMETIC_SUBSCRIPTION_TYPES.forEach { type ->
+            addSubscription(SubscribeRequest.channelSubscription(type, channelId))
+        }
+    }
+
+    suspend fun unsubscribeChannelCosmetics(channelId: String) {
+        if (!chatSettingsDataStore.settings.first().sevenTVLiveEmoteUpdates) {
+            return
+        }
+
+        CHANNEL_COSMETIC_SUBSCRIPTION_TYPES.forEach { type ->
+            removeSubscription(UnsubscribeRequest.channelSubscription(type, channelId))
+        }
     }
 
     suspend fun reconnect() {
@@ -375,7 +410,51 @@ class SevenTVEventApiClient(
                     }
                 }
             }
+
+            is CosmeticCreateDispatchData -> {
+                val cosmetic = d.body.cosmetic
+                scope.launch {
+                    when (cosmetic.kind) {
+                        COSMETIC_KIND_PAINT -> {
+                            val paint = runCatching { json.decodeFromJsonElement<SevenTVPaintDataDto>(cosmetic.data) }.getOrNull()?.toDomain() ?: return@launch
+                            _messages.emit(SevenTVEventMessage.PaintCreated(paint))
+                        }
+
+                        COSMETIC_KIND_BADGE -> {
+                            val badge = runCatching { json.decodeFromJsonElement<SevenTVBadgeDataDto>(cosmetic.data) }.getOrNull()?.toDomain() ?: return@launch
+                            _messages.emit(SevenTVEventMessage.BadgeCreated(badge))
+                        }
+                    }
+                }
+            }
+
+            is EntitlementCreateDispatchData -> {
+                d.body.entitlement.toEventEntitlement()?.let { entitlement ->
+                    scope.launch { _messages.emit(SevenTVEventMessage.EntitlementCreated(entitlement)) }
+                }
+            }
+
+            is EntitlementDeleteDispatchData -> {
+                d.body.entitlement.toEventEntitlement()?.let { entitlement ->
+                    scope.launch { _messages.emit(SevenTVEventMessage.EntitlementDeleted(entitlement)) }
+                }
+            }
         }
+    }
+
+    private fun EntitlementObject.toEventEntitlement(): SevenTVEventMessage.Entitlement? {
+        if (kind != COSMETIC_KIND_PAINT && kind != COSMETIC_KIND_BADGE) {
+            return null
+        }
+
+        val refId = refId ?: return null
+        val twitchConnection = user?.connections?.firstOrNull { it.platform == CONNECTION_PLATFORM_TWITCH }
+        return SevenTVEventMessage.Entitlement(
+            kind = kind,
+            refId = refId,
+            twitchUserId = twitchConnection?.id?.toUserId(),
+            twitchUserName = twitchConnection?.username?.toUserName(),
+        )
     }
 
     private inline fun <reified T> T.encodeOrNull(): String? = runCatching { json.encodeToString(this) }.getOrNull()

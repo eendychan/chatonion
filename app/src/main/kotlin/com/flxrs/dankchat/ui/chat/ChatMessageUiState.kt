@@ -7,7 +7,9 @@ import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.twitch.badge.Badge
 import com.flxrs.dankchat.data.twitch.emote.ChatMessageEmote
+import com.flxrs.dankchat.data.twitch.emote.EmoteEffect
 import com.flxrs.dankchat.data.twitch.message.Message
+import com.flxrs.dankchat.data.twitch.paint.SevenTVPaint
 import com.flxrs.dankchat.ui.chat.image.ImageLinkUi
 import com.flxrs.dankchat.ui.chat.messages.common.LinkUi
 import com.flxrs.dankchat.utils.TextResource
@@ -47,6 +49,7 @@ sealed interface ChatMessageUiState {
         val displayName: DisplayName,
         val badges: ImmutableList<BadgeUi>,
         val rawNameColor: Int,
+        val namePaint: SevenTVPaint? = null,
         val nameText: String,
         val message: String,
         val links: ImmutableList<LinkUi>,
@@ -254,6 +257,7 @@ data class EmoteUi(
     val emotes: ImmutableList<ChatMessageEmote>, // For click handling
     val cheerAmount: Int? = null,
     val cheerColor: Color? = null,
+    val effects: Set<EmoteEffect> = emptySet(),
 )
 
 @Immutable

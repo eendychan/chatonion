@@ -17,6 +17,10 @@ sealed interface DataLoadingStep {
         override val displayNameRes = R.string.data_loading_step_dankchat_badges
     }
 
+    data object HomiesBadges : DataLoadingStep {
+        override val displayNameRes = R.string.data_loading_step_homies_badges
+    }
+
     data object GlobalBadges : DataLoadingStep {
         override val displayNameRes = R.string.data_loading_step_global_badges
     }

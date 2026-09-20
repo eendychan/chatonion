@@ -332,6 +332,8 @@ private fun EmotesAndBadgesCategory(
         val badgeEntries =
             stringArrayResource(R.array.badges_entries)
                 .plus(stringResource(R.string.shared_chat))
+                .plus(stringResource(R.string.badge_category_seventv))
+                .plus(stringResource(R.string.badge_category_homies))
                 .toImmutableList()
         PreferenceMultiListDialog(
             title = stringResource(R.string.preference_visible_badges_title),
