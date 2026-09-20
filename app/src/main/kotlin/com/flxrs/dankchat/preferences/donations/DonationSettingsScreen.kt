@@ -126,10 +126,9 @@ private fun DonationWidgetSection(
     )
 }
 
-private fun providerNameRes(provider: DonationProvider): Int =
-    when (provider) {
-        DonationProvider.DonationAlerts -> R.string.donation_provider_donationalerts
-        DonationProvider.DonateX -> R.string.donation_provider_donatex
-        DonationProvider.DonatePay -> R.string.donation_provider_donatepay
-        DonationProvider.StreamElements -> R.string.donation_provider_streamelements
-    }
+private fun providerNameRes(provider: DonationProvider): Int = when (provider) {
+    DonationProvider.DonationAlerts -> R.string.donation_provider_donationalerts
+    DonationProvider.DonateX -> R.string.donation_provider_donatex
+    DonationProvider.DonatePay -> R.string.donation_provider_donatepay
+    DonationProvider.StreamElements -> R.string.donation_provider_streamelements
+}

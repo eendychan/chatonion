@@ -57,8 +57,8 @@ import androidx.window.core.layout.WindowSizeClass
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
-import com.flxrs.dankchat.preferences.donations.DonationSettingsDataStore
 import com.flxrs.dankchat.preferences.appearance.InputAction
+import com.flxrs.dankchat.preferences.donations.DonationSettingsDataStore
 import com.flxrs.dankchat.ui.chat.FabMenuCallbacks
 import com.flxrs.dankchat.ui.chat.PinnedMessageUiState
 import com.flxrs.dankchat.ui.chat.PinnedMessageViewModel

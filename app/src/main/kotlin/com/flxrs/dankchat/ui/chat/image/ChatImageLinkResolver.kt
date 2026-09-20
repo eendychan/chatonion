@@ -26,7 +26,11 @@ object ChatImageLinkResolver {
 
     fun resolve(url: String): String? {
         val withoutScheme = url.substringAfter("://", missingDelimiterValue = "").takeIf { it.isNotBlank() } ?: return null
-        val host = withoutScheme.substringBefore('/').substringBefore(':').lowercase().removePrefix("www.")
+        val host = withoutScheme
+            .substringBefore('/')
+            .substringBefore(':')
+            .lowercase()
+            .removePrefix("www.")
         val path = withoutScheme.substringAfter('/', "").substringBefore('?').substringBefore('#')
         if (host.isBlank()) return null
 

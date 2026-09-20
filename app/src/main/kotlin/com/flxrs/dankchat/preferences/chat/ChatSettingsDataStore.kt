@@ -55,16 +55,15 @@ class ChatSettingsDataStore(
         ShowRoomState(R.string.preference_roomstate_key),
     }
 
+    @Suppress("DEPRECATION")
     private val initialMigration =
         dankChatPreferencesMigration<ChatPreferenceKeys, ChatSettings>(context) { acc, key, value ->
             when (key) {
-                @Suppress("DEPRECATION")
                 ChatPreferenceKeys.Suggestions,
                 -> {
                     acc.copy(suggestions = value.booleanOrDefault(acc.suggestions))
                 }
 
-                @Suppress("DEPRECATION")
                 ChatPreferenceKeys.SupibotSuggestions,
                 -> {
                     @Suppress("DEPRECATION")

@@ -102,9 +102,10 @@ private fun visibleWidgetsFor(
 ): List<DonationWidget> {
     val configured = widgets.filter { it.isConfigured }
     val forChannel =
-        activeChannel?.let { channel ->
-            configured.filter { it.channel.equals(channel.value, ignoreCase = true) }
-        }.orEmpty()
+        activeChannel
+            ?.let { channel ->
+                configured.filter { it.channel.equals(channel.value, ignoreCase = true) }
+            }.orEmpty()
     return forChannel.ifEmpty { configured }
 }
 
@@ -211,5 +212,5 @@ private fun buildStreamElementsTipsPage(jwtToken: String): String {
 </script>
 </body>
 </html>
-    """.trimIndent()
+        """.trimIndent()
 }

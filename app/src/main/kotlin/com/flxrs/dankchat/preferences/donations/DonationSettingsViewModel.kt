@@ -32,12 +32,11 @@ class DonationSettingsViewModel(
     }
 
     companion object {
-        fun urlHintFor(provider: DonationProvider): String =
-            when (provider) {
-                DonationProvider.DonationAlerts -> "https://www.donationalerts.com/widget/alerts?…&token=…"
-                DonationProvider.DonateX -> "https://donatex.gg/widget/…?token=…"
-                DonationProvider.DonatePay -> "https://widget.donatepay.ru/widgets/page/…?token=…"
-                DonationProvider.StreamElements -> "JWT"
-            }
+        fun urlHintFor(provider: DonationProvider): String = when (provider) {
+            DonationProvider.DonationAlerts -> "https://www.donationalerts.com/widget/alerts?…&token=…"
+            DonationProvider.DonateX -> "https://donatex.gg/widget/…?token=…"
+            DonationProvider.DonatePay -> "https://widget.donatepay.ru/widgets/page/…?token=…"
+            DonationProvider.StreamElements -> "JWT"
+        }
     }
 }
