@@ -94,7 +94,7 @@ fun ChatMessageImagePreviews(
                             if (blurred) {
                                 unblurred = true
                             } else {
-                                previewViewModel.show(link.imageUrl)
+                                previewViewModel.show(ChatImagePreview(imageUrl = link.imageUrl, sourceUrl = link.url))
                             }
                         },
             ) {

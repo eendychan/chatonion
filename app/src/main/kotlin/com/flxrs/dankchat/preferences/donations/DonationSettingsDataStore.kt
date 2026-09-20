@@ -41,11 +41,6 @@ class DonationSettingsDataStore(
             .map { it.configuredWidgets }
             .distinctUntilChanged()
 
-    val hasConfiguredWidgets =
-        settings
-            .map { it.configuredWidgets.isNotEmpty() }
-            .distinctUntilChanged()
-
     fun current() = currentSettings.value
 
     suspend fun update(transform: suspend (DonationSettings) -> DonationSettings) {

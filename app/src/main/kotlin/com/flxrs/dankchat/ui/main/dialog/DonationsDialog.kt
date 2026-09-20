@@ -1,15 +1,23 @@
 package com.flxrs.dankchat.ui.main.dialog
 
 import android.annotation.SuppressLint
+import android.webkit.CookieManager
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
@@ -19,6 +27,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,8 +46,9 @@ import com.flxrs.dankchat.preferences.donations.DonationProvider
 import com.flxrs.dankchat.preferences.donations.DonationWidget
 
 /**
- * In-app browser for donation widgets. Widgets bound to the active channel are preferred;
- * if none match, all configured widgets are shown. Multiple widgets stack top-to-bottom.
+ * In-app browser for donation widgets. Only widgets bound to the active channel
+ * (or without a channel binding) are shown. Multiple widgets are switched via
+ * numbered buttons at the top instead of being stacked.
  */
 @Composable
 fun DonationsDialog(
@@ -47,6 +61,9 @@ fun DonationsDialog(
         LaunchedEffect(Unit) { onDismiss() }
         return
     }
+
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+    val selectedWidget = visibleWidgets[selectedIndex.coerceIn(visibleWidgets.indices)]
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -79,9 +96,29 @@ fun DonationsDialog(
                     }
                 }
 
-                visibleWidgets.forEach { widget ->
+                if (visibleWidgets.size > 1) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        visibleWidgets.forEachIndexed { index, _ ->
+                            WidgetTabButton(
+                                number = index + 1,
+                                selected = index == selectedIndex.coerceIn(visibleWidgets.indices),
+                                onClick = { selectedIndex = index },
+                            )
+                        }
+                    }
+                }
+
+                // key() recreates the WebView when switching widgets, so the new widget actually loads
+                key(selectedWidget) {
                     DonationWidgetWebView(
-                        widget = widget,
+                        widget = selectedWidget,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -96,17 +133,50 @@ fun DonationsDialog(
     }
 }
 
+@Composable
+private fun WidgetTabButton(
+    number: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    },
+                ).clickable(onClick = onClick),
+    ) {
+        Text(
+            text = number.toString(),
+            style = MaterialTheme.typography.labelLarge,
+            color =
+                if (selected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+        )
+    }
+}
+
 private fun visibleWidgetsFor(
     widgets: List<DonationWidget>,
     activeChannel: UserName?,
-): List<DonationWidget> {
-    val configured = widgets.filter { it.isConfigured }
-    val forChannel =
-        activeChannel
-            ?.let { channel ->
-                configured.filter { it.channel.equals(channel.value, ignoreCase = true) }
-            }.orEmpty()
-    return forChannel.ifEmpty { configured }
+): List<DonationWidget> = widgets.filter { widget ->
+    widget.isConfigured &&
+        (widget.channel.isBlank() || widget.channel.equals(activeChannel?.value, ignoreCase = true))
+}
+
+private fun normalizeWidgetUrl(urlOrToken: String): String {
+    val value = urlOrToken.trim()
+    return if ("://" in value) value else "https://$value"
 }
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -120,9 +190,19 @@ private fun DonationWidgetWebView(
         factory = { context ->
             WebView(context).apply {
                 settings.javaScriptEnabled = true
+                settings.javaScriptCanOpenWindowsAutomatically = true
                 settings.domStorageEnabled = true
+                settings.databaseEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = false
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                settings.loadWithOverviewMode = true
+                settings.useWideViewPort = true
+                // The default WebView user agent ("…; wv)") is rejected or endlessly
+                // challenged by several widget pages — masquerade as a regular Chrome browser
+                settings.userAgentString = settings.userAgentString.replace("; wv", "")
                 webViewClient = WebViewClient()
+                webChromeClient = WebChromeClient()
+                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                 when (widget.provider) {
                     DonationProvider.StreamElements -> {
                         loadDataWithBaseURL(
@@ -134,7 +214,7 @@ private fun DonationWidgetWebView(
                         )
                     }
 
-                    else -> loadUrl(widget.urlOrToken)
+                    else -> loadUrl(normalizeWidgetUrl(widget.urlOrToken))
                 }
             }
         },

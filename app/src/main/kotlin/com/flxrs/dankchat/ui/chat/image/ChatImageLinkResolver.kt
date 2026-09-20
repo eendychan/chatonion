@@ -46,6 +46,17 @@ object ChatImageLinkResolver {
         }
     }
 
+    /** True for eblo.id post links, which may resolve to a multi-image album. */
+    fun isEbloidPost(url: String): Boolean {
+        val withoutScheme = url.substringAfter("://", missingDelimiterValue = "").takeIf { it.isNotBlank() } ?: return false
+        val host = withoutScheme
+            .substringBefore('/')
+            .substringBefore(':')
+            .lowercase()
+            .removePrefix("www.")
+        return host == "eblo.id"
+    }
+
     // https://eblo.id/{postId} -> https://eblo.id/download/file/{postId}
     // Post ids are generated base62-like tokens (e.g. RJQC8hq). Site sections (eblo.id/videos,
     // chat.eblo.id) and user profiles (eblo.id/@name) must not be treated as media.

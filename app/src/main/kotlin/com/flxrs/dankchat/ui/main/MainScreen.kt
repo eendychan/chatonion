@@ -152,7 +152,9 @@ fun MainScreen(
     val preferenceStore: DankChatPreferenceStore = koinInject()
     val mainEventBus: MainEventBus = koinInject()
     val donationSettingsDataStore: DonationSettingsDataStore = koinInject()
-    val hasDonationWidgets by donationSettingsDataStore.hasConfiguredWidgets.collectAsStateWithLifecycle(initialValue = false)
+    val donationWidgets by donationSettingsDataStore.configuredWidgets.collectAsStateWithLifecycle(
+        initialValue = donationSettingsDataStore.current().configuredWidgets,
+    )
     val featureTourViewModel: FeatureTourViewModel = koinViewModel()
     val featureTourState by featureTourViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -293,6 +295,12 @@ fun MainScreen(
 
     val tabState = channelTabViewModel.uiState.collectAsStateWithLifecycle().value
     val activeChannel = tabState.tabs.getOrNull(tabState.selectedIndex)?.channel
+
+    // The "Донаты" menu item only appears when the active channel has bound (or unbound/global) widgets
+    val hasDonationWidgets =
+        donationWidgets.any { widget ->
+            widget.channel.isBlank() || widget.channel.equals(activeChannel?.value, ignoreCase = true)
+        }
 
     // Same key as in ChatComposable, so this resolves the active page's instance
     val activePinnedMessageViewModel =

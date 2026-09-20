@@ -261,10 +261,10 @@ fun MainScreenDialogs(
 
     // Movable/zoomable viewer for in-chat image previews
     val chatImagePreviewViewModel: ChatImagePreviewViewModel = koinViewModel()
-    val imagePreviewUrl by chatImagePreviewViewModel.previewImageUrl.collectAsStateWithLifecycle()
-    imagePreviewUrl?.let { url ->
+    val imagePreview by chatImagePreviewViewModel.preview.collectAsStateWithLifecycle()
+    imagePreview?.let { preview ->
         ChatImagePreviewPopup(
-            imageUrl = url,
+            preview = preview,
             onDismiss = chatImagePreviewViewModel::dismiss,
         )
     }
