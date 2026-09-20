@@ -436,7 +436,7 @@
     <string name="moderation_timeout_format_hint">Форматы: 10с, 10м, 2ч, 1н (макс. 2 недели) — сейчас %1$s</string>
     <string name="moderation_timeout_invalid">Неверный формат. Используйте, например: 10с, 10м, 2ч или 1н</string>
     <string name="donation_settings_title">Показ донатов</string>
-    <string name="donation_settings_summary">Добавляйте строки: ник канала и ссылку на виджет донатного сервиса (DonationAlerts, DonateX, DonatePay) или JWT-токен StreamElements. Сервис определяется автоматически по ссылке. Виджеты открываются в указанном канале через пункт меню «Донаты».</string>
+    <string name="donation_settings_summary">Добавляйте строки: ник канала и ссылку на виджет донатного сервиса (DonationAlerts, DonateX, DonatePay) или JWT-токен StreamElements. Сервис определяется автоматически по ссылке. Виджеты открываются в указанном канале через пункт меню «Донаты». Учтите: виджеты оповещений показывают только новые донаты в реальном времени — для истории донатов добавьте ссылку на виджет «Последние донаты».</string>
     <string name="donation_provider_donationalerts">DonationAlerts</string>
     <string name="donation_provider_donatex">DonateX</string>
     <string name="donation_provider_donatepay">DonatePay</string>
@@ -447,6 +447,10 @@
     <string name="donation_widget_url_label">Ссылка на виджет или JWT-токен</string>
     <string name="donation_widget_url_hint">Полная ссылка на виджет с токеном или JWT-токен StreamElements</string>
     <string name="donation_widget_channel_label">Канал (необязательно)</string>
+    <string name="donation_widget_refresh">Обновить виджет</string>
+    <string name="donation_widget_open_browser">Открыть в браузере</string>
+    <string name="donation_widget_load_error">Не удалось загрузить виджет. Проверьте ссылку или откройте её в браузере.</string>
+    <string name="donation_widget_retry">Повторить</string>
     <string name="donations_menu_item">Донаты</string>
     <string name="donations_dialog_title">Донаты</string>
     <string name="image_preview_enabled_title">Показывать изображения по ссылкам</string>

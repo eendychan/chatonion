@@ -3,6 +3,9 @@ package com.flxrs.dankchat.ui.main.dialog
 import android.annotation.SuppressLint
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -20,30 +23,39 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import coil3.compose.LocalPlatformContext
+import com.flxrs.dankchat.BuildConfig
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.preferences.donations.DonationProvider
 import com.flxrs.dankchat.preferences.donations.DonationWidget
+import com.flxrs.dankchat.ui.chat.messages.common.launchCustomTab
 
 /**
  * In-app browser for donation widgets. Only widgets bound to the active channel
@@ -62,8 +74,11 @@ fun DonationsDialog(
         return
     }
 
+    val context = LocalPlatformContext.current
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+    var reloadCounter by rememberSaveable { mutableIntStateOf(0) }
     val selectedWidget = visibleWidgets[selectedIndex.coerceIn(visibleWidgets.indices)]
+    var loadFailed by remember(selectedWidget, reloadCounter) { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -91,6 +106,20 @@ fun DonationsDialog(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
+                    if (selectedWidget.provider != DonationProvider.StreamElements) {
+                        IconButton(onClick = { reloadCounter++ }) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = stringResource(R.string.donation_widget_refresh),
+                            )
+                        }
+                        IconButton(onClick = { launchCustomTab(context, normalizeWidgetUrl(selectedWidget.urlOrToken)) }) {
+                            Icon(
+                                imageVector = Icons.Default.OpenInBrowser,
+                                contentDescription = stringResource(R.string.donation_widget_open_browser),
+                            )
+                        }
+                    }
                     IconButton(onClick = onDismiss) {
                         Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.back))
                     }
@@ -115,18 +144,45 @@ fun DonationsDialog(
                     }
                 }
 
-                // key() recreates the WebView when switching widgets, so the new widget actually loads
-                key(selectedWidget) {
-                    DonationWidgetWebView(
-                        widget = selectedWidget,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .clip(MaterialTheme.shapes.medium)
-                                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
-                    )
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                ) {
+                    // key() recreates the WebView when switching widgets or reloading, so the widget actually (re)loads
+                    key(selectedWidget, reloadCounter) {
+                        DonationWidgetWebView(
+                            widget = selectedWidget,
+                            onMainFrameError = { loadFailed = true },
+                            onMainFrameFinish = { loadFailed = false },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    if (loadFailed) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                                    .padding(24.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.donation_widget_load_error),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                            TextButton(onClick = { reloadCounter++ }) {
+                                Text(stringResource(R.string.donation_widget_retry))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -183,11 +239,16 @@ private fun normalizeWidgetUrl(urlOrToken: String): String {
 @Composable
 private fun DonationWidgetWebView(
     widget: DonationWidget,
+    onMainFrameError: () -> Unit,
+    onMainFrameFinish: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AndroidView(
         modifier = modifier,
         factory = { context ->
+            if (BuildConfig.DEBUG) {
+                WebView.setWebContentsDebuggingEnabled(true)
+            }
             WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.javaScriptCanOpenWindowsAutomatically = true
@@ -197,10 +258,37 @@ private fun DonationWidgetWebView(
                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 settings.loadWithOverviewMode = true
                 settings.useWideViewPort = true
-                // The default WebView user agent ("…; wv)") is rejected or endlessly
+                // The default WebView user agent ("Version/4.0 …; wv)") is rejected or endlessly
                 // challenged by several widget pages — masquerade as a regular Chrome browser
-                settings.userAgentString = settings.userAgentString.replace("; wv", "")
-                webViewClient = WebViewClient()
+                settings.userAgentString =
+                    settings.userAgentString
+                        .replace("; wv", "")
+                        .replace("Version/4.0 ", "")
+                webViewClient =
+                    object : WebViewClient() {
+                        override fun onReceivedError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            error: WebResourceError,
+                        ) {
+                            if (request.isForMainFrame) onMainFrameError()
+                        }
+
+                        override fun onReceivedHttpError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            errorResponse: WebResourceResponse,
+                        ) {
+                            if (request.isForMainFrame) onMainFrameError()
+                        }
+
+                        override fun onPageFinished(
+                            view: WebView,
+                            url: String,
+                        ) {
+                            onMainFrameFinish()
+                        }
+                    }
                 webChromeClient = WebChromeClient()
                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                 when (widget.provider) {
