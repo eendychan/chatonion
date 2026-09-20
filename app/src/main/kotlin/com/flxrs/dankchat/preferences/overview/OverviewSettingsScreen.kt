@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -59,6 +60,8 @@ sealed interface SettingsNavigation {
     data object Notifications : SettingsNavigation
 
     data object Chat : SettingsNavigation
+
+    data object Moderation : SettingsNavigation
 
     data object Streams : SettingsNavigation
 
@@ -127,6 +130,9 @@ fun OverviewSettingsScreen(
             )
             PreferenceItem(stringResource(R.string.preference_chat_header), Icons.Default.Forum, onClick = {
                 onNavigate(SettingsNavigation.Chat)
+            })
+            PreferenceItem(stringResource(R.string.moderation_settings_title), Icons.Default.Shield, onClick = {
+                onNavigate(SettingsNavigation.Moderation)
             })
             PreferenceItem(stringResource(R.string.preference_streams_header), Icons.Default.PlayArrow, onClick = {
                 onNavigate(SettingsNavigation.Streams)

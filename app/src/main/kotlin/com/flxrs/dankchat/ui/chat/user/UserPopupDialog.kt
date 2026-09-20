@@ -426,7 +426,7 @@ private fun ModeratorActionsRow(
                 .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         OutlinedButton(onClick = onBanUser, colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-            Text(stringResource(R.string.automod_ban_user))
+            Text(stringResource(R.string.user_popup_ban))
         }
         timeoutDurationsSeconds.forEach { seconds ->
             OutlinedButton(onClick = { onTimeoutUser(seconds) }) {

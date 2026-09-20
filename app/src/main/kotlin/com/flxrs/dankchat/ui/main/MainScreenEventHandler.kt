@@ -19,7 +19,10 @@ import com.flxrs.dankchat.data.auth.AuthEvent
 import com.flxrs.dankchat.data.auth.AuthStateCoordinator
 import com.flxrs.dankchat.data.repo.chat.toDisplayStrings
 import com.flxrs.dankchat.data.repo.data.toDisplayStrings
+import com.flxrs.dankchat.data.toDisplayName
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
+import com.flxrs.dankchat.ui.chat.user.UserPopupStateParams
+import com.flxrs.dankchat.ui.chat.user.UserPopupViewModel
 import com.flxrs.dankchat.ui.main.channel.ChannelTabViewModel
 import com.flxrs.dankchat.ui.main.dialog.DialogStateViewModel
 import com.flxrs.dankchat.ui.main.input.ChatInputViewModel
@@ -35,6 +38,7 @@ fun MainScreenEventHandler(
     dialogViewModel: DialogStateViewModel,
     chatInputViewModel: ChatInputViewModel,
     channelTabViewModel: ChannelTabViewModel,
+    userPopupViewModel: UserPopupViewModel,
     sheetNavigationViewModel: SheetNavigationViewModel,
     mainScreenViewModel: MainScreenViewModel,
     preferenceStore: DankChatPreferenceStore,
@@ -117,6 +121,23 @@ fun MainScreenEventHandler(
                         )
                     }
                     (context as? MainActivity)?.clearNotificationsOfChannel(event.channel)
+                }
+
+                is MainEvent.OpenUserPopup -> {
+                    userPopupViewModel.show(
+                        UserPopupStateParams(
+                            targetUserId = event.targetUserId,
+                            targetUserName = event.targetUserName,
+                            targetDisplayName = event.targetUserName.toDisplayName(),
+                            channel = event.channel,
+                        ),
+                    )
+                }
+
+                is MainEvent.UserNotFound -> {
+                    snackbarHostState.showSnackbar(
+                        ErrorSnackbarVisuals(resources.getString(R.string.user_not_found_or_banned)),
+                    )
                 }
 
                 else -> Unit

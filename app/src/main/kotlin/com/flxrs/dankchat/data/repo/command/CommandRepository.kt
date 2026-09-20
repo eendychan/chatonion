@@ -142,6 +142,8 @@ class CommandRepository(
 
                 Command.Unblock -> unblockUserCommand(args)
 
+                Command.User -> userCommand(args, channel)
+
                 // Command.Chatters -> chattersCommand(channel)
                 Command.Uptime -> uptimeCommand(channel)
 
@@ -312,6 +314,23 @@ class CommandRepository(
         return result.getOrElse {
             CommandResult.AcceptedWithResponse(TextResource.Res(R.string.cmd_unblock_error, persistentListOf(target.toString())))
         }
+    }
+
+    private suspend fun userCommand(
+        args: List<String>,
+        channel: UserName,
+    ): CommandResult {
+        if (args.isEmpty() || args.first().isBlank()) {
+            return CommandResult.AcceptedWithResponse(TextResource.Res(R.string.cmd_user_usage))
+        }
+
+        val target = args.first().removePrefix("@").toUserName()
+        val targetId =
+            helixApiClient
+                .getUserIdByName(target)
+                .getOrNull() ?: return CommandResult.UserNotFound
+
+        return CommandResult.OpenUserPopup(targetUserId = targetId, targetUserName = target, channel = channel)
     }
 
     private suspend fun uptimeCommand(channel: UserName): CommandResult.AcceptedWithResponse {

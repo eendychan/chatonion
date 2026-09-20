@@ -68,12 +68,12 @@ object DateTimeUtils {
         return seconds
     }
 
-    private fun secondsMultiplierForUnit(char: Char): Int? = when (char) {
-        's' -> 1
-        'm' -> 60
-        'h' -> 60 * 60
-        'd' -> 60 * 60 * 24
-        'w' -> 60 * 60 * 24 * 7
+    private fun secondsMultiplierForUnit(char: Char): Int? = when (char.lowercaseChar()) {
+        's', 'с' -> 1
+        'm', 'м' -> 60
+        'h', 'ч' -> 60 * 60
+        'd', 'д' -> 60 * 60 * 24
+        'w', 'н' -> 60 * 60 * 24 * 7
         else -> null
     }
 

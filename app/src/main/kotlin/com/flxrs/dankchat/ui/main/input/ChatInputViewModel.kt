@@ -457,6 +457,20 @@ class ChatInputViewModel(
                 chatRepository.makeAndPostCustomSystemMessage(commandResult.response, channel)
             }
 
+            is CommandResult.OpenUserPopup -> {
+                mainEventBus.emitEvent(
+                    MainEvent.OpenUserPopup(
+                        targetUserId = commandResult.targetUserId,
+                        targetUserName = commandResult.targetUserName,
+                        channel = commandResult.channel,
+                    ),
+                )
+            }
+
+            is CommandResult.UserNotFound -> {
+                mainEventBus.emitEvent(MainEvent.UserNotFound)
+            }
+
             is CommandResult.Message -> {
                 chatRepository.sendMessage(commandResult.message, replyIdOrNull)
                 setReplying(false)

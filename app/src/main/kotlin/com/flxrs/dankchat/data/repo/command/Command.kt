@@ -5,6 +5,7 @@ enum class Command(
 ) {
     Block(trigger = "/block"),
     Unblock(trigger = "/unblock"),
+    User(trigger = "/user"),
 
     // Chatters(trigger = "/chatters"),
     Uptime(trigger = "/uptime"),

@@ -178,7 +178,8 @@
     <string name="automod_status_approved">Одобрено</string>
     <string name="automod_status_denied">Отклонено</string>
     <string name="automod_ban_user">Заблокировать пользователя</string>
-    <string name="unban_user">Разбанить пользователя</string>
+    <string name="unban_user">Разбан</string>
+    <string name="user_popup_ban">Бан</string>
     <string name="automod_status_expired">Истекло</string>
     <string name="automod_user_held">Эй! Твоё сообщение проверяется модераторами и ещё не отправлено.</string>
     <string name="automod_user_accepted">Модераторы приняли твоё сообщение.</string>
@@ -433,6 +434,8 @@
     <string name="moderation_settings_title">Модерация</string>
     <string name="moderation_timeout_label">Таймаут %1$d</string>
     <string name="moderation_timeout_seconds_hint">Секунды</string>
+    <string name="moderation_timeout_format_hint">Форматы: 10с, 10м, 2ч, 1н (макс. 2 недели) — сейчас %1$s</string>
+    <string name="moderation_timeout_invalid">Неверный формат. Используйте, например: 10с, 10м, 2ч или 1н</string>
     <string name="user_popup_report">Пожаловаться</string>
     <string name="tts_ignore_list_add_user">Добавить пользователя</string>
     <string name="tts_ignore_list_remove_user">Удалить пользователя</string>
@@ -892,6 +895,8 @@
     <string name="cmd_error_not_logged_in_credentials">Отсутствуют данные для входа. Войдите заново и попробуйте снова.</string>
     <string name="cmd_error_unknown_command">%1$s — неизвестная команда</string>
     <string name="cmd_block_usage">Использование: /block &lt;пользователь&gt;</string>
+    <string name="cmd_user_usage">Использование: /user &lt;никнейм&gt;</string>
+    <string name="user_not_found_or_banned">Аккаунт не найден или забанен</string>
     <string name="cmd_block_success">Вы успешно заблокировали пользователя %1$s</string>
     <string name="cmd_block_not_found">Не удалось заблокировать пользователя %1$s, пользователь с таким именем не найден!</string>
     <string name="cmd_block_error">Не удалось заблокировать пользователя %1$s, произошла неизвестная ошибка!</string>

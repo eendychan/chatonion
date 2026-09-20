@@ -3,6 +3,7 @@ package com.flxrs.dankchat.ui.main.channel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flxrs.dankchat.data.UserName
+import com.flxrs.dankchat.data.auth.StartupValidationHolder
 import com.flxrs.dankchat.data.repo.channel.ChannelRepository
 import com.flxrs.dankchat.data.repo.chat.ChatChannelProvider
 import com.flxrs.dankchat.data.repo.chat.ChatNotificationRepository
@@ -38,6 +39,7 @@ class ChannelTabViewModel(
     channelDataCoordinator: ChannelDataCoordinator,
     private val preferenceStore: DankChatPreferenceStore,
     private val channelRepository: ChannelRepository,
+    private val startupValidationHolder: StartupValidationHolder,
 ) : ViewModel() {
     // Best-effort avatar cache for the tab strip. Populated lazily/asynchronously so a missing
     // entry just falls back to a placeholder avatar instead of blocking the tab list.
@@ -100,6 +102,10 @@ class ChannelTabViewModel(
 
     private fun loadAvatars(channels: List<UserName>) {
         viewModelScope.launch {
+            // Helix requests need a validated token - without waiting here the very first
+            // fetch after app start silently fails and avatars stay empty until something
+            // (e.g. adding a channel) triggers a reload.
+            startupValidationHolder.awaitResolved()
             val fetched = channelRepository.getChannels(channels)
             avatarUrls.value = avatarUrls.value + fetched.associate { it.name to it.avatarUrl }
         }

@@ -173,7 +173,8 @@
     <string name="automod_status_approved">Approved</string>
     <string name="automod_status_denied">Denied</string>
     <string name="automod_ban_user">Ban user</string>
-    <string name="unban_user">Unban user</string>
+    <string name="unban_user">Unban</string>
+    <string name="user_popup_ban">Ban</string>
     <string name="automod_status_expired">Expired</string>
     <string name="automod_user_held">Hey! Your message is being checked by mods and has not been sent.</string>
     <string name="automod_user_accepted">Mods have accepted your message.</string>
@@ -419,6 +420,8 @@
     <string name="moderation_settings_title">Moderation</string>
     <string name="moderation_timeout_label">Timeout %1$d</string>
     <string name="moderation_timeout_seconds_hint">Seconds</string>
+    <string name="moderation_timeout_format_hint">Formats: 10s, 10m, 2h, 1w (max 2 weeks) — currently %1$s</string>
+    <string name="moderation_timeout_invalid">Invalid duration. Use e.g. 10s, 10m, 2h or 1w</string>
     <string name="user_popup_report">Report</string>
     <string name="tts_ignore_list_add_user">Add a user</string>
     <string name="tts_ignore_list_remove_user">Remove the user</string>
@@ -936,6 +939,8 @@
     <string name="cmd_error_not_logged_in_credentials">Missing login credentials. Re-login with your account and try again.</string>
     <string name="cmd_error_unknown_command">%1$s is not a known command</string>
     <string name="cmd_block_usage">Usage: /block &lt;user&gt;</string>
+    <string name="cmd_user_usage">Usage: /user &lt;user&gt;</string>
+    <string name="user_not_found_or_banned">Account not found or banned</string>
     <string name="cmd_block_success">You successfully blocked user %1$s</string>
     <string name="cmd_block_not_found">User %1$s couldn\'t be blocked, no user with that name found!</string>
     <string name="cmd_block_error">User %1$s couldn\'t be blocked, an unknown error occurred!</string>

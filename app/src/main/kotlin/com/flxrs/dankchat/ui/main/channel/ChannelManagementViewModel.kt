@@ -3,6 +3,7 @@ package com.flxrs.dankchat.ui.main.channel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.flxrs.dankchat.data.UserName
+import com.flxrs.dankchat.data.auth.StartupValidationHolder
 import com.flxrs.dankchat.data.repo.IgnoresRepository
 import com.flxrs.dankchat.data.repo.channel.ChannelRepository
 import com.flxrs.dankchat.data.repo.chat.ChannelSelectionDataStore
@@ -35,6 +36,7 @@ class ChannelManagementViewModel(
     private val chatNotificationRepository: ChatNotificationRepository,
     private val ignoresRepository: IgnoresRepository,
     private val channelRepository: ChannelRepository,
+    private val startupValidationHolder: StartupValidationHolder,
     channelSelectionDataStore: ChannelSelectionDataStore,
 ) : ViewModel() {
     val channels: StateFlow<ImmutableList<ChannelWithRename>> =
@@ -50,6 +52,9 @@ class ChannelManagementViewModel(
 
     init {
         viewModelScope.launch {
+            // Wait for token validation, otherwise the initial Helix fetch right after
+            // app start fails silently and avatars only load once channels change.
+            startupValidationHolder.awaitResolved()
             channels.collect { current ->
                 if (current.isEmpty()) return@collect
                 val fetched = channelRepository.getChannels(current.map { it.channel })

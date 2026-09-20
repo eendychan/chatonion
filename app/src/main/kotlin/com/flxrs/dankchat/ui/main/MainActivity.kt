@@ -316,6 +316,7 @@ class MainActivity : ComponentActivity() {
                                         SettingsNavigation.Appearance -> navController.navigate(AppearanceSettings)
                                         SettingsNavigation.Notifications -> navController.navigate(NotificationsSettings)
                                         SettingsNavigation.Chat -> navController.navigate(ChatSettings)
+                                        SettingsNavigation.Moderation -> navController.navigate(ModerationSettings)
                                         SettingsNavigation.Streams -> navController.navigate(StreamsSettings)
                                         SettingsNavigation.Battery -> navController.navigate(BatterySettings)
                                         SettingsNavigation.Tools -> navController.navigate(ToolsSettings)
@@ -392,7 +393,6 @@ class MainActivity : ComponentActivity() {
                             ChatSettingsScreen(
                                 onNavToCommands = { navController.navigate(CustomCommandsSettings) },
                                 onNavToUserDisplays = { navController.navigate(UserDisplaySettings) },
-                                onNavToModeration = { navController.navigate(ModerationSettings) },
                                 onNavToBattery = { navController.navigate(BatterySettings) },
                                 onNavBack = { navController.popBackStack() },
                             )

@@ -26,7 +26,7 @@ class ModerationSettingsViewModel(
             chatSettingsDataStore.update { settings ->
                 val updated = settings.moderationTimeoutDurationsSeconds.toMutableList()
                 if (index in updated.indices) {
-                    updated[index] = durationSeconds.coerceAtLeast(1L)
+                    updated[index] = durationSeconds.coerceIn(MIN_TIMEOUT_SECONDS, MAX_TIMEOUT_SECONDS)
                 }
                 settings.copy(moderationTimeoutDurationsSeconds = updated)
             }
@@ -39,5 +39,12 @@ class ModerationSettingsViewModel(
                 settings.copy(moderationTimeoutDurationsSeconds = ChatSettings.DEFAULT_MODERATION_TIMEOUTS)
             }
         }
+    }
+
+    companion object {
+        const val MIN_TIMEOUT_SECONDS = 1L
+
+        // Twitch allows timeouts of up to 2 weeks
+        const val MAX_TIMEOUT_SECONDS = 1_209_600L
     }
 }

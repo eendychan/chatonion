@@ -282,6 +282,7 @@ fun MainScreen(
         dialogViewModel = dialogViewModel,
         chatInputViewModel = chatInputViewModel,
         channelTabViewModel = channelTabViewModel,
+        userPopupViewModel = userPopupViewModel,
         sheetNavigationViewModel = sheetNavigationViewModel,
         mainScreenViewModel = mainScreenViewModel,
         preferenceStore = preferenceStore,
