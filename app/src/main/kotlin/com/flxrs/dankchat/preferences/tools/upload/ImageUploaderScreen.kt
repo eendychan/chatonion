@@ -236,6 +236,22 @@ private fun ImageUploaderScreen(
                     content = { Text(stringResource(R.string.save)) },
                 )
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            SwitchPreferenceItem(
+                title = stringResource(R.string.image_preview_enabled_title),
+                summary = stringResource(R.string.image_preview_enabled_summary),
+                isChecked = imagePreviewEnabled,
+                onClick = onImagePreviewEnabledChange,
+            )
+            SwitchPreferenceItem(
+                title = stringResource(R.string.image_preview_streamer_mode_title),
+                summary = stringResource(R.string.image_preview_streamer_mode_summary),
+                isChecked = imagePreviewStreamerMode,
+                isEnabled = imagePreviewEnabled,
+                onClick = onImagePreviewStreamerModeChange,
+            )
             NavigationBarSpacer()
         }
     }

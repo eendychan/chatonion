@@ -86,44 +86,46 @@ private fun DonationWidgetSection(
     val providerName = stringResource(providerNameRes(widget.provider))
     val isTokenProvider = widget.provider == DonationProvider.StreamElements
 
-    Text(
-        text = providerName,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(vertical = 4.dp),
-    )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = providerName,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
 
-    OutlinedTextField(
-        value = widget.urlOrToken,
-        onValueChange = { onWidgetChange(widget.copy(urlOrToken = it.trim())) },
-        label = {
-            Text(
-                stringResource(
-                    if (isTokenProvider) R.string.donation_widget_token_label else R.string.donation_widget_url_label,
-                ),
-            )
-        },
-        placeholder = { Text(DonationSettingsViewModel.urlHintFor(widget.provider)) },
-        supportingText = {
-            Text(
-                stringResource(
-                    if (isTokenProvider) R.string.donation_widget_token_hint else R.string.donation_widget_url_hint,
-                ),
-            )
-        },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-    )
+        OutlinedTextField(
+            value = widget.urlOrToken,
+            onValueChange = { onWidgetChange(widget.copy(urlOrToken = it.trim())) },
+            label = {
+                Text(
+                    stringResource(
+                        if (isTokenProvider) R.string.donation_widget_token_label else R.string.donation_widget_url_label,
+                    ),
+                )
+            },
+            placeholder = { Text(DonationSettingsViewModel.urlHintFor(widget.provider)) },
+            supportingText = {
+                Text(
+                    stringResource(
+                        if (isTokenProvider) R.string.donation_widget_token_hint else R.string.donation_widget_url_hint,
+                    ),
+                )
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        )
 
-    OutlinedTextField(
-        value = widget.channel,
-        onValueChange = { onWidgetChange(widget.copy(channel = it.trim().removePrefix("@"))) },
-        label = { Text(stringResource(R.string.donation_widget_channel_label, providerName)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-    )
+        OutlinedTextField(
+            value = widget.channel,
+            onValueChange = { onWidgetChange(widget.copy(channel = it.trim().removePrefix("@"))) },
+            label = { Text(stringResource(R.string.donation_widget_channel_label, providerName)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        )
+    }
 }
 
 private fun providerNameRes(provider: DonationProvider): Int = when (provider) {
