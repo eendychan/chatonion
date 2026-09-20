@@ -35,6 +35,7 @@ import com.flxrs.dankchat.data.twitch.emote.ChatMessageEmote
 import com.flxrs.dankchat.data.twitch.emote.ChatMessageEmoteType
 import com.flxrs.dankchat.data.twitch.emote.CheermoteSet
 import com.flxrs.dankchat.data.twitch.emote.CheermoteTier
+import com.flxrs.dankchat.data.twitch.emote.EmoteEffect
 import com.flxrs.dankchat.data.twitch.emote.EmoteType
 import com.flxrs.dankchat.data.twitch.emote.GenericEmote
 import com.flxrs.dankchat.data.twitch.emote.toChatMessageEmoteType

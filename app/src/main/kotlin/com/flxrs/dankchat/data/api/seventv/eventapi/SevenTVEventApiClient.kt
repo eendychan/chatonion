@@ -472,5 +472,15 @@ class SevenTVEventApiClient(
         private val RECONNECT_BASE_DELAY = 1.seconds
         private const val RECONNECT_MAX_ATTEMPTS = 6
         private val FLOW_DEBOUNCE = 2.seconds
+
+        private const val COSMETIC_KIND_PAINT = "PAINT"
+        private const val COSMETIC_KIND_BADGE = "BADGE"
+        private const val CONNECTION_PLATFORM_TWITCH = "TWITCH"
+        private val CHANNEL_COSMETIC_SUBSCRIPTION_TYPES =
+            listOf(
+                SubscriptionType.CosmeticCreate,
+                SubscriptionType.EntitlementCreate,
+                SubscriptionType.EntitlementDelete,
+            )
     }
 }
