@@ -10,6 +10,7 @@ import com.flxrs.dankchat.data.auth.StartupValidationHolder
 import com.flxrs.dankchat.data.repo.chat.ChatLoadingFailure
 import com.flxrs.dankchat.data.repo.chat.ChatLoadingStep
 import com.flxrs.dankchat.data.repo.chat.ChatMessageRepository
+import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.repo.data.DataLoadingFailure
 import com.flxrs.dankchat.data.repo.data.DataLoadingStep
 import com.flxrs.dankchat.data.repo.data.DataRepository
@@ -55,6 +56,7 @@ internal class ChannelDataCoordinatorTest {
     private val globalDataLoader: GlobalDataLoader = mockk()
     private val chatMessageRepository: ChatMessageRepository = mockk(relaxed = true)
     private val dataRepository: DataRepository = mockk(relaxed = true)
+    private val sevenTVCosmeticsRepository = SevenTVCosmeticsRepository()
     private val authDataStore: AuthDataStore = mockk()
     private val preferenceStore: DankChatPreferenceStore = mockk()
     private val startupValidationHolder = StartupValidationHolder()
@@ -81,6 +83,7 @@ internal class ChannelDataCoordinatorTest {
                 globalDataLoader = globalDataLoader,
                 chatMessageRepository = chatMessageRepository,
                 dataRepository = dataRepository,
+                sevenTVCosmeticsRepository = sevenTVCosmeticsRepository,
                 authDataStore = authDataStore,
                 preferenceStore = preferenceStore,
                 startupValidationHolder = startupValidationHolder,
