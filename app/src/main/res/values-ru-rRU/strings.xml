@@ -179,7 +179,6 @@
     <string name="automod_status_denied">Отклонено</string>
     <string name="automod_ban_user">Заблокировать пользователя</string>
     <string name="unban_user">Разбан</string>
-    <string name="user_popup_ban">Бан</string>
     <string name="automod_status_expired">Истекло</string>
     <string name="automod_user_held">Эй! Твоё сообщение проверяется модераторами и ещё не отправлено.</string>
     <string name="automod_user_accepted">Модераторы приняли твоё сообщение.</string>
@@ -400,7 +399,7 @@
     <string name="logout">Выйти</string>
     <string name="user_popup_timeout">Тайм-аут</string>
     <string name="user_popup_delete">Удалить сообщение</string>
-    <string name="user_popup_ban">Забанить</string>
+    <string name="user_popup_ban">Бан</string>
     <string name="user_popup_unban">Разбанить</string>
     <string name="change_roomstate">Режимы чата</string>
     <string name="confirm_user_ban_title">Подтверждение бана</string>
