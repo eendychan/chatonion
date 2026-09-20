@@ -36,6 +36,9 @@ object UserDisplaySettings
 object ModerationSettings
 
 @Serializable
+object DonationsSettings
+
+@Serializable
 object StreamsSettings
 
 @Serializable

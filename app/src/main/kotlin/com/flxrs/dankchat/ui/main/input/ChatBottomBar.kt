@@ -56,6 +56,8 @@ fun ChatBottomBar(
     tourState: TourOverlayState = TourOverlayState(),
     isRepeatedSendEnabled: Boolean = false,
     overflowMenuMaxHeightDp: Dp = Dp.Unspecified,
+    showDonations: Boolean = false,
+    onDonationsClick: () -> Unit = {},
 ) {
     val inputVisibleState = remember { MutableTransitionState(showInput) }
     inputVisibleState.targetState = showInput
@@ -91,6 +93,8 @@ fun ChatBottomBar(
                 tourState = tourState,
                 isRepeatedSendEnabled = isRepeatedSendEnabled,
                 overflowMenuMaxHeightDp = overflowMenuMaxHeightDp,
+                showDonations = showDonations,
+                onDonationsClick = onDonationsClick,
                 modifier =
                     Modifier.onSizeChanged { size ->
                         onInputHeightChange(size.height)

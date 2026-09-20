@@ -66,6 +66,7 @@ import com.flxrs.dankchat.preferences.chat.commands.CustomCommandsScreen
 import com.flxrs.dankchat.preferences.chat.moderation.ModerationSettingsScreen
 import com.flxrs.dankchat.preferences.chat.userdisplay.UserDisplayScreen
 import com.flxrs.dankchat.preferences.developer.DeveloperSettingsScreen
+import com.flxrs.dankchat.preferences.donations.DonationSettingsScreen
 import com.flxrs.dankchat.preferences.notifications.NotificationsSettingsScreen
 import com.flxrs.dankchat.preferences.notifications.highlights.HighlightsScreen
 import com.flxrs.dankchat.preferences.notifications.ignores.IgnoresScreen
@@ -317,6 +318,7 @@ class MainActivity : ComponentActivity() {
                                         SettingsNavigation.Notifications -> navController.navigate(NotificationsSettings)
                                         SettingsNavigation.Chat -> navController.navigate(ChatSettings)
                                         SettingsNavigation.Moderation -> navController.navigate(ModerationSettings)
+                                        SettingsNavigation.Donations -> navController.navigate(DonationsSettings)
                                         SettingsNavigation.Streams -> navController.navigate(StreamsSettings)
                                         SettingsNavigation.Battery -> navController.navigate(BatterySettings)
                                         SettingsNavigation.Tools -> navController.navigate(ToolsSettings)
@@ -424,6 +426,16 @@ class MainActivity : ComponentActivity() {
                             popExitTransition = subPopExit,
                         ) {
                             ModerationSettingsScreen(
+                                onNavBack = { navController.popBackStack() },
+                            )
+                        }
+                        composable<DonationsSettings>(
+                            enterTransition = subEnter,
+                            exitTransition = subExit,
+                            popEnterTransition = subPopEnter,
+                            popExitTransition = subPopExit,
+                        ) {
+                            DonationSettingsScreen(
                                 onNavBack = { navController.popBackStack() },
                             )
                         }

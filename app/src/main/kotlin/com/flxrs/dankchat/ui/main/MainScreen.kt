@@ -57,6 +57,7 @@ import androidx.window.core.layout.WindowSizeClass
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
+import com.flxrs.dankchat.preferences.donations.DonationSettingsDataStore
 import com.flxrs.dankchat.preferences.appearance.InputAction
 import com.flxrs.dankchat.ui.chat.FabMenuCallbacks
 import com.flxrs.dankchat.ui.chat.PinnedMessageUiState
@@ -150,6 +151,8 @@ fun MainScreen(
     val mentionViewModel: MentionViewModel = koinViewModel()
     val preferenceStore: DankChatPreferenceStore = koinInject()
     val mainEventBus: MainEventBus = koinInject()
+    val donationSettingsDataStore: DonationSettingsDataStore = koinInject()
+    val hasDonationWidgets by donationSettingsDataStore.hasConfiguredWidgets.collectAsStateWithLifecycle(initialValue = false)
     val featureTourViewModel: FeatureTourViewModel = koinViewModel()
     val featureTourState by featureTourViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -572,6 +575,8 @@ fun MainScreen(
                     instantHide = isHistorySheet,
                     isRepeatedSendEnabled = mainState.isRepeatedSendEnabled,
                     overflowMenuMaxHeightDp = menuMaxHeightDp,
+                    showDonations = hasDonationWidgets,
+                    onDonationsClick = dialogViewModel::showDonations,
                     tourState =
                         remember(featureTourState.currentTourStep, featureTourState.forceOverflowOpen, featureTourState.isTourActive) {
                             TourOverlayState(

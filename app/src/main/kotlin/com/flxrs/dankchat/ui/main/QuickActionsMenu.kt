@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Theaters
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Videocam
@@ -44,6 +45,8 @@ fun QuickActionsMenu(
     onAudioOnly: () -> Unit,
     onUploadClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showDonations: Boolean = false,
+    onDonationsClick: () -> Unit = {},
 ) {
     val scrollState = rememberScrollState()
 
@@ -121,6 +124,20 @@ fun QuickActionsMenu(
                     )
                 },
             )
+
+            if (showDonations) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.donations_menu_item)) },
+                    onClick = onDonationsClick,
+                    enabled = enabled,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Paid,
+                            contentDescription = null,
+                        )
+                    },
+                )
+            }
 
             if (debugMode) {
                 DropdownMenuItem(

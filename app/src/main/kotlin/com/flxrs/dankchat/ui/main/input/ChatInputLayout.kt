@@ -124,6 +124,8 @@ fun ChatInputLayout(
     tourState: TourOverlayState = TourOverlayState(),
     isRepeatedSendEnabled: Boolean = false,
     overflowMenuMaxHeightDp: Dp = Dp.Unspecified,
+    showDonations: Boolean = false,
+    onDonationsClick: () -> Unit = {},
 ) {
     val inputState = uiState.inputState
     val enabled = uiState.enabled
@@ -428,6 +430,11 @@ fun ChatInputLayout(
                 },
                 onUploadClick = {
                     callbacks.onChooseMedia()
+                    onOverflowExpandedChange(false)
+                },
+                showDonations = showDonations,
+                onDonationsClick = {
+                    onDonationsClick()
                     onOverflowExpandedChange(false)
                 },
             )

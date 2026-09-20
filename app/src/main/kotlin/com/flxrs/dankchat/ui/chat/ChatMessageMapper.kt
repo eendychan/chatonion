@@ -34,6 +34,8 @@ import com.flxrs.dankchat.data.twitch.message.recipientAliasOrFormattedName
 import com.flxrs.dankchat.data.twitch.message.senderAliasOrFormattedName
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
 import com.flxrs.dankchat.preferences.chat.ChatSettings
+import com.flxrs.dankchat.ui.chat.image.ChatImageLinkResolver
+import com.flxrs.dankchat.ui.chat.image.ImageLinkUi
 import com.flxrs.dankchat.ui.chat.messages.common.findLinks
 import com.flxrs.dankchat.utils.DateTimeUtils
 import com.flxrs.dankchat.utils.TextResource
@@ -657,6 +659,14 @@ class ChatMessageMapper(
 
         val rawNameColor = resolveNameColor(userDisplay?.color, color, userId, chatSettings)
 
+        val links = findLinks(message)
+        val imageLinks =
+            links.mapNotNull { link ->
+                ChatImageLinkResolver.resolve(link.url)?.let { imageUrl ->
+                    ImageLinkUi(url = link.url, imageUrl = imageUrl)
+                }
+            }
+
         return ChatMessageUiState.PrivMessageUi(
             id = id,
             tag = tag,
@@ -674,7 +684,8 @@ class ChatMessageMapper(
             rawNameColor = rawNameColor,
             nameText = nameText,
             message = message,
-            links = findLinks(message).toImmutableList(),
+            links = links.toImmutableList(),
+            imageLinks = imageLinks.toImmutableList(),
             emotes = emoteUis,
             isAction = isAction,
             thread = threadUi,

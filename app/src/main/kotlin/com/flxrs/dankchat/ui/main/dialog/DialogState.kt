@@ -14,6 +14,7 @@ data class DialogState(
     val blockChannelTarget: UserName? = null,
     val showLogout: Boolean = false,
     val showNewWhisper: Boolean = false,
+    val showDonations: Boolean = false,
     val pendingUploadAction: (() -> Unit)? = null,
     val isUploading: Boolean = false,
     val crashEntry: CrashEntry? = null,

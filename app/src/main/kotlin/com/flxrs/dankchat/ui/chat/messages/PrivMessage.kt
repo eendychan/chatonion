@@ -40,6 +40,7 @@ import com.flxrs.dankchat.data.toUserName
 import com.flxrs.dankchat.ui.chat.BadgeUi
 import com.flxrs.dankchat.ui.chat.ChatMessageUiState
 import com.flxrs.dankchat.ui.chat.emote.EmoteSheetData
+import com.flxrs.dankchat.ui.chat.image.ChatMessageImagePreviews
 import com.flxrs.dankchat.ui.chat.messages.common.MessageTextWithInlineContent
 import com.flxrs.dankchat.ui.chat.messages.common.appendInlineSpacer
 import com.flxrs.dankchat.ui.chat.messages.common.appendWithLinks
@@ -195,6 +196,9 @@ fun PrivMessageComposable(
             onMessageLongClick = onMessageLongClick,
             onEmoteClick = onEmoteClick,
         )
+
+        // In-chat image previews (eblo.id, s-ul.eu, kappa.lol, gachi.gay, imgur, direct image links)
+        ChatMessageImagePreviews(imageLinks = message.imageLinks)
     }
 }
 

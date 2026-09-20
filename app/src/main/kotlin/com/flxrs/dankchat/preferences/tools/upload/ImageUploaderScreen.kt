@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.preferences.components.NavigationBarSpacer
+import com.flxrs.dankchat.preferences.components.SwitchPreferenceItem
 import com.flxrs.dankchat.preferences.tools.ImageUploaderConfig
 import com.flxrs.dankchat.utils.compose.ConfirmationBottomSheet
 import com.flxrs.dankchat.utils.compose.textLinkStyles
@@ -60,8 +62,14 @@ import sh.calvin.autolinktext.rememberAutoLinkText
 fun ImageUploaderScreen(onNavBack: () -> Unit) {
     val viewModel = koinViewModel<ImageUploaderViewModel>()
     val uploader = viewModel.uploader.collectAsStateWithLifecycle().value
+    val imagePreviewEnabled = viewModel.imagePreviewEnabled.collectAsStateWithLifecycle().value
+    val imagePreviewStreamerMode = viewModel.imagePreviewStreamerMode.collectAsStateWithLifecycle().value
     ImageUploaderScreen(
         uploaderConfig = uploader,
+        imagePreviewEnabled = imagePreviewEnabled,
+        imagePreviewStreamerMode = imagePreviewStreamerMode,
+        onImagePreviewEnabledChange = viewModel::setImagePreviewEnabled,
+        onImagePreviewStreamerModeChange = viewModel::setImagePreviewStreamerMode,
         onReset = { viewModel.reset() },
         onSave = { viewModel.save(it) },
         onSaveAndNavBack = {
@@ -74,6 +82,10 @@ fun ImageUploaderScreen(onNavBack: () -> Unit) {
 @Composable
 private fun ImageUploaderScreen(
     uploaderConfig: ImageUploaderConfig,
+    imagePreviewEnabled: Boolean,
+    imagePreviewStreamerMode: Boolean,
+    onImagePreviewEnabledChange: (Boolean) -> Unit,
+    onImagePreviewStreamerModeChange: (Boolean) -> Unit,
     onReset: () -> Unit,
     onSave: (ImageUploaderConfig) -> Unit,
     onSaveAndNavBack: (ImageUploaderConfig) -> Unit,

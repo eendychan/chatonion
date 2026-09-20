@@ -17,6 +17,8 @@ data class ToolsSettings(
     val ttsVolume: Float = 1.0f,
     val ttsAudioDucking: Boolean = false,
     val ttsUserIgnoreList: Set<String> = emptySet(),
+    val imagePreviewEnabled: Boolean = true,
+    val imagePreviewStreamerMode: Boolean = false,
 ) {
     @Transient
     val ttsUserNameIgnores = ttsUserIgnoreList.toUserNames()

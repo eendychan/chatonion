@@ -58,6 +58,9 @@ import com.flxrs.dankchat.data.repo.crash.CrashEntry
 import com.flxrs.dankchat.data.repo.crash.CrashRepository
 import com.flxrs.dankchat.data.repo.log.LogRepository
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
+import com.flxrs.dankchat.preferences.donations.DonationSettingsDataStore
+import com.flxrs.dankchat.ui.chat.image.ChatImagePreviewPopup
+import com.flxrs.dankchat.ui.chat.image.ChatImagePreviewViewModel
 import com.flxrs.dankchat.ui.main.ChannelSettingsWindow
 import com.flxrs.dankchat.ui.main.channel.ChannelManagementViewModel
 import com.flxrs.dankchat.ui.main.input.ChatInputViewModel
@@ -198,6 +201,16 @@ fun MainScreenDialogs(
         )
     }
 
+    if (dialogState.showDonations) {
+        val donationSettingsDataStore: DonationSettingsDataStore = koinInject()
+        val donationWidgets by donationSettingsDataStore.configuredWidgets.collectAsStateWithLifecycle(initialValue = emptyList())
+        DonationsDialog(
+            widgets = donationWidgets,
+            activeChannel = activeChannel,
+            onDismiss = dialogViewModel::dismissDonations,
+        )
+    }
+
     if (startupValidation is StartupValidation.ScopesOutdated) {
         InfoBottomSheet(
             title = stringResource(R.string.login_outdated_title),
@@ -240,6 +253,16 @@ fun MainScreenDialogs(
     if (sheetsReady) {
         UserPopupSheetContainer(
             onOpenUrl = onOpenUrl,
+        )
+    }
+
+    // Movable/zoomable viewer for in-chat image previews
+    val chatImagePreviewViewModel: ChatImagePreviewViewModel = koinViewModel()
+    val imagePreviewUrl by chatImagePreviewViewModel.previewImageUrl.collectAsStateWithLifecycle()
+    imagePreviewUrl?.let { url ->
+        ChatImagePreviewPopup(
+            imageUrl = url,
+            onDismiss = chatImagePreviewViewModel::dismiss,
         )
     }
 

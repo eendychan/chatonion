@@ -83,6 +83,15 @@ class DialogStateViewModel(
         update { copy(showNewWhisper = false) }
     }
 
+    // Donations
+    fun showDonations() {
+        update { copy(showDonations = true) }
+    }
+
+    fun dismissDonations() {
+        update { copy(showDonations = false) }
+    }
+
     // Upload
     val uploadHost: String
         get() =

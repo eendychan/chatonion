@@ -8,6 +8,7 @@ import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.twitch.badge.Badge
 import com.flxrs.dankchat.data.twitch.emote.ChatMessageEmote
 import com.flxrs.dankchat.data.twitch.message.Message
+import com.flxrs.dankchat.ui.chat.image.ImageLinkUi
 import com.flxrs.dankchat.ui.chat.messages.common.LinkUi
 import com.flxrs.dankchat.utils.TextResource
 import kotlinx.collections.immutable.ImmutableList
@@ -49,6 +50,7 @@ sealed interface ChatMessageUiState {
         val nameText: String,
         val message: String,
         val links: ImmutableList<LinkUi>,
+        val imageLinks: ImmutableList<ImageLinkUi> = persistentListOf(),
         val emotes: ImmutableList<EmoteUi>,
         val isAction: Boolean,
         val thread: ThreadUi?,

@@ -6,6 +6,8 @@ import com.flxrs.dankchat.preferences.tools.ImageUploaderConfig
 import com.flxrs.dankchat.preferences.tools.ToolsSettingsDataStore
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.WhileSubscribed
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -22,6 +24,34 @@ class ImageUploaderViewModel(
                 started = SharingStarted.WhileSubscribed(5.seconds),
                 initialValue = toolsSettingsDataStore.current().uploaderConfig,
             )
+
+    val imagePreviewEnabled =
+        toolsSettingsDataStore.settings
+            .map { it.imagePreviewEnabled }
+            .distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5.seconds),
+                initialValue = toolsSettingsDataStore.current().imagePreviewEnabled,
+            )
+
+    val imagePreviewStreamerMode =
+        toolsSettingsDataStore.settings
+            .map { it.imagePreviewStreamerMode }
+            .distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5.seconds),
+                initialValue = toolsSettingsDataStore.current().imagePreviewStreamerMode,
+            )
+
+    fun setImagePreviewEnabled(enabled: Boolean) = viewModelScope.launch {
+        toolsSettingsDataStore.update { it.copy(imagePreviewEnabled = enabled) }
+    }
+
+    fun setImagePreviewStreamerMode(enabled: Boolean) = viewModelScope.launch {
+        toolsSettingsDataStore.update { it.copy(imagePreviewStreamerMode = enabled) }
+    }
 
     fun save(uploader: ImageUploaderConfig) = viewModelScope.launch {
         val validated =
