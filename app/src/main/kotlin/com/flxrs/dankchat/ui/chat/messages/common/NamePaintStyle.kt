@@ -11,8 +11,6 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import com.flxrs.dankchat.data.twitch.paint.SevenTVPaint
 import kotlin.math.cos
 import kotlin.math.max
@@ -68,11 +66,7 @@ private class PaintShaderBrush(
     private val colors = sortedStops.map { Color(it.argb) }
     private val positions = sortedStops.map { it.at.coerceIn(0f, 1f) }
 
-    override fun createShader(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density,
-    ): Shader {
+    override fun createShader(size: Size): Shader {
         val tileMode = if (paint.repeat) TileMode.Repeated else TileMode.Clamp
         if (paint.function == SevenTVPaint.PaintFunction.RadialGradient) {
             return RadialGradientShader(
