@@ -23,6 +23,8 @@ data class ImageLinkUi(
 object ChatImageLinkResolver {
     private val IMAGE_EXTENSIONS = listOf(".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".avif")
     private val DIRECT_IMAGE_HOSTS = setOf("s-ul.eu", "kappa.lol", "gachi.gay")
+    private val EBLOID_POST_ID = Regex("[A-Za-z0-9_-]{6,16}")
+    private val EBLOID_RESERVED_SECTIONS = setOf("videos", "clips", "about", "explore", "search", "settings", "login", "register", "upload", "users")
 
     fun resolve(url: String): String? {
         val withoutScheme = url.substringAfter("://", missingDelimiterValue = "").takeIf { it.isNotBlank() } ?: return null
@@ -45,9 +47,16 @@ object ChatImageLinkResolver {
     }
 
     // https://eblo.id/{postId} -> https://eblo.id/download/file/{postId}
+    // Post ids are generated base62-like tokens (e.g. RJQC8hq). Site sections (eblo.id/videos,
+    // chat.eblo.id) and user profiles (eblo.id/@name) must not be treated as media.
     private fun resolveEbloid(path: String): String? {
-        val segments = path.split('/').filter { it.isNotBlank() }
-        val postId = segments.singleOrNull() ?: return null
+        val postId = path.split('/').filter { it.isNotBlank() }.singleOrNull() ?: return null
+        if (postId.startsWith("@")) return null
+        if (postId.lowercase() in EBLOID_RESERVED_SECTIONS) return null
+        if (!EBLOID_POST_ID.matches(postId)) return null
+        // generated ids practically always contain an uppercase letter or a digit,
+        // lowercase-only words like "videos" are site sections
+        if (postId.none { it.isUpperCase() || it.isDigit() }) return null
         return "https://eblo.id/download/file/$postId"
     }
 

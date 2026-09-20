@@ -1,6 +1,7 @@
 package com.flxrs.dankchat.preferences.donations
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,10 +13,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -23,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,7 +40,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun DonationSettingsScreen(onNavBack: () -> Unit) {
     val viewModel = koinViewModel<DonationSettingsViewModel>()
-    val widgets by viewModel.widgetSlots.collectAsStateWithLifecycle()
+    val rows by viewModel.rows.collectAsStateWithLifecycle()
 
     Scaffold(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.navigationBars),
@@ -64,14 +69,22 @@ fun DonationSettingsScreen(onNavBack: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
-            widgets.forEachIndexed { index, widget ->
-                DonationWidgetSection(
-                    widget = widget,
-                    onWidgetChange = viewModel::updateWidget,
+            rows.forEachIndexed { index, row ->
+                DonationWidgetRowItem(
+                    row = row,
+                    onRowChange = viewModel::updateRow,
+                    onRowRemove = { viewModel.removeRow(row.id) },
                 )
-                if (index < widgets.lastIndex) {
+                if (index < rows.lastIndex) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 }
+            }
+            OutlinedButton(
+                onClick = viewModel::addRow,
+                modifier = Modifier.padding(top = 12.dp),
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                Text(stringResource(R.string.donation_widget_add))
             }
             NavigationBarSpacer()
         }
@@ -79,50 +92,46 @@ fun DonationSettingsScreen(onNavBack: () -> Unit) {
 }
 
 @Composable
-private fun DonationWidgetSection(
-    widget: DonationWidget,
-    onWidgetChange: (DonationWidget) -> Unit,
+private fun DonationWidgetRowItem(
+    row: DonationWidgetRow,
+    onRowChange: (DonationWidgetRow) -> Unit,
+    onRowRemove: () -> Unit,
 ) {
-    val providerName = stringResource(providerNameRes(widget.provider))
-    val isTokenProvider = widget.provider == DonationProvider.StreamElements
+    val provider = detectDonationProvider(row.urlOrToken)
+    val providerName = provider?.let { stringResource(providerNameRes(it)) } ?: stringResource(R.string.donation_widget_unknown)
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = providerName,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(vertical = 4.dp),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = providerName,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onRowRemove) {
+                Icon(imageVector = Icons.Default.Delete, contentDescription = stringResource(R.string.donation_widget_remove))
+            }
+        }
 
         OutlinedTextField(
-            value = widget.urlOrToken,
-            onValueChange = { onWidgetChange(widget.copy(urlOrToken = it.trim())) },
-            label = {
-                Text(
-                    stringResource(
-                        if (isTokenProvider) R.string.donation_widget_token_label else R.string.donation_widget_url_label,
-                    ),
-                )
-            },
-            placeholder = { Text(DonationSettingsViewModel.urlHintFor(widget.provider)) },
-            supportingText = {
-                Text(
-                    stringResource(
-                        if (isTokenProvider) R.string.donation_widget_token_hint else R.string.donation_widget_url_hint,
-                    ),
-                )
-            },
+            value = row.channel,
+            onValueChange = { onRowChange(row.copy(channel = it)) },
+            label = { Text(stringResource(R.string.donation_widget_channel_label)) },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
             modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         )
 
         OutlinedTextField(
-            value = widget.channel,
-            onValueChange = { onWidgetChange(widget.copy(channel = it.trim().removePrefix("@"))) },
-            label = { Text(stringResource(R.string.donation_widget_channel_label, providerName)) },
+            value = row.urlOrToken,
+            onValueChange = { onRowChange(row.copy(urlOrToken = it)) },
+            label = { Text(stringResource(R.string.donation_widget_url_label)) },
+            supportingText = { Text(stringResource(R.string.donation_widget_url_hint)) },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         )
     }

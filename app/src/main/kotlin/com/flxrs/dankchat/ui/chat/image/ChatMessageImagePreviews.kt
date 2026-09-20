@@ -6,11 +6,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,8 +39,12 @@ import kotlinx.collections.immutable.ImmutableList
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
+private val PREVIEW_MAX_WIDTH = 280.dp
+private val PREVIEW_MAX_HEIGHT = 200.dp
+
 /**
  * Renders clickable image previews under a chat message.
+ * Previews keep the image's aspect ratio, so the whole image is visible without cropping.
  * In streamer mode images are blurred: the first tap removes the blur,
  * the second tap opens the movable viewer window.
  */
@@ -65,15 +70,25 @@ fun ChatMessageImagePreviews(
     ) {
         imageLinks.forEach { link ->
             var unblurred by remember(link.url) { mutableStateOf(false) }
+            var imageRatio by remember(link.imageUrl) { mutableStateOf<Float?>(null) }
             val blurred = streamerMode && !unblurred
 
             Box(
                 modifier =
                     Modifier
                         .padding(end = 6.dp)
-                        .width(200.dp)
-                        .height(140.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .then(
+                            when (val ratio = imageRatio) {
+                                // placeholder box until the image dimensions are known
+                                null -> Modifier.size(width = PREVIEW_MAX_WIDTH, height = PREVIEW_MAX_HEIGHT)
+
+                                else ->
+                                    Modifier
+                                        .widthIn(max = PREVIEW_MAX_WIDTH)
+                                        .heightIn(max = PREVIEW_MAX_HEIGHT)
+                                        .aspectRatio(ratio)
+                            },
+                        ).clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable {
                             if (blurred) {
@@ -86,7 +101,13 @@ fun ChatMessageImagePreviews(
                 AsyncImage(
                     model = link.imageUrl,
                     contentDescription = link.url,
-                    contentScale = ContentScale.Crop,
+                    contentScale = ContentScale.Fit,
+                    onSuccess = { state ->
+                        val size = state.painter.intrinsicSize
+                        if (size.width > 0f && size.height > 0f) {
+                            imageRatio = size.width / size.height
+                        }
+                    },
                     modifier =
                         Modifier
                             .fillMaxSize()

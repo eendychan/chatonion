@@ -21,6 +21,7 @@ import com.flxrs.dankchat.data.twitch.message.SystemMessageType
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
 import com.flxrs.dankchat.preferences.chat.ChatSettingsDataStore
 import com.flxrs.dankchat.utils.DateTimeUtils
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -175,13 +176,16 @@ class PinnedMessageViewModel(
         // Twitch emotes from the Helix pin fragments and third-party emotes from the text
         val existing = chatMessageRepository.findMessage(pin.messageId, channel, chatNotificationRepository.whispers) as? PrivMessage
         val message = existing ?: messageProcessor.reparseEmotesAndBadges(pin.toSyntheticMessage()) as? PrivMessage ?: return null
+        // Pinned messages never show in-chat image previews (eblo.id, kappa.lol, …)
         val messageUi =
-            chatMessageMapper.mapToUiState(
-                item = ChatItem(message),
-                chatSettings = chatSettingsDataStore.current(),
-                preferenceStore = preferenceStore,
-                isAlternateBackground = false,
-            ) as? ChatMessageUiState.PrivMessageUi ?: return null
+            (
+                chatMessageMapper.mapToUiState(
+                    item = ChatItem(message),
+                    chatSettings = chatSettingsDataStore.current(),
+                    preferenceStore = preferenceStore,
+                    isAlternateBackground = false,
+                ) as? ChatMessageUiState.PrivMessageUi
+            )?.copy(imageLinks = persistentListOf()) ?: return null
 
         cachedMessageUi = pin.messageId to messageUi
         return messageUi

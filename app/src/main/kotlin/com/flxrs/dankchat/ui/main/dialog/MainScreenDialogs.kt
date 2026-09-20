@@ -203,7 +203,10 @@ fun MainScreenDialogs(
 
     if (dialogState.showDonations) {
         val donationSettingsDataStore: DonationSettingsDataStore = koinInject()
-        val donationWidgets by donationSettingsDataStore.configuredWidgets.collectAsStateWithLifecycle(initialValue = emptyList())
+        // Synchronous initial value: an empty initial emission would instantly dismiss the dialog
+        val donationWidgets by donationSettingsDataStore.configuredWidgets.collectAsStateWithLifecycle(
+            initialValue = donationSettingsDataStore.current().configuredWidgets,
+        )
         DonationsDialog(
             widgets = donationWidgets,
             activeChannel = activeChannel,
