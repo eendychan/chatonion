@@ -75,6 +75,7 @@ import com.flxrs.dankchat.preferences.overview.SettingsNavigation
 import com.flxrs.dankchat.preferences.search.SettingsSearchScreen
 import com.flxrs.dankchat.preferences.stream.StreamsSettingsScreen
 import com.flxrs.dankchat.preferences.tools.ToolsSettingsScreen
+import com.flxrs.dankchat.preferences.tools.cache.EmoteCacheSettingsScreen
 import com.flxrs.dankchat.preferences.tools.tts.TTSUserIgnoreListScreen
 import com.flxrs.dankchat.preferences.tools.upload.ImageUploaderScreen
 import com.flxrs.dankchat.ui.changelog.ChangelogScreen
@@ -478,6 +479,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             ToolsSettingsScreen(
                                 onNavToImageUploader = { navController.navigate(ImageUploaderSettings) },
+                                onNavToEmoteCache = { navController.navigate(EmoteCacheSettings) },
                                 onNavToTTSUserIgnoreList = { navController.navigate(TTSUserIgnoreListSettings) },
                                 onNavBack = { navController.popBackStack() },
                             )

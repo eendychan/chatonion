@@ -48,6 +48,9 @@ object BatterySettings
 object ToolsSettings
 
 @Serializable
+object EmoteCacheSettings
+
+@Serializable
 object ImageUploaderSettings
 
 @Serializable

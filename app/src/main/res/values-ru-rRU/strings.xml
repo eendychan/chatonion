@@ -454,6 +454,15 @@
     <string name="donation_widget_webview_version">Версия WebView: %1$s</string>
     <string name="donations_menu_item">Донаты</string>
     <string name="donations_dialog_title">Донаты</string>
+    <string name="preference_emote_cache_header">Кэш смайликов (7TV / BTTV / FFZ)</string>
+    <string name="preference_emote_cache_configure_summary">Кэширование сторонних смайликов на выбранных каналах</string>
+    <string name="emote_cache_settings_title">Кэширование</string>
+    <string name="emote_cache_settings_summary">Сохраняет списки смайликов 7TV, BTTV и FFZ на диск, чтобы не скачивать их заново. Когда выключено, смайлики загружаются из сети при каждом открытии канала. Когда включено — смайлики каналов кэшируются только на перечисленных ниже каналах, а глобальные наборы кэшируются всегда, пока включено кэширование. Закэшированные списки обновляются в фоне.</string>
+    <string name="emote_cache_enabled_title">Включить кэширование смайликов</string>
+    <string name="emote_cache_enabled_summary">Действует только на каналы из списка ниже</string>
+    <string name="emote_cache_channel_label">Канал</string>
+    <string name="emote_cache_channel_add">Добавить канал</string>
+    <string name="emote_cache_channel_remove">Удалить канал</string>
     <string name="image_preview_enabled_title">Показывать изображения по ссылкам</string>
     <string name="image_preview_enabled_summary">Превью для eblo.id, s-ul.eu, kappa.lol, gachi.gay, imgur и прямых ссылок на картинки прямо в чате</string>
     <string name="image_preview_streamer_mode_title">Режим стримера (размытие)</string>

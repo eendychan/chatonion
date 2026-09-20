@@ -440,6 +440,15 @@
     <string name="donation_widget_webview_version">WebView version: %1$s</string>
     <string name="donations_menu_item">Donations</string>
     <string name="donations_dialog_title">Donations</string>
+    <string name="preference_emote_cache_header">Emote cache (7TV / BTTV / FFZ)</string>
+    <string name="preference_emote_cache_configure_summary">Cache third-party emote lists on selected channels</string>
+    <string name="emote_cache_settings_title">Caching</string>
+    <string name="emote_cache_settings_summary">Caches the 7TV, BTTV and FFZ emote lists on disk so they do not have to be downloaded again. When disabled, emotes are fetched from the network every time. When enabled, channel emotes are cached only on the channels listed below; the global emote sets are cached as long as caching is enabled. Cached lists are refreshed in the background.</string>
+    <string name="emote_cache_enabled_title">Enable emote caching</string>
+    <string name="emote_cache_enabled_summary">Applies only to the channels listed below</string>
+    <string name="emote_cache_channel_label">Channel</string>
+    <string name="emote_cache_channel_add">Add channel</string>
+    <string name="emote_cache_channel_remove">Remove channel</string>
     <string name="image_preview_enabled_title">Show images from links</string>
     <string name="image_preview_enabled_summary">Previews for eblo.id, s-ul.eu, kappa.lol, gachi.gay, imgur and direct image links, right in chat</string>
     <string name="image_preview_streamer_mode_title">Streamer mode (blur)</string>

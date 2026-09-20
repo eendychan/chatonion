@@ -188,7 +188,7 @@ class DataRepository(
 
         measureTimeAndLog(logger, "FFZ emotes for #$channel") {
             collectCachedEmotes(
-                flow = cachedEmoteProvider.getFFZChannelEmotes(channelId, forceNetwork),
+                flow = cachedEmoteProvider.getFFZChannelEmotes(channelId, channel, forceNetwork),
                 onData = { emoteRepository.setFFZEmotes(channel, it) },
                 onFailure = { getOrEmitFailure { DataLoadingStep.ChannelFFZEmotes(channel, channelId) } },
             )
@@ -207,7 +207,7 @@ class DataRepository(
 
         measureTimeAndLog(logger, "BTTV emotes for #$channel") {
             collectCachedEmotes(
-                flow = cachedEmoteProvider.getBTTVChannelEmotes(channelId, forceNetwork),
+                flow = cachedEmoteProvider.getBTTVChannelEmotes(channelId, channel, forceNetwork),
                 onData = { emoteRepository.setBTTVEmotes(channel, channelDisplayName, it) },
                 onFailure = { getOrEmitFailure { DataLoadingStep.ChannelBTTVEmotes(channel, channelDisplayName, channelId) } },
             )
@@ -225,7 +225,7 @@ class DataRepository(
 
         measureTimeAndLog(logger, "7TV emotes for #$channel") {
             collectCachedEmotes(
-                flow = cachedEmoteProvider.getSevenTVChannelEmotes(channelId, forceNetwork),
+                flow = cachedEmoteProvider.getSevenTVChannelEmotes(channelId, channel, forceNetwork),
                 onData = { result ->
                     if (result.emoteSet?.id != null) {
                         sevenTVEventApiClient.subscribeEmoteSet(result.emoteSet.id)

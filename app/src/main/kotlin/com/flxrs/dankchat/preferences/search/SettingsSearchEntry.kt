@@ -9,6 +9,7 @@ import com.flxrs.dankchat.ui.main.ChatSettings
 import com.flxrs.dankchat.ui.main.CustomCommandsSettings
 import com.flxrs.dankchat.ui.main.DeveloperSettings
 import com.flxrs.dankchat.ui.main.DonationsSettings
+import com.flxrs.dankchat.ui.main.EmoteCacheSettings
 import com.flxrs.dankchat.ui.main.ModerationSettings
 import com.flxrs.dankchat.ui.main.NotificationsSettings
 import com.flxrs.dankchat.ui.main.StreamsSettings
@@ -34,6 +35,7 @@ val settingsSearchIndex =
         SettingsSearchEntry(R.string.custom_user_display_title, UserDisplaySettings),
         SettingsSearchEntry(R.string.moderation_settings_title, ModerationSettings),
         SettingsSearchEntry(R.string.donation_settings_title, DonationsSettings),
+        SettingsSearchEntry(R.string.emote_cache_settings_title, EmoteCacheSettings),
         SettingsSearchEntry(R.string.preference_streams_header, StreamsSettings),
         SettingsSearchEntry(R.string.preference_battery_header, BatterySettings),
         SettingsSearchEntry(R.string.preference_tools_header, ToolsSettings),

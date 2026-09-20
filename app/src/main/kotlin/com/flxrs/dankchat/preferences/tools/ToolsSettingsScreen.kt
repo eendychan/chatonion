@@ -88,6 +88,7 @@ import kotlin.math.roundToInt
 @Composable
 fun ToolsSettingsScreen(
     onNavToImageUploader: () -> Unit,
+    onNavToEmoteCache: () -> Unit,
     onNavToTTSUserIgnoreList: () -> Unit,
     onNavBack: () -> Unit,
 ) {
@@ -98,6 +99,7 @@ fun ToolsSettingsScreen(
         settings = settings,
         onInteraction = { viewModel.onInteraction(it) },
         onNavToImageUploader = onNavToImageUploader,
+        onNavToEmoteCache = onNavToEmoteCache,
         onNavToTTSUserIgnoreList = onNavToTTSUserIgnoreList,
         onNavBack = onNavBack,
     )
@@ -108,6 +110,7 @@ private fun ToolsSettingsScreen(
     settings: ToolsSettingsState,
     onInteraction: (ToolsSettingsInteraction) -> Unit,
     onNavToImageUploader: () -> Unit,
+    onNavToEmoteCache: () -> Unit,
     onNavToTTSUserIgnoreList: () -> Unit,
     onNavBack: () -> Unit,
 ) {
@@ -137,9 +140,23 @@ private fun ToolsSettingsScreen(
         ) {
             ImageUploaderCategory(hasRecentUploads = settings.hasRecentUploads, onNavToImageUploader = onNavToImageUploader)
             HorizontalDivider(thickness = Dp.Hairline)
+            EmoteCacheCategory(onNavToEmoteCache = onNavToEmoteCache)
+            HorizontalDivider(thickness = Dp.Hairline)
             TextToSpeechCategory(settings, onInteraction, onNavToTTSUserIgnoreList)
             NavigationBarSpacer()
         }
+    }
+}
+
+@Composable
+fun EmoteCacheCategory(onNavToEmoteCache: () -> Unit) {
+    PreferenceCategory(title = stringResource(R.string.preference_emote_cache_header)) {
+        PreferenceItem(
+            title = stringResource(R.string.emote_cache_settings_title),
+            summary = stringResource(R.string.preference_emote_cache_configure_summary),
+            onClick = onNavToEmoteCache,
+            trailingIcon = Icons.AutoMirrored.Filled.ArrowForward,
+        )
     }
 }
 
