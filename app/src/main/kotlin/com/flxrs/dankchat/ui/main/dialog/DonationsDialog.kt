@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.webkit.WebViewCompat
+import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import com.flxrs.dankchat.BuildConfig
 import com.flxrs.dankchat.R
@@ -313,7 +313,7 @@ private fun createDonationWebView(
         // Older WebView builds append "X-Requested-With: <package name>" to requests, which WAFs
         // (e.g. Cloudflare) use to detect and block in-app browsers. Disable it where supported.
         if (WebViewFeature.isFeatureSupported(WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST)) {
-            WebViewCompat.setRequestedWithHeaderOriginAllowList(settings, emptySet())
+            WebSettingsCompat.setRequestedWithHeaderOriginAllowList(settings, emptySet())
         }
 
         // Never serve a stale (possibly failed) page cached by an earlier attempt
