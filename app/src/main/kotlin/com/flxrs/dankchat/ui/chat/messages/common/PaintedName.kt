@@ -1,29 +1,28 @@
 package com.flxrs.dankchat.ui.chat.messages.common
 
-import android.graphics.Bitmap
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageShader
-import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
-import coil3.asDrawable
-import coil3.compose.LocalPlatformContext
-import coil3.imageLoader
-import coil3.request.ImageRequest
-import coil3.size.Size
+import coil3.compose.AsyncImage
 import com.flxrs.dankchat.data.twitch.paint.SevenTVPaint
-import kotlin.math.roundToInt
-import androidx.compose.ui.geometry.Size as GeometrySize
 
 const val PAINTED_NAME_INLINE_ID = "PAINTED_NAME"
 
@@ -36,91 +35,131 @@ data class PaintedNameUi(
 
 /**
  * Renders a painted user name. Unlike a brush in a span style — where the shader is sized
- * to the whole message paragraph — here the brush shader receives the exact bounds of the
- * name, so gradients always span the full nickname instead of showing only a slice of it.
+ * to the whole message paragraph — here the name is its own inline element, so paints
+ * always span the exact name bounds. Image paints are masked out of a (possibly animated)
+ * image like CSS background-clip: text, and every drop shadow of the paint is drawn as
+ * its own underlay copy, mirroring the stacked filter: drop-shadow(...) of the web version.
  */
 @Composable
 fun PaintedNameText(
     name: PaintedNameUi,
     fontSize: Float,
-    heightPx: Int,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     val paint = name.paint
-    val imageUrl = paint.imageUrl.takeIf { paint.function == SevenTVPaint.PaintFunction.ImageUrl }
-    val imageBrush = imageUrl?.let { rememberPaintImageBrush(url = it, heightPx = heightPx) }
-
     val spanStyle = paint.toNameSpanStyle(fallbackColor = name.fallbackColor)
-    val brush = imageBrush ?: spanStyle.brush
-    // TextStyle has no constructor accepting both brush and color — they are mutually exclusive
-    val style =
-        if (brush != null) {
-            TextStyle(
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.Bold,
-                brush = brush,
-                shadow = spanStyle.shadow,
-            )
-        } else {
-            TextStyle(
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.Bold,
-                color = spanStyle.color,
-                shadow = spanStyle.shadow,
+    val imageUrl = paint.imageUrl.takeIf { paint.function == SevenTVPaint.PaintFunction.ImageUrl }
+
+    // Taps are handled here instead of through the text layout: an inline placeholder is a
+    // single object-replacement character, so resolving the USER annotation by text offset
+    // only works for taps landing exactly on its edges
+    Box(
+        modifier =
+            Modifier.pointerInput(name.text, paint.id) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onLongPress = { onLongClick() },
+                )
+            },
+    ) {
+        paint.shadows.forEach { shadow ->
+            BasicText(
+                text = name.text,
+                style =
+                    TextStyle(
+                        fontSize = fontSize.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(shadow.argb),
+                        shadow =
+                            Shadow(
+                                color = Color(shadow.argb),
+                                offset = Offset(shadow.xOffset, shadow.yOffset),
+                                blurRadius = shadow.radius,
+                            ),
+                    ),
+                maxLines = 1,
+                softWrap = false,
             )
         }
 
-    BasicText(
-        text = name.text,
-        style = style,
-        maxLines = 1,
-        softWrap = false,
-    )
+        when {
+            imageUrl != null -> ImagePaintedName(name = name, fontSize = fontSize, imageUrl = imageUrl)
+
+            spanStyle.brush != null ->
+                BasicText(
+                    text = name.text,
+                    style =
+                        TextStyle(
+                            fontSize = fontSize.sp,
+                            fontWeight = FontWeight.Bold,
+                            brush = spanStyle.brush,
+                        ),
+                    maxLines = 1,
+                    softWrap = false,
+                )
+
+            else ->
+                BasicText(
+                    text = name.text,
+                    style =
+                        TextStyle(
+                            fontSize = fontSize.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = spanStyle.color,
+                        ),
+                    maxLines = 1,
+                    softWrap = false,
+                )
+        }
+    }
 }
 
 /**
- * Loads the image of an image-based paint and turns it into a horizontally repeating brush,
- * scaled to the line height like in Chatterino7 and the browser extension.
+ * Masks the name out of the paint's image (cover + center, like the 7TV web extension).
+ * The image stays a composable, so animated webp paints keep animating; a plain colored
+ * copy underneath keeps the name readable while the image is loading or failed to load.
  */
 @Composable
-private fun rememberPaintImageBrush(
-    url: String,
-    heightPx: Int,
-): ShaderBrush? {
-    val context = LocalPlatformContext.current
-    val bitmap by produceState<ImageBitmap?>(initialValue = null, url, heightPx) {
-        value =
-            runCatching {
-                val request =
-                    ImageRequest
-                        .Builder(context)
-                        .data(url)
-                        .size(Size.ORIGINAL)
-                        .build()
-                val drawable = context.imageLoader
-                    .execute(request)
-                    .image
-                    ?.asDrawable(context.resources) ?: return@runCatching null
-                val srcWidth = drawable.intrinsicWidth
-                val srcHeight = drawable.intrinsicHeight
-                if (srcWidth <= 0 || srcHeight <= 0 || heightPx <= 0) {
-                    return@runCatching null
-                }
+private fun ImagePaintedName(
+    name: PaintedNameUi,
+    fontSize: Float,
+    imageUrl: String,
+) {
+    val textStyle = TextStyle(fontSize = fontSize.sp, fontWeight = FontWeight.Bold)
+    val textMeasurer = rememberTextMeasurer()
+    val nameLayout = remember(name.text, fontSize) { textMeasurer.measure(AnnotatedString(name.text), style = textStyle) }
 
-                val scaledWidth = (srcWidth * (heightPx.toFloat() / srcHeight)).roundToInt().coerceAtLeast(1)
-                val bitmap = Bitmap.createBitmap(scaledWidth, heightPx, Bitmap.Config.ARGB_8888)
-                drawable.setBounds(0, 0, scaledWidth, heightPx)
-                drawable.draw(android.graphics.Canvas(bitmap))
-                bitmap.asImageBitmap()
-            }.getOrNull()
+    Box {
+        // Keeps the name readable while the image is loading or failed to load
+        BasicText(
+            text = name.text,
+            style = TextStyle(fontSize = fontSize.sp, fontWeight = FontWeight.Bold, color = name.fallbackColor),
+            maxLines = 1,
+            softWrap = false,
+        )
+        Box(
+            modifier =
+                Modifier
+                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                    .drawWithContent {
+                        drawContent()
+                        drawText(nameLayout, color = Color.Black, blendMode = BlendMode.DstIn)
+                    },
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+            // Sizes the box to the name bounds; the glyphs themselves are stamped in the draw pass above
+            BasicText(
+                text = name.text,
+                style = TextStyle(fontSize = fontSize.sp, fontWeight = FontWeight.Bold, color = Color.Transparent),
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
     }
-
-    return bitmap?.let { remember(it) { ImagePaintBrush(it) } }
-}
-
-private class ImagePaintBrush(
-    image: ImageBitmap,
-) : ShaderBrush() {
-    private val shader = ImageShader(image, TileMode.Repeated, TileMode.Clamp)
-
-    override fun createShader(size: GeometrySize): Shader = shader
 }

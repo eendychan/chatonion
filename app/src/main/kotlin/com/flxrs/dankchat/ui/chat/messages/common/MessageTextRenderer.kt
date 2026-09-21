@@ -52,6 +52,8 @@ fun MessageTextWithInlineContent(
     onEmoteClick: (List<EmoteSheetData>) -> Unit,
     modifier: Modifier = Modifier,
     paintedName: PaintedNameUi? = null,
+    onPaintedNameClick: (() -> Unit)? = null,
+    onPaintedNameLongClick: (() -> Unit)? = null,
     onTextLongClick: ((Int) -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
 ) {
@@ -74,7 +76,7 @@ fun MessageTextWithInlineContent(
 
     val badgeSize = emoteBaseHeight(fontSize)
     val inlineContentProviders: ImmutableMap<String, @Composable () -> Unit> =
-        remember(badges, emotes, paintedName, paintedNameDimensions, fontSize, animateGifs) {
+        remember(badges, emotes, paintedName, paintedNameDimensions, fontSize, animateGifs, onPaintedNameClick, onPaintedNameLongClick) {
             buildMap<String, @Composable () -> Unit> {
                 badges.forEach { badge ->
                     put("BADGE_${badge.position}") {
@@ -92,7 +94,8 @@ fun MessageTextWithInlineContent(
                             PaintedNameText(
                                 name = paintedName,
                                 fontSize = fontSize,
-                                heightPx = paintedNameDimensions?.heightPx ?: 0,
+                                onClick = { onPaintedNameClick?.invoke() },
+                                onLongClick = { onPaintedNameLongClick?.invoke() },
                             )
                         }
                     }

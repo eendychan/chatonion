@@ -352,6 +352,18 @@ private fun PrivMessageText(
             message.namePaint?.let { paint ->
                 PaintedNameUi(text = message.nameText, paint = paint, fallbackColor = nameColor)
             },
+        onPaintedNameClick =
+            message.namePaint?.let {
+                {
+                    onUserClick(message.userId?.value, message.userName.value, message.displayName.value, message.channel.value, message.badges, false)
+                }
+            },
+        onPaintedNameLongClick =
+            message.namePaint?.let {
+                {
+                    onUserClick(message.userId?.value, message.userName.value, message.displayName.value, message.channel.value, message.badges, true)
+                }
+            },
         interactionSource = interactionSource,
         onEmoteClick = onEmoteClick,
         onTextClick = { offset ->
