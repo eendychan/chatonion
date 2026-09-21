@@ -10,9 +10,9 @@ enum class BadgeType {
     SharedChat,
     SevenTV,
     Homies,
+    FrankerFaceZ,
+    BetterTTV,
     ;
-
-    // FrankerFaceZ;
 
     companion object {
         fun parseFromBadgeId(id: String): BadgeType = when (id) {

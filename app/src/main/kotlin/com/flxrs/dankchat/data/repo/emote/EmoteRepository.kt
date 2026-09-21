@@ -6,10 +6,12 @@ import androidx.core.graphics.toColorInt
 import com.flxrs.dankchat.data.DisplayName
 import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
+import com.flxrs.dankchat.data.api.bttv.dto.BTTVBadgeDto
 import com.flxrs.dankchat.data.api.bttv.dto.BTTVChannelDto
 import com.flxrs.dankchat.data.api.bttv.dto.BTTVEmoteDto
 import com.flxrs.dankchat.data.api.bttv.dto.BTTVGlobalEmoteDto
 import com.flxrs.dankchat.data.api.dankchat.dto.DankChatBadgeDto
+import com.flxrs.dankchat.data.api.ffz.dto.FFZBadgesDto
 import com.flxrs.dankchat.data.api.ffz.dto.FFZChannelDto
 import com.flxrs.dankchat.data.api.ffz.dto.FFZEmoteDto
 import com.flxrs.dankchat.data.api.ffz.dto.FFZGlobalDto
@@ -77,6 +79,8 @@ class EmoteRepository(
     private val globalBadges = ConcurrentHashMap<String, BadgeSet>()
     private val dankChatBadges = CopyOnWriteArrayList<DankChatBadgeDto>()
     private val homiesBadges = ConcurrentHashMap<UserId, CopyOnWriteArrayList<HomiesBadgeEntry>>()
+    private val ffzUserBadges = ConcurrentHashMap<UserId, ThirdPartyBadgeEntry>()
+    private val bttvUserBadges = ConcurrentHashMap<UserId, ThirdPartyBadgeEntry>()
 
     private val sevenTvChannelDetails = ConcurrentHashMap<UserName, SevenTVUserDetails>()
 
@@ -361,6 +365,12 @@ class EmoteRepository(
                     homiesBadges[userId]?.forEach { homiesBadge ->
                         add(Badge.HomiesBadge(title = homiesBadge.tooltip, url = homiesBadge.url))
                     }
+                    ffzUserBadges[userId]?.let { ffzBadge ->
+                        add(Badge.FFZBadge(title = ffzBadge.tooltip, url = ffzBadge.url))
+                    }
+                    bttvUserBadges[userId]?.let { bttvBadge ->
+                        add(Badge.BTTVBadge(title = bttvBadge.tooltip, url = bttvBadge.url))
+                    }
                 }
             }
 
@@ -386,6 +396,11 @@ class EmoteRepository(
     }
 
     private data class HomiesBadgeEntry(
+        val url: String,
+        val tooltip: String?,
+    )
+
+    private data class ThirdPartyBadgeEntry(
         val url: String,
         val tooltip: String?,
     )
@@ -495,6 +510,24 @@ class EmoteRepository(
             userIds.forEach { userId ->
                 homiesBadges.getOrPut(userId) { CopyOnWriteArrayList() }.add(HomiesBadgeEntry(url = url, tooltip = badge.tooltip))
             }
+        }
+    }
+
+    fun setFfzBadges(dto: FFZBadgesDto) {
+        ffzUserBadges.clear()
+        dto.users.forEach { (badgeId, userIds) ->
+            val badge = dto.badges.find { it.id.toString() == badgeId } ?: return@forEach
+            val url = badge.bestUrl ?: return@forEach
+            userIds.forEach { userId ->
+                ffzUserBadges[userId] = ThirdPartyBadgeEntry(url = url, tooltip = badge.title)
+            }
+        }
+    }
+
+    fun setBttvBadges(dto: List<BTTVBadgeDto>) {
+        bttvUserBadges.clear()
+        dto.forEach { badge ->
+            bttvUserBadges[badge.providerId] = ThirdPartyBadgeEntry(url = badge.badge.svg, tooltip = badge.badge.description)
         }
     }
 

@@ -73,6 +73,8 @@
     <string name="snackbar_data_load_failed_multiple_causes">Data loading failed with multiple errors:\n%1$s</string>
     <string name="data_loading_step_dankchat_badges">DankChat Badges</string>
     <string name="data_loading_step_homies_badges">Chatterino Homies Badges</string>
+    <string name="data_loading_step_ffz_badges">FFZ Badges</string>
+    <string name="data_loading_step_bttv_badges">BTTV Badges</string>
     <string name="data_loading_step_global_badges">Global Badges</string>
     <string name="data_loading_step_global_ffz_emotes">Global FFZ Emotes</string>
     <string name="data_loading_step_global_bttv_emotes">Global BTTV Emotes</string>
@@ -296,6 +298,8 @@
     <string name="user_popup_subscription">Sub tier %1$s — %2$d mo.</string>
     <string name="badge_category_seventv" translatable="false">7TV</string>
     <string name="badge_category_homies" translatable="false">Chatterino Homies</string>
+    <string name="badge_category_ffz" translatable="false">FrankerFaceZ</string>
+    <string name="badge_category_bttv" translatable="false">BetterTTV</string>
     <string name="user_popup_not_following">Not following</string>
     <string name="user_popup_avatar_description">Profile avatar image</string>
     <string name="user_popup_error">Failed to load user data: %1$s</string>

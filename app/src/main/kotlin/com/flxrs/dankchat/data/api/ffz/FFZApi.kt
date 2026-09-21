@@ -10,4 +10,6 @@ class FFZApi(
     suspend fun getChannelEmotes(channelId: UserId) = ktorClient.get("room/id/$channelId")
 
     suspend fun getGlobalEmotes() = ktorClient.get("set/global")
+
+    suspend fun getBadges() = ktorClient.get("badges/ids")
 }

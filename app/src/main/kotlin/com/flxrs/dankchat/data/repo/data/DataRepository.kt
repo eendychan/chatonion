@@ -4,9 +4,11 @@ import com.flxrs.dankchat.data.DisplayName
 import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.api.badges.BadgesApiClient
+import com.flxrs.dankchat.data.api.bttv.BTTVApiClient
 import com.flxrs.dankchat.data.api.cache.CachedEmoteProvider
 import com.flxrs.dankchat.data.api.cache.CachedResult
 import com.flxrs.dankchat.data.api.dankchat.DankChatApiClient
+import com.flxrs.dankchat.data.api.ffz.FFZApiClient
 import com.flxrs.dankchat.data.api.helix.HelixApiClient
 import com.flxrs.dankchat.data.api.helix.dto.StreamDto
 import com.flxrs.dankchat.data.api.helix.dto.UserFollowsDto
@@ -52,6 +54,8 @@ class DataRepository(
     private val helixApiClient: HelixApiClient,
     private val dankChatApiClient: DankChatApiClient,
     private val badgesApiClient: BadgesApiClient,
+    private val ffzApiClient: FFZApiClient,
+    private val bttvApiClient: BTTVApiClient,
     private val cachedEmoteProvider: CachedEmoteProvider,
     private val sevenTVApiClient: SevenTVApiClient,
     private val sevenTVEventApiClient: SevenTVEventApiClient,
@@ -213,6 +217,26 @@ class DataRepository(
                     Result.success(Unit)
                 }
             }
+        }
+    }
+
+    suspend fun loadFFZBadges(): Result<Unit> = withContext(dispatchersProvider.io) {
+        measureTimeAndLog(logger, "FFZ badges") {
+            ffzApiClient
+                .getFFZBadges()
+                .getOrEmitFailure { DataLoadingStep.FFZBadges }
+                .onSuccess { emoteRepository.setFfzBadges(it) }
+                .map { }
+        }
+    }
+
+    suspend fun loadBTTVBadges(): Result<Unit> = withContext(dispatchersProvider.io) {
+        measureTimeAndLog(logger, "BTTV badges") {
+            bttvApiClient
+                .getBTTVBadges()
+                .getOrEmitFailure { DataLoadingStep.BTTVBadges }
+                .onSuccess { emoteRepository.setBttvBadges(it) }
+                .map { }
         }
     }
 

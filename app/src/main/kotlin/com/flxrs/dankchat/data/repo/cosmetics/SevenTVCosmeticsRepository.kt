@@ -187,8 +187,9 @@ class SevenTVCosmeticsRepository(
     fun getBadgeForUser(userId: UserId): SevenTVBadgeCosmetic? = badgeAssignments[userId]?.let(knownBadges::get)
 
     /**
-     * Applies cached cosmetics instantly after a restart: cached users count as already
-     * fetched, so no GraphQL requests are made for them again this session.
+     * Applies cached cosmetics instantly after a restart. Restored users are deliberately
+     * NOT marked as fetched: when they show up in chat, a background GraphQL refresh still
+     * runs once this session, so changed paints/badges update in chat and get re-cached.
      */
     private suspend fun restoreFromCache() {
         if (!emoteCacheSettingsDataStore.current().sevenTvCosmeticsEnabled) {
@@ -209,7 +210,6 @@ class SevenTVCosmeticsRepository(
             if (badge != null) {
                 badgeAssignments.putIfAbsent(UserId(entry.userId), badge.id)
             }
-            fetchedUsers += UserId(entry.userId)
         }
         if (restored.entries.isNotEmpty()) {
             _updates.tryEmit(Unit)

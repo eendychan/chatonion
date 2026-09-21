@@ -1,6 +1,7 @@
 package com.flxrs.dankchat.data.api.ffz
 
 import com.flxrs.dankchat.data.UserId
+import com.flxrs.dankchat.data.api.ffz.dto.FFZBadgesDto
 import com.flxrs.dankchat.data.api.ffz.dto.FFZChannelDto
 import com.flxrs.dankchat.data.api.ffz.dto.FFZGlobalDto
 import com.flxrs.dankchat.data.api.recoverNotFoundWith
@@ -24,6 +25,13 @@ class FFZApiClient(
     suspend fun getFFZGlobalEmotes(): Result<FFZGlobalDto> = runCatching {
         ffzApi
             .getGlobalEmotes()
+            .throwApiErrorOnFailure(json)
+            .body()
+    }
+
+    suspend fun getFFZBadges(): Result<FFZBadgesDto> = runCatching {
+        ffzApi
+            .getBadges()
             .throwApiErrorOnFailure(json)
             .body()
     }

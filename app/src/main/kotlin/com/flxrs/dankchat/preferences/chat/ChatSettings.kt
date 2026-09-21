@@ -34,6 +34,7 @@ data class ChatSettings(
     val showStreamTitleInLiveMessage: Boolean = false,
     val sharedChatMigration: Boolean = false,
     val thirdPartyBadgeMigration: Boolean = false,
+    val thirdPartyBadgeMigrationFfzBttv: Boolean = false,
     val moderationTimeoutDurationsSeconds: List<Long> = DEFAULT_MODERATION_TIMEOUTS,
 ) {
     @Transient
@@ -85,6 +86,8 @@ enum class VisibleBadges {
     SharedChat,
     SevenTV,
     Homies,
+    FrankerFaceZ,
+    BetterTTV,
 }
 
 enum class VisibleThirdPartyEmotes {

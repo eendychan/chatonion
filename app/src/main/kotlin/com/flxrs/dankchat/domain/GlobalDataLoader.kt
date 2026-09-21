@@ -20,6 +20,8 @@ class GlobalDataLoader(
             awaitAll(
                 async { loadDankChatBadges() },
                 async { loadHomiesBadges() },
+                async { loadFFZBadges() },
+                async { loadBTTVBadges() },
                 async { loadGlobalBTTVEmotes() },
                 async { loadGlobalFFZEmotes() },
                 async { loadGlobalSevenTVEmotes() },
@@ -38,6 +40,10 @@ class GlobalDataLoader(
     suspend fun loadDankChatBadges(): Result<Unit> = dataRepository.loadDankChatBadges()
 
     suspend fun loadHomiesBadges(): Result<Unit> = dataRepository.loadHomiesBadges()
+
+    suspend fun loadFFZBadges(): Result<Unit> = dataRepository.loadFFZBadges()
+
+    suspend fun loadBTTVBadges(): Result<Unit> = dataRepository.loadBTTVBadges()
 
     suspend fun loadGlobalBadges(): Result<Unit> = dataRepository.loadGlobalBadges()
 

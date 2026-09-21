@@ -73,6 +73,8 @@
     <string name="snackbar_data_load_failed_multiple_causes">Загрузка данных не удалась из-за нескольких ошибок:\n%1$s</string>
     <string name="data_loading_step_dankchat_badges">Значки DankChat</string>
     <string name="data_loading_step_homies_badges">Значки Chatterino Homies</string>
+    <string name="data_loading_step_ffz_badges">Значки FFZ</string>
+    <string name="data_loading_step_bttv_badges">Значки BTTV</string>
     <string name="data_loading_step_global_badges">Глобальные значки</string>
     <string name="data_loading_step_global_ffz_emotes">Глобальные FFZ-эмоуты</string>
     <string name="data_loading_step_global_bttv_emotes">Глобальные BTTV-эмоуты</string>

@@ -218,6 +218,21 @@ class ChatSettingsDataStore(
             override suspend fun cleanUp() = Unit
         }
 
+    private val thirdPartyBadgeMigrationFfzBttv =
+        object : DataMigration<ChatSettings> {
+            override suspend fun shouldMigrate(currentData: ChatSettings): Boolean = !currentData.thirdPartyBadgeMigrationFfzBttv
+
+            override suspend fun migrate(currentData: ChatSettings): ChatSettings = currentData.copy(
+                visibleBadges = currentData.visibleBadges
+                    .plus(VisibleBadges.FrankerFaceZ)
+                    .plus(VisibleBadges.BetterTTV)
+                    .distinct(),
+                thirdPartyBadgeMigrationFfzBttv = true,
+            )
+
+            override suspend fun cleanUp() = Unit
+        }
+
     private val dataStore =
         createDataStore(
             fileName = "chat",
@@ -225,7 +240,15 @@ class ChatSettingsDataStore(
             defaultValue = ChatSettings(),
             serializer = ChatSettings.serializer(),
             scope = CoroutineScope(dispatchersProvider.io + SupervisorJob()),
-            migrations = listOf(initialMigration, scrollbackResetMigration, sharedChatMigration, thirdPartyBadgeMigration, suggestionTypeMigration),
+            migrations =
+                listOf(
+                    initialMigration,
+                    scrollbackResetMigration,
+                    sharedChatMigration,
+                    thirdPartyBadgeMigration,
+                    thirdPartyBadgeMigrationFfzBttv,
+                    suggestionTypeMigration,
+                ),
         )
 
     val settings = dataStore.safeData(ChatSettings())

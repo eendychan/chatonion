@@ -27,8 +27,8 @@ android {
         applicationId = "com.flxrs.dankchat"
         minSdk = 30
         targetSdk = 36
-        versionCode = 676768
-        versionName = "4.5.0"
+        versionCode = 676767
+        versionName = "4.7.1"
     }
 
     androidResources { generateLocaleConfig = true }
@@ -211,6 +211,7 @@ dependencies {
     // Image loading
     implementation(libs.coil)
     implementation(libs.coil.gif)
+    implementation(libs.coil.svg)
     implementation(libs.coil.ktor)
     implementation(libs.coil.cache.control)
     implementation(libs.coil.compose)

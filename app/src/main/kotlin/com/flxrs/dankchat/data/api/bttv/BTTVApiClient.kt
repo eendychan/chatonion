@@ -1,6 +1,7 @@
 package com.flxrs.dankchat.data.api.bttv
 
 import com.flxrs.dankchat.data.UserId
+import com.flxrs.dankchat.data.api.bttv.dto.BTTVBadgeDto
 import com.flxrs.dankchat.data.api.bttv.dto.BTTVChannelDto
 import com.flxrs.dankchat.data.api.bttv.dto.BTTVGlobalEmoteDto
 import com.flxrs.dankchat.data.api.recoverNotFoundWith
@@ -24,6 +25,13 @@ class BTTVApiClient(
     suspend fun getBTTVGlobalEmotes(): Result<List<BTTVGlobalEmoteDto>> = runCatching {
         bttvApi
             .getGlobalEmotes()
+            .throwApiErrorOnFailure(json)
+            .body()
+    }
+
+    suspend fun getBTTVBadges(): Result<List<BTTVBadgeDto>> = runCatching {
+        bttvApi
+            .getBadges()
             .throwApiErrorOnFailure(json)
             .body()
     }

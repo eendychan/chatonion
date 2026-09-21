@@ -249,6 +249,14 @@ class ChannelDataCoordinator(
                                 globalDataLoader.loadHomiesBadges()
                             }
 
+                            is DataLoadingStep.FFZBadges -> {
+                                globalDataLoader.loadFFZBadges()
+                            }
+
+                            is DataLoadingStep.BTTVBadges -> {
+                                globalDataLoader.loadBTTVBadges()
+                            }
+
                             is DataLoadingStep.TwitchEmotes -> {
                                 val userId = authDataStore.userIdString
                                 if (userId != null) {

@@ -334,6 +334,8 @@ private fun EmotesAndBadgesCategory(
                 .plus(stringResource(R.string.shared_chat))
                 .plus(stringResource(R.string.badge_category_seventv))
                 .plus(stringResource(R.string.badge_category_homies))
+                .plus(stringResource(R.string.badge_category_ffz))
+                .plus(stringResource(R.string.badge_category_bttv))
                 .toImmutableList()
         PreferenceMultiListDialog(
             title = stringResource(R.string.preference_visible_badges_title),

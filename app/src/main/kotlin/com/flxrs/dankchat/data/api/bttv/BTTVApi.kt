@@ -10,4 +10,6 @@ class BTTVApi(
     suspend fun getChannelEmotes(channelId: UserId) = ktorClient.get("users/twitch/$channelId")
 
     suspend fun getGlobalEmotes() = ktorClient.get("emotes/global")
+
+    suspend fun getBadges() = ktorClient.get("badges")
 }

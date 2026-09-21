@@ -11,6 +11,7 @@ import coil3.disk.directory
 import coil3.gif.AnimatedImageDecoder
 import coil3.network.cachecontrol.CacheControlCacheStrategy
 import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.svg.SvgDecoder
 import com.flxrs.dankchat.data.repo.HighlightsRepository
 import com.flxrs.dankchat.data.repo.IgnoresRepository
 import com.flxrs.dankchat.di.DankChatModule
@@ -88,6 +89,8 @@ class DankChatApplication :
         }.components {
             // minSdk 30 guarantees AnimatedImageDecoder support (API 28+)
             add(AnimatedImageDecoder.Factory())
+            // BTTV badges are served as SVG
+            add(SvgDecoder.Factory())
             val client =
                 HttpClient(OkHttp) {
                     install(UserAgent) {
