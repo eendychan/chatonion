@@ -51,14 +51,23 @@ fun PaintedNameText(
 
     val spanStyle = paint.toNameSpanStyle(fallbackColor = name.fallbackColor)
     val brush = imageBrush ?: spanStyle.brush
+    // TextStyle has no constructor accepting both brush and color — they are mutually exclusive
     val style =
-        TextStyle(
-            fontSize = fontSize.sp,
-            fontWeight = FontWeight.Bold,
-            brush = brush,
-            color = if (brush != null) Color.Unspecified else spanStyle.color,
-            shadow = spanStyle.shadow,
-        )
+        if (brush != null) {
+            TextStyle(
+                fontSize = fontSize.sp,
+                fontWeight = FontWeight.Bold,
+                brush = brush,
+                shadow = spanStyle.shadow,
+            )
+        } else {
+            TextStyle(
+                fontSize = fontSize.sp,
+                fontWeight = FontWeight.Bold,
+                color = spanStyle.color,
+                shadow = spanStyle.shadow,
+            )
+        }
 
     BasicText(
         text = name.text,
