@@ -43,6 +43,7 @@ import com.flxrs.dankchat.ui.chat.emote.EmoteSheetData
 import com.flxrs.dankchat.ui.chat.image.ChatMessageImagePreviews
 import com.flxrs.dankchat.ui.chat.messages.common.MessageTextWithInlineContent
 import com.flxrs.dankchat.ui.chat.messages.common.PAINTED_NAME_INLINE_ID
+import com.flxrs.dankchat.ui.chat.messages.common.PaintedMentionUi
 import com.flxrs.dankchat.ui.chat.messages.common.PaintedNameUi
 import com.flxrs.dankchat.ui.chat.messages.common.appendInlineSpacer
 import com.flxrs.dankchat.ui.chat.messages.common.appendWithLinks
@@ -54,6 +55,7 @@ import com.flxrs.dankchat.ui.chat.messages.common.rememberBackgroundColor
 import com.flxrs.dankchat.ui.chat.messages.common.rememberNormalizedColor
 import com.flxrs.dankchat.ui.chat.messages.common.timestampSpanStyle
 import com.flxrs.dankchat.utils.resolve
+import kotlinx.collections.immutable.toImmutableList
 
 /**
  * Renders a regular chat message with:
@@ -232,6 +234,7 @@ private fun PrivMessageText(
             message.nameText,
             message.message,
             message.emotes,
+            message.mentions,
             message.isAction,
             message.namePaint,
             defaultTextColor,
@@ -242,6 +245,41 @@ private fun PrivMessageText(
             fontSize,
         ) {
             buildAnnotatedString {
+                // Highlights mentions of chatters currently in the channel: tinted and bolded
+                // when the chatter has a name color, rendered as painted inline content when
+                // the chatter has a 7TV name paint
+                fun AnnotatedString.Builder.appendWithMentions(
+                    from: Int,
+                    to: Int,
+                ) {
+                    var segmentStart = from
+                    message.mentions
+                        .filter { it.start >= from && it.end <= to }
+                        .sortedBy { it.start }
+                        .forEach { mention ->
+                            if (segmentStart < mention.start) {
+                                appendWithLinks(message.message.substring(segmentStart, mention.start), segmentStart, message.links, linkColor)
+                            }
+                            val mentionText = message.message.substring(mention.start, mention.end)
+                            val paint = mention.paint
+                            val color = mention.color
+                            when {
+                                paint != null -> appendInlineContent("PAINTED_MENTION_${mention.start}", mentionText)
+
+                                color != null ->
+                                    withStyle(SpanStyle(color = Color(color), fontWeight = FontWeight.Bold)) {
+                                        append(mentionText)
+                                    }
+
+                                else -> append(mentionText)
+                            }
+                            segmentStart = mention.end
+                        }
+                    if (segmentStart < to) {
+                        appendWithLinks(message.message.substring(segmentStart, to), segmentStart, message.links, linkColor)
+                    }
+                }
+
                 // Channel prefix (for mention tab)
                 if (showChannelPrefix) {
                     withStyle(
@@ -305,8 +343,7 @@ private fun PrivMessageText(
                     message.emotes.sortedBy { it.position.first }.forEach { emote ->
                         // Text before emote
                         if (currentPos < emote.position.first) {
-                            val segment = message.message.substring(currentPos, emote.position.first)
-                            appendWithLinks(segment, currentPos, message.links, linkColor)
+                            appendWithMentions(currentPos, emote.position.first)
                         }
 
                         // Emote inline content
@@ -335,8 +372,7 @@ private fun PrivMessageText(
 
                     // Remaining text
                     if (currentPos < message.message.length) {
-                        val segment = message.message.substring(currentPos)
-                        appendWithLinks(segment, currentPos, message.links, linkColor)
+                        appendWithMentions(currentPos, message.message.length)
                     }
                 }
             }
@@ -352,6 +388,21 @@ private fun PrivMessageText(
             message.namePaint?.let { paint ->
                 PaintedNameUi(text = message.nameText, paint = paint, fallbackColor = nameColor)
             },
+        paintedMentions =
+            message.mentions
+                .mapNotNull { mention ->
+                    mention.paint?.let { paint ->
+                        PaintedMentionUi(
+                            inlineId = "PAINTED_MENTION_${mention.start}",
+                            name =
+                                PaintedNameUi(
+                                    text = message.message.substring(mention.start, mention.end),
+                                    paint = paint,
+                                    fallbackColor = mention.color?.let(::Color) ?: defaultTextColor,
+                                ),
+                        )
+                    }
+                }.toImmutableList(),
         onPaintedNameClick =
             message.namePaint?.let {
                 {

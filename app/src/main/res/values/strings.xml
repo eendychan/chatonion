@@ -45,7 +45,7 @@
     <string name="snackbar_link_copied">Link copied</string>
     <string name="snackbar_error_copied">Error information copied</string>
     <string name="notification_stop">Stop</string>
-    <string name="notification_title">FeelsDankMan</string>
+    <string name="notification_title">peepoOnion</string>
     <string name="notification_message">chatonion running in the background</string>
     <string name="emote_menu_hint">Open the emote menu</string>
     <string name="no_recent_emotes">No recent emotes</string>
@@ -286,6 +286,8 @@
     <string name="confirm_channel_block_message_named">Are you sure you want to block channel \"%1$s\"?</string>
     <string name="confirm_channel_block_question_named">Block channel \"%1$s\"?</string>
     <string name="user_popup_block">Block</string>
+    <string name="user_popup_pin">Pin card</string>
+    <string name="user_popup_unpin">Unpin card</string>
     <string name="user_popup_unblock">Unblock</string>
     <string name="user_popup_mention">Mention user</string>
     <string name="user_popup_whisper">Whisper user</string>
@@ -450,6 +452,8 @@
     <string name="emote_cache_settings_summary">Caches the 7TV, BTTV and FFZ emote lists on disk so they do not have to be downloaded again. When disabled, emotes are fetched from the network every time. When enabled, channel emotes are cached only on the channels listed below; the global emote sets are cached as long as caching is enabled. Cached lists are refreshed in the background.</string>
     <string name="emote_cache_enabled_title">Enable emote caching</string>
     <string name="emote_cache_enabled_summary">Applies only to the channels listed below</string>
+    <string name="emote_cache_cosmetics_enabled_title">Cache 7TV paints and badges</string>
+    <string name="emote_cache_cosmetics_enabled_summary">Keeps name paints and badges between app launches so they show up instantly</string>
     <string name="emote_cache_channel_label">Channel</string>
     <string name="emote_cache_channel_add">Add channel</string>
     <string name="emote_cache_channel_remove">Remove channel</string>

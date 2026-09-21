@@ -16,6 +16,15 @@ import com.flxrs.dankchat.utils.TextResource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
+/** A mention of an active chatter inside a message, styled with their name color or 7TV paint. */
+@Immutable
+data class MentionUi(
+    val start: Int,
+    val end: Int,
+    val color: Int?,
+    val paint: SevenTVPaint?,
+)
+
 @Immutable
 sealed interface ChatMessageUiState {
     val id: String
@@ -52,6 +61,7 @@ sealed interface ChatMessageUiState {
         val namePaint: SevenTVPaint? = null,
         val nameText: String,
         val message: String,
+        val mentions: ImmutableList<MentionUi> = persistentListOf(),
         val links: ImmutableList<LinkUi>,
         val imageLinks: ImmutableList<ImageLinkUi> = persistentListOf(),
         val emotes: ImmutableList<EmoteUi>,

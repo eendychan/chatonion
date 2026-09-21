@@ -3,9 +3,11 @@ package com.flxrs.dankchat.data.repo.cosmetics
 import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.api.seventv.SevenTVApiClient
+import com.flxrs.dankchat.data.api.seventv.SevenTVUserCosmetics
 import com.flxrs.dankchat.data.twitch.badge.SevenTVBadgeCosmetic
 import com.flxrs.dankchat.data.twitch.paint.SevenTVPaint
 import com.flxrs.dankchat.di.DispatchersProvider
+import com.flxrs.dankchat.preferences.tools.cache.EmoteCacheSettingsDataStore
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -36,6 +38,8 @@ private val logger = KotlinLogging.logger("SevenTVCosmeticsRepository")
 @Single
 class SevenTVCosmeticsRepository(
     private val sevenTVApiClient: SevenTVApiClient,
+    private val emoteCacheSettingsDataStore: EmoteCacheSettingsDataStore,
+    private val cacheDataStore: SevenTVCosmeticsCacheDataStore,
     dispatchersProvider: DispatchersProvider,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatchersProvider.io)
@@ -58,6 +62,9 @@ class SevenTVCosmeticsRepository(
     val updates: SharedFlow<Unit> = _updates.asSharedFlow()
 
     init {
+        scope.launch {
+            restoreFromCache()
+        }
         scope.launch {
             while (isActive) {
                 val batch = mutableListOf(pendingCosmeticRequests.receive())
@@ -113,6 +120,7 @@ class SevenTVCosmeticsRepository(
                         assignBadge(userId, badge.id)
                     }
                 }
+                persistFetched(users, cosmeticsByUser)
             }.onFailure { throwable ->
                 logger.debug(throwable) { "Failed to fetch 7TV user cosmetics" }
                 users.forEach { (userId, _) ->
@@ -177,6 +185,61 @@ class SevenTVCosmeticsRepository(
     fun getPaintForUser(userName: UserName): SevenTVPaint? = paintAssignments[userName.lowercase()]?.let(knownPaints::get)
 
     fun getBadgeForUser(userId: UserId): SevenTVBadgeCosmetic? = badgeAssignments[userId]?.let(knownBadges::get)
+
+    /**
+     * Applies cached cosmetics instantly after a restart: cached users count as already
+     * fetched, so no GraphQL requests are made for them again this session.
+     */
+    private suspend fun restoreFromCache() {
+        if (!emoteCacheSettingsDataStore.current().sevenTvCosmeticsEnabled) {
+            return
+        }
+        val restored = runCatching { cacheDataStore.load() }.getOrNull() ?: return
+        restored.entries.forEach { entry ->
+            val paint = entry.paint?.toDomain()
+            val badge = entry.badge?.toDomain()
+            if (paint == null && badge == null) {
+                return@forEach
+            }
+            paint?.let { knownPaints.putIfAbsent(it.id, it) }
+            badge?.let { knownBadges.putIfAbsent(it.id, it) }
+            if (paint != null) {
+                paintAssignments.putIfAbsent(UserName(entry.userName).lowercase(), paint.id)
+            }
+            if (badge != null) {
+                badgeAssignments.putIfAbsent(UserId(entry.userId), badge.id)
+            }
+            fetchedUsers += UserId(entry.userId)
+        }
+        if (restored.entries.isNotEmpty()) {
+            _updates.tryEmit(Unit)
+        }
+    }
+
+    private fun persistFetched(
+        users: List<Pair<UserId, UserName>>,
+        cosmeticsByUser: Map<UserId, SevenTVUserCosmetics>,
+    ) {
+        if (!emoteCacheSettingsDataStore.current().sevenTvCosmeticsEnabled) {
+            return
+        }
+        val fetchedAt = System.currentTimeMillis()
+        val entries =
+            users.mapNotNull { (userId, userName) ->
+                val cosmetics = cosmeticsByUser[userId] ?: return@mapNotNull null
+                if (cosmetics.paint == null && cosmetics.badge == null) {
+                    return@mapNotNull null
+                }
+                CachedSevenTVCosmetics.Entry(
+                    userId = userId.value,
+                    userName = userName.lowercase().value,
+                    fetchedAt = fetchedAt,
+                    paint = cosmetics.paint?.toCached(),
+                    badge = cosmetics.badge?.toCached(),
+                )
+            }
+        scope.launch { cacheDataStore.merge(entries) }
+    }
 
     companion object {
         private const val BATCH_SIZE = 25

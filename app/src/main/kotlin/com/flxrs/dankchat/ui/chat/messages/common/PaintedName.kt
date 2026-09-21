@@ -8,16 +8,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
@@ -33,6 +30,12 @@ data class PaintedNameUi(
     val fallbackColor: Color,
 )
 
+/** A painted mention of an active chatter inside a message, rendered as inline content. */
+data class PaintedMentionUi(
+    val inlineId: String,
+    val name: PaintedNameUi,
+)
+
 /**
  * Renders a painted user name. Unlike a brush in a span style — where the shader is sized
  * to the whole message paragraph — here the name is its own inline element, so paints
@@ -44,8 +47,8 @@ data class PaintedNameUi(
 fun PaintedNameText(
     name: PaintedNameUi,
     fontSize: Float,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
 ) {
     val paint = name.paint
     val spanStyle = paint.toNameSpanStyle(fallbackColor = name.fallbackColor)
@@ -129,6 +132,7 @@ private fun ImagePaintedName(
     val textStyle = TextStyle(fontSize = fontSize.sp, fontWeight = FontWeight.Bold)
     val textMeasurer = rememberTextMeasurer()
     val nameLayout = remember(name.text, fontSize) { textMeasurer.measure(AnnotatedString(name.text), style = textStyle) }
+    val namePath = remember(nameLayout) { nameLayout.getPathForRange(0, name.text.length) }
 
     Box {
         // Keeps the name readable while the image is loading or failed to load
@@ -138,14 +142,15 @@ private fun ImagePaintedName(
             maxLines = 1,
             softWrap = false,
         )
+        // Clipping to the glyph path works on the plain canvas, unlike blend modes that
+        // depend on an offscreen compositing layer being honored by the device
         Box(
             modifier =
-                Modifier
-                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-                    .drawWithContent {
-                        drawContent()
-                        drawText(nameLayout, color = Color.Black, blendMode = BlendMode.DstIn)
-                    },
+                Modifier.drawWithContent {
+                    clipPath(namePath) {
+                        this@drawWithContent.drawContent()
+                    }
+                },
         ) {
             AsyncImage(
                 model = imageUrl,
@@ -153,7 +158,7 @@ private fun ImagePaintedName(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.matchParentSize(),
             )
-            // Sizes the box to the name bounds; the glyphs themselves are stamped in the draw pass above
+            // Sizes the box to the name bounds; the image is only visible inside the glyphs
             BasicText(
                 text = name.text,
                 style = TextStyle(fontSize = fontSize.sp, fontWeight = FontWeight.Bold, color = Color.Transparent),

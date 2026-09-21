@@ -45,7 +45,7 @@
     <string name="snackbar_link_copied">Ссылка скопирована</string>
     <string name="snackbar_error_copied">Информация об ошибке скопирована</string>
     <string name="notification_stop">Стоп</string>
-    <string name="notification_title">FeelsDankMan</string>
+    <string name="notification_title">peepoOnion</string>
     <string name="notification_message">chatonion работает в фоновом режиме</string>
     <string name="emote_menu_hint">Открыть меню смайлов</string>
     <string name="no_recent_emotes">Нет недавних эмоутов</string>
@@ -298,6 +298,8 @@
     <string name="confirm_channel_block_message_named">Вы уверены, что хотите заблокировать канал \"%1$s\"?</string>
     <string name="confirm_channel_block_question_named">Заблокировать канал \"%1$s\"?</string>
     <string name="user_popup_block">Заблокировать</string>
+    <string name="user_popup_pin">Закрепить карточку</string>
+    <string name="user_popup_unpin">Открепить карточку</string>
     <string name="user_popup_unblock">Разблокировать</string>
     <string name="user_popup_mention">Упомянуть пользователя</string>
     <string name="user_popup_whisper">Написать личное сообщение</string>
@@ -462,6 +464,8 @@
     <string name="emote_cache_settings_summary">Сохраняет списки смайликов 7TV, BTTV и FFZ на диск, чтобы не скачивать их заново. Когда выключено, смайлики загружаются из сети при каждом открытии канала. Когда включено — смайлики каналов кэшируются только на перечисленных ниже каналах, а глобальные наборы кэшируются всегда, пока включено кэширование. Закэшированные списки обновляются в фоне.</string>
     <string name="emote_cache_enabled_title">Включить кэширование смайликов</string>
     <string name="emote_cache_enabled_summary">Действует только на каналы из списка ниже</string>
+    <string name="emote_cache_cosmetics_enabled_title">Кэшировать раскраски и значки 7TV</string>
+    <string name="emote_cache_cosmetics_enabled_summary">Сохраняет раскраски ников и значки между запусками, чтобы они появлялись сразу</string>
     <string name="emote_cache_channel_label">Канал</string>
     <string name="emote_cache_channel_add">Добавить канал</string>
     <string name="emote_cache_channel_remove">Удалить канал</string>

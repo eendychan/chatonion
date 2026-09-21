@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 data class EmoteCacheSettings(
     val enabled: Boolean = false,
     val channels: List<String> = emptyList(),
+    val sevenTvCosmeticsEnabled: Boolean = false,
 ) {
     fun isChannelCached(channel: UserName): Boolean = enabled && channels.any { it.equals(channel.value, ignoreCase = true) }
 }

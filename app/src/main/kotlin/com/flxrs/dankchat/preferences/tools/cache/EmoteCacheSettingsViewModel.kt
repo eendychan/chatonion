@@ -28,6 +28,9 @@ class EmoteCacheSettingsViewModel(
     private val _enabled = MutableStateFlow(emoteCacheSettingsDataStore.current().enabled)
     val enabled: StateFlow<Boolean> = _enabled.asStateFlow()
 
+    private val _cosmeticsEnabled = MutableStateFlow(emoteCacheSettingsDataStore.current().sevenTvCosmeticsEnabled)
+    val cosmeticsEnabled: StateFlow<Boolean> = _cosmeticsEnabled.asStateFlow()
+
     private val _rows = MutableStateFlow<List<EmoteCacheChannelRow>>(emptyList())
     val rows: StateFlow<List<EmoteCacheChannelRow>> = _rows.asStateFlow()
 
@@ -46,6 +49,13 @@ class EmoteCacheSettingsViewModel(
         _enabled.value = enabled
         viewModelScope.launch {
             emoteCacheSettingsDataStore.update { it.copy(enabled = enabled) }
+        }
+    }
+
+    fun setCosmeticsEnabled(enabled: Boolean) {
+        _cosmeticsEnabled.value = enabled
+        viewModelScope.launch {
+            emoteCacheSettingsDataStore.update { it.copy(sevenTvCosmeticsEnabled = enabled) }
         }
     }
 

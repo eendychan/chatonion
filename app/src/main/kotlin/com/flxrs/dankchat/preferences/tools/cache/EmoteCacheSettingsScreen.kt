@@ -42,6 +42,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun EmoteCacheSettingsScreen(onNavBack: () -> Unit) {
     val viewModel = koinViewModel<EmoteCacheSettingsViewModel>()
     val enabled by viewModel.enabled.collectAsStateWithLifecycle()
+    val cosmeticsEnabled by viewModel.cosmeticsEnabled.collectAsStateWithLifecycle()
     val rows by viewModel.rows.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -76,6 +77,12 @@ fun EmoteCacheSettingsScreen(onNavBack: () -> Unit) {
                 summary = stringResource(R.string.emote_cache_enabled_summary),
                 isChecked = enabled,
                 onClick = viewModel::setEnabled,
+            )
+            SwitchPreferenceItem(
+                title = stringResource(R.string.emote_cache_cosmetics_enabled_title),
+                summary = stringResource(R.string.emote_cache_cosmetics_enabled_summary),
+                isChecked = cosmeticsEnabled,
+                onClick = viewModel::setCosmeticsEnabled,
             )
             rows.forEachIndexed { index, row ->
                 EmoteCacheChannelRowItem(

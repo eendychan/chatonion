@@ -11,6 +11,7 @@ import com.flxrs.dankchat.data.auth.StartupValidationHolder
 import com.flxrs.dankchat.data.repo.chat.ChatLoadingFailure
 import com.flxrs.dankchat.data.repo.chat.ChatLoadingStep
 import com.flxrs.dankchat.data.repo.chat.ChatMessageRepository
+import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsCacheDataStore
 import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.repo.data.DataLoadingFailure
 import com.flxrs.dankchat.data.repo.data.DataLoadingStep
@@ -22,6 +23,7 @@ import com.flxrs.dankchat.data.state.ChannelLoadingState
 import com.flxrs.dankchat.data.state.GlobalLoadingState
 import com.flxrs.dankchat.di.DispatchersProvider
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
+import com.flxrs.dankchat.preferences.tools.cache.EmoteCacheSettingsDataStore
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -58,7 +60,15 @@ internal class ChannelDataCoordinatorTest {
     private val chatMessageRepository: ChatMessageRepository = mockk(relaxed = true)
     private val dataRepository: DataRepository = mockk(relaxed = true)
     private val sevenTVApiClient: SevenTVApiClient = mockk()
-    private val sevenTVCosmeticsRepository = SevenTVCosmeticsRepository(sevenTVApiClient, dispatchersProvider)
+    private val emoteCacheSettingsDataStore: EmoteCacheSettingsDataStore = mockk(relaxed = true)
+    private val sevenTVCosmeticsCacheDataStore: SevenTVCosmeticsCacheDataStore = mockk(relaxed = true)
+    private val sevenTVCosmeticsRepository =
+        SevenTVCosmeticsRepository(
+            sevenTVApiClient = sevenTVApiClient,
+            emoteCacheSettingsDataStore = emoteCacheSettingsDataStore,
+            cacheDataStore = sevenTVCosmeticsCacheDataStore,
+            dispatchersProvider = dispatchersProvider,
+        )
     private val authDataStore: AuthDataStore = mockk()
     private val preferenceStore: DankChatPreferenceStore = mockk()
     private val startupValidationHolder = StartupValidationHolder()

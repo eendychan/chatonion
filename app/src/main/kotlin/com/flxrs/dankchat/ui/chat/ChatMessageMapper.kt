@@ -6,6 +6,7 @@ import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.chat.ChatImportance
 import com.flxrs.dankchat.data.chat.ChatItem
+import com.flxrs.dankchat.data.repo.chat.ActiveChattersRepository
 import com.flxrs.dankchat.data.repo.chat.UsersRepository
 import com.flxrs.dankchat.data.repo.cosmetics.SevenTVCosmeticsRepository
 import com.flxrs.dankchat.data.toUserId
@@ -53,6 +54,7 @@ import org.koin.core.annotation.Single
 class ChatMessageMapper(
     private val usersRepository: UsersRepository,
     private val sevenTVCosmeticsRepository: SevenTVCosmeticsRepository,
+    private val activeChattersRepository: ActiveChattersRepository,
 ) {
     fun mapToUiState(
         item: ChatItem,
@@ -663,6 +665,22 @@ class ChatMessageMapper(
         val rawNameColor = resolveNameColor(userDisplay?.color, color, userId, chatSettings)
         val namePaint = sevenTVCosmeticsRepository.getPaintForUser(name)
 
+        // The chatter just spoke, so they are present in chat: remember their name style
+        // for highlighting mentions of them in other messages of this channel
+        activeChattersRepository.registerChatter(
+            channel = channel,
+            userName = name,
+            color = rawNameColor.takeIf { it != Message.DEFAULT_COLOR },
+            paint = namePaint,
+        )
+        val mentions =
+            findActiveChatterMentions(
+                channel = channel,
+                message = message,
+                author = name,
+                emoteRanges = emotes.map { it.position },
+            )
+
         val links = findLinks(message)
         val imageLinks =
             links.mapNotNull { link ->
@@ -689,6 +707,7 @@ class ChatMessageMapper(
             namePaint = namePaint,
             nameText = nameText,
             message = message,
+            mentions = mentions.toImmutableList(),
             links = links.toImmutableList(),
             imageLinks = imageLinks.toImmutableList(),
             emotes = emoteUis,
@@ -838,6 +857,33 @@ class ChatMessageMapper(
         )
     }
 
+    /**
+     * Finds mentions of chatters that are currently active in this channel, so they can be
+     * highlighted with the mentioned user's name color or 7TV paint. Mentions overlapping
+     * emotes and self-mentions are skipped.
+     */
+    private fun findActiveChatterMentions(
+        channel: UserName,
+        message: String,
+        author: UserName,
+        emoteRanges: List<IntRange>,
+    ): List<MentionUi> {
+        val authorName = author.lowercase().value
+        return MENTION_TOKEN_REGEX
+            .findAll(message)
+            .mapNotNull { match ->
+                val lookupName = match.value.removePrefix("@").lowercase()
+                val style = activeChattersRepository.getChatterStyle(channel, lookupName)
+                val range = match.range
+                val overlapsEmote = emoteRanges.any { range.first <= it.last && range.last >= it.first }
+                when {
+                    lookupName == authorName || style == null || overlapsEmote -> null
+                    else -> MentionUi(start = range.first, end = range.last + 1, color = style.color, paint = style.paint)
+                }
+            }.take(MAX_MENTIONS_PER_MESSAGE)
+            .toList()
+    }
+
     private fun resolveNameColor(
         customColor: Int?,
         ircColor: Int?,
@@ -943,6 +989,9 @@ class ChatMessageMapper(
     }
 
     companion object {
+        private val MENTION_TOKEN_REGEX = Regex("@?\\w+")
+        private const val MAX_MENTIONS_PER_MESSAGE = 10
+
         // Highlight colors - Light theme (all dark enough for white text, 80% opacity)
         private val COLOR_SUB_HIGHLIGHT_LIGHT = Color(0xCC7E57C2)
         private val COLOR_MENTION_HIGHLIGHT_LIGHT = Color(0xCCCF5050)

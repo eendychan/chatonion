@@ -37,6 +37,7 @@ import com.flxrs.dankchat.ui.chat.emote.toEmoteSheetData
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
 
 private val logger = KotlinLogging.logger("MessageTextRenderer")
@@ -52,6 +53,7 @@ fun MessageTextWithInlineContent(
     onEmoteClick: (List<EmoteSheetData>) -> Unit,
     modifier: Modifier = Modifier,
     paintedName: PaintedNameUi? = null,
+    paintedMentions: ImmutableList<PaintedMentionUi> = persistentListOf(),
     onPaintedNameClick: (() -> Unit)? = null,
     onPaintedNameLongClick: (() -> Unit)? = null,
     onTextLongClick: ((Int) -> Unit)? = null,
@@ -74,9 +76,21 @@ fun MessageTextWithInlineContent(
             }
         }
 
+    val paintedMentionDimensions =
+        remember(paintedMentions, fontSize) {
+            paintedMentions.associate { mention ->
+                val measured =
+                    textMeasurer.measure(
+                        text = AnnotatedString(mention.name.text),
+                        style = TextStyle(fontSize = fontSize.sp, fontWeight = FontWeight.Bold),
+                    )
+                mention.inlineId to EmoteDimensions(mention.inlineId, measured.size.width, measured.size.height)
+            }
+        }
+
     val badgeSize = emoteBaseHeight(fontSize)
     val inlineContentProviders: ImmutableMap<String, @Composable () -> Unit> =
-        remember(badges, emotes, paintedName, paintedNameDimensions, fontSize, animateGifs, onPaintedNameClick, onPaintedNameLongClick) {
+        remember(badges, emotes, paintedName, paintedMentions, paintedNameDimensions, paintedMentionDimensions, fontSize, animateGifs, onPaintedNameClick, onPaintedNameLongClick) {
             buildMap<String, @Composable () -> Unit> {
                 badges.forEach { badge ->
                     put("BADGE_${badge.position}") {
@@ -96,6 +110,17 @@ fun MessageTextWithInlineContent(
                                 fontSize = fontSize,
                                 onClick = { onPaintedNameClick?.invoke() },
                                 onLongClick = { onPaintedNameLongClick?.invoke() },
+                            )
+                        }
+                    }
+                }
+
+                paintedMentions.forEach { mention ->
+                    put(mention.inlineId) {
+                        key(mention.name.text, mention.name.paint.id) {
+                            PaintedNameText(
+                                name = mention.name,
+                                fontSize = fontSize,
                             )
                         }
                     }
@@ -123,7 +148,7 @@ fun MessageTextWithInlineContent(
     // Unloaded emotes get the loading placeholder size as an estimate so the map is always
     // complete and rows never fall back to subcompose measuring
     val (knownDimensions, hasEstimatedDimensions) =
-        remember(badges, emotes, paintedNameDimensions, fontSize, emoteCoordinator, dimensionRefresh) {
+        remember(badges, emotes, paintedNameDimensions, paintedMentionDimensions, fontSize, emoteCoordinator, dimensionRefresh) {
             var hasEstimates = false
             val dimensions = buildMap {
                 badges.forEach { badge ->
@@ -131,6 +156,7 @@ fun MessageTextWithInlineContent(
                 }
 
                 paintedNameDimensions?.let { put(PAINTED_NAME_INLINE_ID, it) }
+                putAll(paintedMentionDimensions)
 
                 emotes.forEach { emote ->
                     val id = "EMOTE_${emote.position}"
