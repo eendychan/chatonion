@@ -209,6 +209,14 @@ class EmoteRepository(
     }
 
     suspend fun parseEmotesAndBadges(message: Message): Message {
+        // The EventAPI only pushes cosmetics of users with an active 7TV presence, so the
+        // cosmetics of regular chatters are resolved on demand as their messages appear
+        when (message) {
+            is PrivMessage -> message.userId?.let { sevenTVCosmeticsRepository.requestUserCosmetics(it, message.name) }
+            is WhisperMessage -> message.userId?.let { sevenTVCosmeticsRepository.requestUserCosmetics(it, message.name) }
+            else -> Unit
+        }
+
         val replyMentionOffset = (message as? PrivMessage)?.replyMentionOffset ?: 0
         val emoteData = message.emoteData ?: return message
         val (messageString, channel, emotesWithPositions) = emoteData

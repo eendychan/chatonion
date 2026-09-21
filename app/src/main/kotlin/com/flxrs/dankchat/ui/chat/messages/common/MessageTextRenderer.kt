@@ -20,6 +20,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -50,15 +51,30 @@ fun MessageTextWithInlineContent(
     onTextClick: (Int) -> Unit,
     onEmoteClick: (List<EmoteSheetData>) -> Unit,
     modifier: Modifier = Modifier,
+    paintedName: PaintedNameUi? = null,
     onTextLongClick: ((Int) -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val emoteCoordinator = LocalEmoteAnimationCoordinator.current
     val density = LocalDensity.current
+    val textMeasurer = rememberTextMeasurer()
+
+    // The painted name is measured exactly, so its placeholder never needs an estimate
+    val paintedNameDimensions =
+        remember(paintedName, fontSize) {
+            paintedName?.let { name ->
+                val measured =
+                    textMeasurer.measure(
+                        text = AnnotatedString(name.text),
+                        style = TextStyle(fontSize = fontSize.sp, fontWeight = FontWeight.Bold),
+                    )
+                EmoteDimensions(PAINTED_NAME_INLINE_ID, measured.size.width, measured.size.height)
+            }
+        }
 
     val badgeSize = emoteBaseHeight(fontSize)
     val inlineContentProviders: ImmutableMap<String, @Composable () -> Unit> =
-        remember(badges, emotes, fontSize, animateGifs) {
+        remember(badges, emotes, paintedName, paintedNameDimensions, fontSize, animateGifs) {
             buildMap<String, @Composable () -> Unit> {
                 badges.forEach { badge ->
                     put("BADGE_${badge.position}") {
@@ -66,6 +82,18 @@ fun MessageTextWithInlineContent(
                         // prevents a slot reused for a different item from inheriting its state
                         key(badge.position, badge.url) {
                             BadgeInlineContent(badge = badge, size = badgeSize)
+                        }
+                    }
+                }
+
+                if (paintedName != null) {
+                    put(PAINTED_NAME_INLINE_ID) {
+                        key(paintedName.text, paintedName.paint.id) {
+                            PaintedNameText(
+                                name = paintedName,
+                                fontSize = fontSize,
+                                heightPx = paintedNameDimensions?.heightPx ?: 0,
+                            )
                         }
                     }
                 }
@@ -92,12 +120,14 @@ fun MessageTextWithInlineContent(
     // Unloaded emotes get the loading placeholder size as an estimate so the map is always
     // complete and rows never fall back to subcompose measuring
     val (knownDimensions, hasEstimatedDimensions) =
-        remember(badges, emotes, fontSize, emoteCoordinator, dimensionRefresh) {
+        remember(badges, emotes, paintedNameDimensions, fontSize, emoteCoordinator, dimensionRefresh) {
             var hasEstimates = false
             val dimensions = buildMap {
                 badges.forEach { badge ->
                     put("BADGE_${badge.position}", EmoteDimensions("BADGE_${badge.position}", baseHeightPx, baseHeightPx))
                 }
+
+                paintedNameDimensions?.let { put(PAINTED_NAME_INLINE_ID, it) }
 
                 emotes.forEach { emote ->
                     val id = "EMOTE_${emote.position}"

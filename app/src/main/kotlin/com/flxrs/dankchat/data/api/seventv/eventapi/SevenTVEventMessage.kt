@@ -53,7 +53,12 @@ sealed interface SevenTVEventMessage {
     data class Entitlement(
         val kind: String,
         val refId: String,
-        val twitchUserId: UserId?,
-        val twitchUserName: UserName?,
-    )
+        /** All Twitch connections of the entitled user — cosmetics apply to every linked account. */
+        val twitchUsers: List<TwitchConnection>,
+    ) {
+        data class TwitchConnection(
+            val userId: UserId,
+            val userName: UserName,
+        )
+    }
 }

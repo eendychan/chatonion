@@ -13,6 +13,7 @@ data class SevenTVPaint(
     val angleDegrees: Float,
     val stops: List<Stop>,
     val shadows: List<Shadow>,
+    val imageUrl: String? = null,
 ) {
     enum class PaintFunction {
         LinearGradient,

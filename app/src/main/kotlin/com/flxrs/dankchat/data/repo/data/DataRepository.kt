@@ -153,15 +153,15 @@ class DataRepository(
 
     private fun SevenTVEventMessage.Entitlement.assignTo(repository: SevenTVCosmeticsRepository) {
         when (kind) {
-            ENTITLEMENT_KIND_PAINT -> twitchUserName?.let { repository.assignPaint(it, refId) }
-            ENTITLEMENT_KIND_BADGE -> twitchUserId?.let { repository.assignBadge(it, refId) }
+            ENTITLEMENT_KIND_PAINT -> twitchUsers.forEach { repository.assignPaint(it.userName, refId) }
+            ENTITLEMENT_KIND_BADGE -> twitchUsers.forEach { repository.assignBadge(it.userId, refId) }
         }
     }
 
     private fun SevenTVEventMessage.Entitlement.unassignFrom(repository: SevenTVCosmeticsRepository) {
         when (kind) {
-            ENTITLEMENT_KIND_PAINT -> twitchUserName?.let { repository.unassignPaint(it, refId) }
-            ENTITLEMENT_KIND_BADGE -> twitchUserId?.let { repository.unassignBadge(it, refId) }
+            ENTITLEMENT_KIND_PAINT -> twitchUsers.forEach { repository.unassignPaint(it.userName, refId) }
+            ENTITLEMENT_KIND_BADGE -> twitchUsers.forEach { repository.unassignBadge(it.userId, refId) }
         }
     }
 

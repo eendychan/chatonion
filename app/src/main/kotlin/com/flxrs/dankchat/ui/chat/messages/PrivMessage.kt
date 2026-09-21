@@ -42,6 +42,8 @@ import com.flxrs.dankchat.ui.chat.ChatMessageUiState
 import com.flxrs.dankchat.ui.chat.emote.EmoteSheetData
 import com.flxrs.dankchat.ui.chat.image.ChatMessageImagePreviews
 import com.flxrs.dankchat.ui.chat.messages.common.MessageTextWithInlineContent
+import com.flxrs.dankchat.ui.chat.messages.common.PAINTED_NAME_INLINE_ID
+import com.flxrs.dankchat.ui.chat.messages.common.PaintedNameUi
 import com.flxrs.dankchat.ui.chat.messages.common.appendInlineSpacer
 import com.flxrs.dankchat.ui.chat.messages.common.appendWithLinks
 import com.flxrs.dankchat.ui.chat.messages.common.launchCustomTab
@@ -51,7 +53,6 @@ import com.flxrs.dankchat.ui.chat.messages.common.rememberAdaptiveTextColor
 import com.flxrs.dankchat.ui.chat.messages.common.rememberBackgroundColor
 import com.flxrs.dankchat.ui.chat.messages.common.rememberNormalizedColor
 import com.flxrs.dankchat.ui.chat.messages.common.timestampSpanStyle
-import com.flxrs.dankchat.ui.chat.messages.common.toNameSpanStyle
 import com.flxrs.dankchat.utils.resolve
 
 /**
@@ -271,16 +272,23 @@ private fun PrivMessageText(
 
                 // Username with click annotation (only if nameText is not empty)
                 if (showHeader && message.nameText.isNotEmpty()) {
-                    val nameSpanStyle =
-                        message.namePaint?.toNameSpanStyle(fallbackColor = nameColor)
-                            ?: SpanStyle(fontWeight = FontWeight.Bold, color = nameColor)
-                    withStyle(nameSpanStyle) {
-                        pushStringAnnotation(
-                            tag = "USER",
-                            annotation = "${message.userId?.value.orEmpty()}|${message.userName.value}|${message.displayName.value}|${message.channel.value}",
-                        )
-                        append(message.nameText)
-                        pop()
+                    val userAnnotation =
+                        "${message.userId?.value.orEmpty()}|${message.userName.value}|${message.displayName.value}|${message.channel.value}"
+                    when (message.namePaint) {
+                        // Painted names are rendered as inline content so the paint's shader is
+                        // sized to the name itself instead of the whole message paragraph
+                        null ->
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = nameColor)) {
+                                pushStringAnnotation(tag = "USER", annotation = userAnnotation)
+                                append(message.nameText)
+                                pop()
+                            }
+
+                        else -> {
+                            pushStringAnnotation(tag = "USER", annotation = userAnnotation)
+                            appendInlineContent(PAINTED_NAME_INLINE_ID, message.nameText)
+                            pop()
+                        }
                     }
                 }
 
@@ -340,6 +348,10 @@ private fun PrivMessageText(
         emotes = message.emotes,
         fontSize = fontSize,
         animateGifs = animateGifs,
+        paintedName =
+            message.namePaint?.let { paint ->
+                PaintedNameUi(text = message.nameText, paint = paint, fallbackColor = nameColor)
+            },
         interactionSource = interactionSource,
         onEmoteClick = onEmoteClick,
         onTextClick = { offset ->

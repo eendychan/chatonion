@@ -448,12 +448,20 @@ class SevenTVEventApiClient(
         }
 
         val refId = refId ?: return null
-        val twitchConnection = user?.connections?.firstOrNull { it.platform == CONNECTION_PLATFORM_TWITCH }
+        val twitchConnections =
+            user
+                ?.connections
+                ?.filter { it.platform == CONNECTION_PLATFORM_TWITCH }
+                ?.map { SevenTVEventMessage.Entitlement.TwitchConnection(it.id.toUserId(), it.username.toUserName()) }
+                .orEmpty()
+        if (twitchConnections.isEmpty()) {
+            return null
+        }
+
         return SevenTVEventMessage.Entitlement(
             kind = kind,
             refId = refId,
-            twitchUserId = twitchConnection?.id?.toUserId(),
-            twitchUserName = twitchConnection?.username?.toUserName(),
+            twitchUsers = twitchConnections,
         )
     }
 
