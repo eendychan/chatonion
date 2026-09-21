@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -60,8 +61,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import coil3.compose.AsyncImage
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.DisplayName
@@ -114,163 +113,153 @@ fun UserPopupDialog(
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
     // Drag position is tracked locally for smooth 60fps updates, and mirrored to the
-    // view model via onDrag so it survives re-creation (pin toggle, bring-to-front)
+    // view model via onDrag so it survives configuration changes
     var dragOffset by remember { mutableStateOf(offset) }
 
-    Popup(
-        alignment = Alignment.Center,
-        offset = dragOffset,
-        // Pinned cards don't steal touches from the chat, so more cards can be opened
-        properties = PopupProperties(focusable = !isPinned, usePlatformDefaultWidth = false, clippingEnabled = false),
-        onDismissRequest = {
-            // Pinned cards survive taps outside of their bounds
-            if (!isPinned) {
-                onDismiss()
-            }
-        },
+    // The card lives inside the single full-screen overlay of UserPopupSheetContainer,
+    // so pin toggles and z-order changes only recompose it instead of recreating a window
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 8.dp,
+        modifier =
+            Modifier
+                .width(CARD_WIDTH)
+                .offset { dragOffset }
+                .pointerInput(Unit) {
+                    // Tapping a card moves it above the other open cards
+                    detectTapGestures(onTap = { onInteraction() })
+                },
     ) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 8.dp,
-            modifier =
-                Modifier
-                    .width(CARD_WIDTH)
-                    .pointerInput(Unit) {
-                        // Tapping a card moves it above the other open cards
-                        detectTapGestures(onTap = { onInteraction() })
-                    },
-        ) {
-            AnimatedContent(
-                targetState = showBlockConfirmation,
-                label = "UserPopupContent",
-            ) { isBlockConfirmation ->
-                when {
-                    isBlockConfirmation -> {
-                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                            Text(
-                                text = stringResource(R.string.confirm_user_block_message),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            )
+        AnimatedContent(
+            targetState = showBlockConfirmation,
+            label = "UserPopupContent",
+        ) { isBlockConfirmation ->
+            when {
+                isBlockConfirmation -> {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text(
+                            text = stringResource(R.string.confirm_user_block_message),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        )
 
-                            Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-                                OutlinedButton(onClick = { showBlockConfirmation = false }, modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.dialog_cancel))
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Button(
-                                    onClick = {
-                                        onBlockUser()
-                                        showBlockConfirmation = false
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                ) {
-                                    Text(stringResource(R.string.confirm_user_block_positive_button))
-                                }
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                            OutlinedButton(onClick = { showBlockConfirmation = false }, modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.dialog_cancel))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Button(
+                                onClick = {
+                                    onBlockUser()
+                                    showBlockConfirmation = false
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            ) {
+                                Text(stringResource(R.string.confirm_user_block_positive_button))
                             }
                         }
                     }
+                }
 
-                    else -> {
-                        Column {
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    UserBannerHeader(
-                                        state = state,
-                                        isPinned = isPinned,
-                                        onTogglePin = onTogglePin,
-                                        onClose = onDismiss,
-                                        onDrag = { delta ->
-                                            val maxX = (screenWidthPx / 2).roundToInt()
-                                            val maxY = (screenHeightPx / 2).roundToInt()
-                                            val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
-                                            val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
-                                            dragOffset = IntOffset(newX, newY)
-                                            onDrag(dragOffset)
-                                        },
-                                    )
-                                    // Space where the banner fade blends into the solid card color
-                                    Spacer(modifier = Modifier.height(BANNER_FADE_HEIGHT))
-                                }
-
-                                // Avatar + name sit right on the banner-to-card gradient
-                                if (state !is UserPopupState.Error) {
-                                    Box(
-                                        modifier =
-                                            Modifier
-                                                .align(Alignment.TopCenter)
-                                                .padding(top = BANNER_HEIGHT - IDENTITY_OVERLAP),
-                                    ) {
-                                        UserIdentitySection(state = state, onOpenChannel = onOpenChannel)
-                                    }
-                                }
+                else -> {
+                    Column {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                UserBannerHeader(
+                                    state = state,
+                                    isPinned = isPinned,
+                                    onTogglePin = onTogglePin,
+                                    onClose = onDismiss,
+                                    onDrag = { delta ->
+                                        val maxX = (screenWidthPx / 2).roundToInt()
+                                        val maxY = (screenHeightPx / 2).roundToInt()
+                                        val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
+                                        val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
+                                        dragOffset = IntOffset(newX, newY)
+                                        onDrag(dragOffset)
+                                    },
+                                )
+                                // Space where the banner fade blends into the solid card color
+                                Spacer(modifier = Modifier.height(BANNER_FADE_HEIGHT))
                             }
 
-                            when (state) {
-                                is UserPopupState.Error -> {
-                                    SheetErrorContent()
+                            // Avatar + name sit right on the banner-to-card gradient
+                            if (state !is UserPopupState.Error) {
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.TopCenter)
+                                            .padding(top = BANNER_HEIGHT - IDENTITY_OVERLAP),
+                                ) {
+                                    UserIdentitySection(state = state, onOpenChannel = onOpenChannel)
                                 }
+                            }
+                        }
 
-                                else -> {
-                                    val userName = state.userName
-                                    val displayName = state.displayName
-                                    val isSuccess = state is UserPopupState.Success
-                                    val isLoggedIn = state !is UserPopupState.NotLoggedIn
-                                    val isBlocked = (state as? UserPopupState.Success)?.isBlocked == true
+                        when (state) {
+                            is UserPopupState.Error -> {
+                                SheetErrorContent()
+                            }
 
-                                    UserActionsRow(
-                                        isLoggedIn = isLoggedIn,
-                                        isOwnUser = isOwnUser,
-                                        isSuccess = isSuccess,
-                                        isBlocked = isBlocked,
-                                        onMention =
-                                            onMention?.let { callback ->
-                                                {
-                                                    callback(userName.value, displayName.value)
-                                                    onDismiss()
-                                                }
-                                            },
-                                        onWhisper =
-                                            onWhisper?.let { callback ->
-                                                {
-                                                    callback(userName.value)
-                                                    onDismiss()
-                                                }
-                                            },
-                                        onHistory =
-                                            (onViewHistory ?: onMessageHistory)?.let { callback ->
-                                                {
-                                                    callback(userName.value)
-                                                    onDismiss()
-                                                }
-                                            },
-                                        onBlockToggle = {
-                                            when {
-                                                isBlocked -> onUnblockUser()
-                                                else -> showBlockConfirmation = true
+                            else -> {
+                                val userName = state.userName
+                                val displayName = state.displayName
+                                val isSuccess = state is UserPopupState.Success
+                                val isLoggedIn = state !is UserPopupState.NotLoggedIn
+                                val isBlocked = (state as? UserPopupState.Success)?.isBlocked == true
+
+                                UserActionsRow(
+                                    isLoggedIn = isLoggedIn,
+                                    isOwnUser = isOwnUser,
+                                    isSuccess = isSuccess,
+                                    isBlocked = isBlocked,
+                                    onMention =
+                                        onMention?.let { callback ->
+                                            {
+                                                callback(userName.value, displayName.value)
+                                                onDismiss()
                                             }
                                         },
-                                        onReport = {
-                                            onReport(userName.value)
-                                            onDismiss()
+                                    onWhisper =
+                                        onWhisper?.let { callback ->
+                                            {
+                                                callback(userName.value)
+                                                onDismiss()
+                                            }
                                         },
+                                    onHistory =
+                                        (onViewHistory ?: onMessageHistory)?.let { callback ->
+                                            {
+                                                callback(userName.value)
+                                                onDismiss()
+                                            }
+                                        },
+                                    onBlockToggle = {
+                                        when {
+                                            isBlocked -> onUnblockUser()
+                                            else -> showBlockConfirmation = true
+                                        }
+                                    },
+                                    onReport = {
+                                        onReport(userName.value)
+                                        onDismiss()
+                                    },
+                                )
+
+                                if (canModerate && isSuccess && !isOwnUser) {
+                                    ModeratorActionsRow(
+                                        timeoutDurationsSeconds = timeoutDurationsSeconds,
+                                        onBanUser = onBanUser,
+                                        onUnbanUser = onUnbanUser,
+                                        onTimeoutUser = onTimeoutUser,
                                     )
-
-                                    if (canModerate && isSuccess && !isOwnUser) {
-                                        ModeratorActionsRow(
-                                            timeoutDurationsSeconds = timeoutDurationsSeconds,
-                                            onBanUser = onBanUser,
-                                            onUnbanUser = onUnbanUser,
-                                            onTimeoutUser = onTimeoutUser,
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(12.dp))
                                 }
+
+                                Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
                     }
@@ -330,26 +319,24 @@ private fun UserBannerHeader(
             )
         }
 
-        Row(modifier = Modifier.align(Alignment.TopEnd).padding(2.dp)) {
-            val buttonTint =
-                when {
-                    bannerUrl != null -> Color.White
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            IconButton(onClick = onTogglePin) {
-                Icon(
-                    imageVector = Icons.Default.PushPin,
-                    contentDescription = stringResource(if (isPinned) R.string.user_popup_unpin else R.string.user_popup_pin),
-                    tint = if (isPinned) MaterialTheme.colorScheme.primary else buttonTint,
-                )
+        val buttonTint =
+            when {
+                bannerUrl != null -> Color.White
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             }
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.user_popup_close),
-                    tint = buttonTint,
-                )
-            }
+        IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopStart).padding(2.dp)) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.user_popup_close),
+                tint = buttonTint,
+            )
+        }
+        IconButton(onClick = onTogglePin, modifier = Modifier.align(Alignment.TopEnd).padding(2.dp)) {
+            Icon(
+                imageVector = Icons.Default.PushPin,
+                contentDescription = stringResource(if (isPinned) R.string.user_popup_unpin else R.string.user_popup_pin),
+                tint = if (isPinned) MaterialTheme.colorScheme.primary else buttonTint,
+            )
         }
     }
 }

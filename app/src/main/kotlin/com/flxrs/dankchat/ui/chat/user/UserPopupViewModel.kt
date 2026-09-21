@@ -32,7 +32,7 @@ data class UserPopupUiState(
     val isOwnUser: Boolean,
     val canModerate: Boolean,
     val isPinned: Boolean = false,
-    // Bumping the sequence re-creates the card's popup window, moving it above the others
+    // Cards render in z-sequence order inside a single overlay, so a higher node draws on top
     val zSequence: Long = 0L,
     val offsetX: Int = 0,
     val offsetY: Int = 0,
@@ -72,11 +72,11 @@ class UserPopupViewModel(
         cards.map { card -> if (card.id == cardId) card.copy(isPinned = !card.isPinned) else card }
     }
 
-    /** Re-creates the card's window via a key change so it renders above all other cards. */
+    /** Bumps the card's z-sequence so it renders above all other cards in the overlay. */
     fun bringToFront(cardId: Long) {
         val cards = _states.value
         val card = cards.find { it.id == cardId } ?: return
-        // The card with the highest z-sequence is already on top, a re-creation would just flicker
+        // The card with the highest z-sequence is already on top, a recomposition would just flicker
         if (cards.all { it.id == cardId || it.zSequence < card.zSequence }) {
             return
         }
