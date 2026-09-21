@@ -290,6 +290,7 @@
     <string name="user_popup_block">Block</string>
     <string name="user_popup_pin">Pin card</string>
     <string name="user_popup_unpin">Unpin card</string>
+    <string name="user_popup_close">Close card</string>
     <string name="user_popup_unblock">Unblock</string>
     <string name="user_popup_mention">Mention user</string>
     <string name="user_popup_whisper">Whisper user</string>

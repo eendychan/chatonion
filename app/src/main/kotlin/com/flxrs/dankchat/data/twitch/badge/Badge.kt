@@ -70,6 +70,7 @@ sealed class Badge : Parcelable {
     data class FFZBadge(
         override val title: String?,
         override val url: String,
+        val backgroundColor: Int? = null,
         override val badgeTag: String? = null,
         override val badgeInfo: String? = null,
         override val type: BadgeType = BadgeType.FrankerFaceZ,

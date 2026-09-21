@@ -5,12 +5,14 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -70,7 +73,10 @@ import kotlin.math.roundToInt
 
 private val CARD_WIDTH = 320.dp
 private val BANNER_HEIGHT = 64.dp
-private val BANNER_GRADIENT_HEIGHT = 52.dp
+private val BANNER_FADE_HEIGHT = 52.dp
+
+// Where the card-color fade starts on the banner (top part stays fully visible)
+private const val BANNER_FADE_START_FRACTION = 0.35f
 
 // How far the identity row (avatar + name) reaches into the banner area,
 // so it sits right on the banner-to-card gradient
@@ -82,6 +88,11 @@ fun UserPopupDialog(
     onBlockUser: () -> Unit,
     onUnblockUser: () -> Unit,
     onDismiss: () -> Unit,
+    onTogglePin: () -> Unit,
+    onInteraction: () -> Unit,
+    onDrag: (IntOffset) -> Unit,
+    offset: IntOffset,
+    isPinned: Boolean,
     onOpenChannel: (String) -> Unit,
     onReport: (String) -> Unit,
     onMention: ((String, String) -> Unit)? = null,
@@ -101,19 +112,34 @@ fun UserPopupDialog(
     val configuration = LocalConfiguration.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
-    var dragOffset by remember { mutableStateOf(IntOffset.Zero) }
+
+    // Drag position is tracked locally for smooth 60fps updates, and mirrored to the
+    // view model via onDrag so it survives re-creation (pin toggle, bring-to-front)
+    var dragOffset by remember { mutableStateOf(offset) }
 
     Popup(
         alignment = Alignment.Center,
         offset = dragOffset,
-        properties = PopupProperties(focusable = true, usePlatformDefaultWidth = false, clippingEnabled = false),
-        onDismissRequest = onDismiss,
+        // Pinned cards don't steal touches from the chat, so more cards can be opened
+        properties = PopupProperties(focusable = !isPinned, usePlatformDefaultWidth = false, clippingEnabled = false),
+        onDismissRequest = {
+            // Pinned cards survive taps outside of their bounds
+            if (!isPinned) {
+                onDismiss()
+            }
+        },
     ) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             shadowElevation = 8.dp,
-            modifier = Modifier.width(CARD_WIDTH),
+            modifier =
+                Modifier
+                    .width(CARD_WIDTH)
+                    .pointerInput(Unit) {
+                        // Tapping a card moves it above the other open cards
+                        detectTapGestures(onTap = { onInteraction() })
+                    },
         ) {
             AnimatedContent(
                 targetState = showBlockConfirmation,
@@ -155,27 +181,20 @@ fun UserPopupDialog(
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     UserBannerHeader(
                                         state = state,
-                                        onDismiss = onDismiss,
+                                        isPinned = isPinned,
+                                        onTogglePin = onTogglePin,
+                                        onClose = onDismiss,
                                         onDrag = { delta ->
                                             val maxX = (screenWidthPx / 2).roundToInt()
                                             val maxY = (screenHeightPx / 2).roundToInt()
                                             val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
                                             val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
                                             dragOffset = IntOffset(newX, newY)
+                                            onDrag(dragOffset)
                                         },
                                     )
-                                    // Soft shade transitioning from the banner into the solid card color
-                                    Box(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(BANNER_GRADIENT_HEIGHT)
-                                                .background(
-                                                    Brush.verticalGradient(
-                                                        listOf(Color.Transparent, MaterialTheme.colorScheme.surfaceContainerHigh),
-                                                    ),
-                                                ),
-                                    )
+                                    // Space where the banner fade blends into the solid card color
+                                    Spacer(modifier = Modifier.height(BANNER_FADE_HEIGHT))
                                 }
 
                                 // Avatar + name sit right on the banner-to-card gradient
@@ -264,7 +283,9 @@ fun UserPopupDialog(
 @Composable
 private fun UserBannerHeader(
     state: UserPopupState,
-    onDismiss: () -> Unit,
+    isPinned: Boolean,
+    onTogglePin: () -> Unit,
+    onClose: () -> Unit,
     onDrag: (Offset) -> Unit,
 ) {
     // The Twitch profile banner comes from ivr.fi, the Helix offline image is the fallback
@@ -293,14 +314,42 @@ private fun UserBannerHeader(
             )
             // Darken the banner so the avatar/name stay readable on top of it
             Box(modifier = Modifier.fillMaxWidth().height(64.dp).background(Color.Black.copy(alpha = 0.45f)))
+            // The card's solid color fades in over the lower part of the banner, so the
+            // banner blends smoothly into the card without being covered entirely
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                BANNER_FADE_START_FRACTION to Color.Transparent,
+                                1f to MaterialTheme.colorScheme.surfaceContainerHigh,
+                            ),
+                        ),
+            )
         }
 
-        IconButton(onClick = onDismiss, modifier = Modifier.padding(2.dp)) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = stringResource(R.string.dialog_dismiss),
-                tint = if (bannerUrl != null) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Row(modifier = Modifier.align(Alignment.TopEnd).padding(2.dp)) {
+            val buttonTint =
+                when {
+                    bannerUrl != null -> Color.White
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            IconButton(onClick = onTogglePin) {
+                Icon(
+                    imageVector = Icons.Default.PushPin,
+                    contentDescription = stringResource(if (isPinned) R.string.user_popup_unpin else R.string.user_popup_pin),
+                    tint = if (isPinned) MaterialTheme.colorScheme.primary else buttonTint,
+                )
+            }
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.user_popup_close),
+                    tint = buttonTint,
+                )
+            }
         }
     }
 }

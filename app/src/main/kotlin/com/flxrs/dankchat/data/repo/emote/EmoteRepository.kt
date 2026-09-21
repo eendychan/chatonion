@@ -366,7 +366,7 @@ class EmoteRepository(
                         add(Badge.HomiesBadge(title = homiesBadge.tooltip, url = homiesBadge.url))
                     }
                     ffzUserBadges[userId]?.let { ffzBadge ->
-                        add(Badge.FFZBadge(title = ffzBadge.tooltip, url = ffzBadge.url))
+                        add(Badge.FFZBadge(title = ffzBadge.tooltip, url = ffzBadge.url, backgroundColor = ffzBadge.backgroundColor))
                     }
                     bttvUserBadges[userId]?.let { bttvBadge ->
                         add(Badge.BTTVBadge(title = bttvBadge.tooltip, url = bttvBadge.url))
@@ -403,6 +403,7 @@ class EmoteRepository(
     private data class ThirdPartyBadgeEntry(
         val url: String,
         val tooltip: String?,
+        val backgroundColor: Int? = null,
     )
 
     private data class CachedEmoteMap(
@@ -518,8 +519,9 @@ class EmoteRepository(
         dto.users.forEach { (badgeId, userIds) ->
             val badge = dto.badges.find { it.id.toString() == badgeId } ?: return@forEach
             val url = badge.bestUrl ?: return@forEach
+            val backgroundColor = badge.color?.let { runCatching { it.toColorInt() }.getOrNull() }
             userIds.forEach { userId ->
-                ffzUserBadges[userId] = ThirdPartyBadgeEntry(url = url, tooltip = badge.title)
+                ffzUserBadges[userId] = ThirdPartyBadgeEntry(url = url, tooltip = badge.title, backgroundColor = backgroundColor)
             }
         }
     }

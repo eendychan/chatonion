@@ -302,6 +302,7 @@
     <string name="user_popup_block">Заблокировать</string>
     <string name="user_popup_pin">Закрепить карточку</string>
     <string name="user_popup_unpin">Открепить карточку</string>
+    <string name="user_popup_close">Закрыть карточку</string>
     <string name="user_popup_unblock">Разблокировать</string>
     <string name="user_popup_mention">Упомянуть пользователя</string>
     <string name="user_popup_whisper">Написать личное сообщение</string>

@@ -28,7 +28,7 @@ android {
         minSdk = 30
         targetSdk = 36
         versionCode = 676767
-        versionName = "4.7.1"
+        versionName = "4.8.0"
     }
 
     androidResources { generateLocaleConfig = true }

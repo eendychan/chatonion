@@ -21,6 +21,8 @@ data class FFZBadgeDto(
     @SerialName(value = "title") val title: String,
     @SerialName(value = "image") val image: String? = null,
     @SerialName(value = "urls") val urls: Map<String, String> = emptyMap(),
+    // Background color the badge is meant to be rendered on, e.g. "#755000"
+    @SerialName(value = "color") val color: String? = null,
 ) {
     val bestUrl: String? get() = urls["2"] ?: urls["1"] ?: image
 }
