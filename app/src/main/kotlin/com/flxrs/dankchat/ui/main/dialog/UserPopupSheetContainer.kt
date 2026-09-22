@@ -25,18 +25,17 @@ import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetState
 import com.flxrs.dankchat.ui.main.sheet.SheetNavigationViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
-// Card is centered by the popup window itself, offset by however far it's been dragged.
-// Dragging moves the window itself (see UserPopupDialog) rather than offsetting content
-// inside a fixed-size window, so the card is never clipped by its own window bounds.
-private fun centeredPopupPositionProvider(cardOffset: IntOffset) = object : PopupPositionProvider {
+// Card is centered by the popup window itself; dragging is handled entirely inside
+// UserPopupDialog via its own local offset, so this only ever needs to center content once.
+private object CenteredPopupPositionProvider : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize,
     ): IntOffset = IntOffset(
-        x = (windowSize.width - popupContentSize.width) / 2 + cardOffset.x,
-        y = (windowSize.height - popupContentSize.height) / 2 + cardOffset.y,
+        x = (windowSize.width - popupContentSize.width) / 2,
+        y = (windowSize.height - popupContentSize.height) / 2,
     )
 }
 
@@ -80,7 +79,6 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
         // so recreating is what actually moves it to the top - reordering the composition alone
         // wouldn't restack windows that already exist.
         key(card.id, card.zSequence) {
-            val cardOffset = IntOffset(card.offsetX, card.offsetY)
             val dismissOnOutsideTap = !card.isPinned
             val popupProperties = remember(dismissOnOutsideTap) {
                 PopupProperties(
@@ -91,18 +89,15 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
                     usePlatformDefaultWidth = false,
                 )
             }
-            // New provider instance whenever the offset changes is what tells Popup to
-            // actually reposition its window - it compares by reference/equality, not by content.
-            val positionProvider = remember(cardOffset) { centeredPopupPositionProvider(cardOffset) }
             Popup(
-                popupPositionProvider = positionProvider,
+                popupPositionProvider = CenteredPopupPositionProvider,
                 onDismissRequest = { userPopupViewModel.dismiss(card.id) },
                 properties = popupProperties,
             ) {
                 UserPopupDialog(
                     state = card.popupState,
                     isPinned = card.isPinned,
-                    offset = cardOffset,
+                    offset = IntOffset(card.offsetX, card.offsetY),
                     onDrag = { newOffset -> userPopupViewModel.updateOffset(card.id, newOffset.x, newOffset.y) },
                     onTogglePin = { userPopupViewModel.togglePin(card.id) },
                     onInteraction = { userPopupViewModel.bringToFront(card.id) },
