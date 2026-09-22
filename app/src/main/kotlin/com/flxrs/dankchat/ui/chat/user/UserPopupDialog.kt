@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,12 +53,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.flxrs.dankchat.R
@@ -112,12 +113,14 @@ fun UserPopupDialog(
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-    // Drag position is tracked locally for smooth 60fps updates, and mirrored to the
-    // view model via onDrag so it survives configuration changes
-    var dragOffset by remember { mutableStateOf(offset) }
+    // The card's own measured size, so the drag clamp keeps the whole card on screen
+    // (not just its center) regardless of how tall its content ends up being.
+    var cardSize by remember { mutableStateOf(IntSize.Zero) }
 
-    // The card lives inside the single full-screen overlay of UserPopupSheetContainer,
-    // so pin toggles and z-order changes only recompose it instead of recreating a window
+    // This card is its own top-level window now (see UserPopupSheetContainer): the window
+    // itself is moved to follow the drag via the popup's position provider, so this composable
+    // must NOT also offset its content internally - doing both clips the card against its own
+    // window bounds as soon as it's dragged away from its initial position.
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -125,7 +128,7 @@ fun UserPopupDialog(
         modifier =
             Modifier
                 .width(CARD_WIDTH)
-                .offset { dragOffset }
+                .onSizeChanged { cardSize = it }
                 .pointerInput(Unit) {
                     // Tapping a card moves it above the other open cards
                     detectTapGestures(onTap = { onInteraction() })
@@ -175,12 +178,14 @@ fun UserPopupDialog(
                                     onTogglePin = onTogglePin,
                                     onClose = onDismiss,
                                     onDrag = { delta ->
-                                        val maxX = (screenWidthPx / 2).roundToInt()
-                                        val maxY = (screenHeightPx / 2).roundToInt()
-                                        val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
-                                        val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
-                                        dragOffset = IntOffset(newX, newY)
-                                        onDrag(dragOffset)
+                                        // Clamp against the card's real size so the whole card stays
+                                        // on screen (previously only the center point was clamped,
+                                        // letting up to half the card hang off the edge).
+                                        val maxX = ((screenWidthPx - cardSize.width) / 2).roundToInt().coerceAtLeast(0)
+                                        val maxY = ((screenHeightPx - cardSize.height) / 2).roundToInt().coerceAtLeast(0)
+                                        val newX = (offset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
+                                        val newY = (offset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
+                                        onDrag(IntOffset(newX, newY))
                                     },
                                 )
                                 // Space where the banner fade blends into the solid card color
