@@ -64,7 +64,7 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
                             Modifier.pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
-                                        currentCards.filter { !it.isPinned }.forEach { userPopupViewModel.dismiss(it.id) }
+                                        currentCards.filter { card -> !card.isPinned }.forEach { card -> userPopupViewModel.dismiss(card.id) }
                                     },
                                 )
                             }
