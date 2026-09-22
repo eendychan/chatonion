@@ -25,17 +25,18 @@ import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetState
 import com.flxrs.dankchat.ui.main.sheet.SheetNavigationViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
-// Card is centered by the popup window itself; dragging afterwards is handled entirely inside
-// UserPopupDialog via its own local offset, so this provider only ever needs to center content.
-private object CenteredPopupPositionProvider : PopupPositionProvider {
+// Card is centered by the popup window itself, offset by however far it's been dragged.
+// Dragging moves the window itself (see UserPopupDialog) rather than offsetting content
+// inside a fixed-size window, so the card is never clipped by its own window bounds.
+private fun centeredPopupPositionProvider(cardOffset: IntOffset) = object : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize,
     ): IntOffset = IntOffset(
-        x = (windowSize.width - popupContentSize.width) / 2,
-        y = (windowSize.height - popupContentSize.height) / 2,
+        x = (windowSize.width - popupContentSize.width) / 2 + cardOffset.x,
+        y = (windowSize.height - popupContentSize.height) / 2 + cardOffset.y,
     )
 }
 
@@ -69,12 +70,17 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
     // Each card gets its OWN window, sized to just that card - not one window covering the whole
     // screen. That keeps every pixel outside the card(s) free of any popup window, so taps there
     // reach the chat/stream underneath normally, letting you interact with anything outside the
-    // card (or open more cards) even while one is pinned. Windows still draw above the WebView
-    // stream player regardless, since each is its own Android window on top of the host window.
-    // At most one transient card exists at a time (show() clears prior unpinned ones), so per-card
-    // "dismiss on outside tap" can never cross-dismiss a second transient card.
+    // card - or open/pin any number of additional cards - even while one is pinned. Windows still
+    // draw above the WebView stream player regardless, since each is its own Android window on
+    // top of the host window. At most one transient card exists at a time (show() clears prior
+    // unpinned ones), so per-card "dismiss on outside tap" can never cross-dismiss a second one.
     cards.sortedBy { it.zSequence }.forEach { card ->
-        key(card.id) {
+        // Keying on zSequence (not just id) tears down and recreates this card's window whenever
+        // it's brought to front. Android stacks newly-added sibling windows above existing ones,
+        // so recreating is what actually moves it to the top - reordering the composition alone
+        // wouldn't restack windows that already exist.
+        key(card.id, card.zSequence) {
+            val cardOffset = IntOffset(card.offsetX, card.offsetY)
             val dismissOnOutsideTap = !card.isPinned
             val popupProperties = remember(dismissOnOutsideTap) {
                 PopupProperties(
@@ -85,15 +91,18 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
                     usePlatformDefaultWidth = false,
                 )
             }
+            // New provider instance whenever the offset changes is what tells Popup to
+            // actually reposition its window - it compares by reference/equality, not by content.
+            val positionProvider = remember(cardOffset) { centeredPopupPositionProvider(cardOffset) }
             Popup(
-                popupPositionProvider = CenteredPopupPositionProvider,
+                popupPositionProvider = positionProvider,
                 onDismissRequest = { userPopupViewModel.dismiss(card.id) },
                 properties = popupProperties,
             ) {
                 UserPopupDialog(
                     state = card.popupState,
                     isPinned = card.isPinned,
-                    offset = IntOffset(card.offsetX, card.offsetY),
+                    offset = cardOffset,
                     onDrag = { newOffset -> userPopupViewModel.updateOffset(card.id, newOffset.x, newOffset.y) },
                     onTogglePin = { userPopupViewModel.togglePin(card.id) },
                     onInteraction = { userPopupViewModel.bringToFront(card.id) },
