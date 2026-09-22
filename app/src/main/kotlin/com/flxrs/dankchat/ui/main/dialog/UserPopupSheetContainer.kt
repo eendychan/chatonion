@@ -1,18 +1,17 @@
 package com.flxrs.dankchat.ui.main.dialog
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flxrs.dankchat.data.DisplayName
@@ -25,6 +24,20 @@ import com.flxrs.dankchat.ui.main.input.ChatInputViewModel
 import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetState
 import com.flxrs.dankchat.ui.main.sheet.SheetNavigationViewModel
 import org.koin.compose.viewmodel.koinViewModel
+
+// Card is centered by the popup window itself; dragging afterwards is handled entirely inside
+// UserPopupDialog via its own local offset, so this provider only ever needs to center content.
+private object CenteredPopupPositionProvider : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset = IntOffset(
+        x = (windowSize.width - popupContentSize.width) / 2,
+        y = (windowSize.height - popupContentSize.height) / 2,
+    )
+}
 
 @Composable
 fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
@@ -43,110 +56,93 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
         return
     }
 
-    // All cards live in a single overlay, so pin toggles and z-order changes only
-    // recompose the affected card instead of destroying and recreating a popup window
     val currentCards by rememberUpdatedState(cards)
     val hasTransientCard = cards.any { !it.isPinned }
 
-    // Like a focusable popup, an unpinned card closes on outside tap and back press;
-    // with only pinned cards the overlay stays touch-transparent, like a non-focusable popup
+    // Back press dismisses every transient (unpinned) card at once, same as before.
     if (hasTransientCard) {
         BackHandler {
             currentCards.filter { !it.isPinned }.forEach { userPopupViewModel.dismiss(it.id) }
         }
     }
 
-    // Rendered in its own Android window (not just a Compose layer) so it always draws above
-    // everything in the host window - including the WebView stream player, whose hardware video
-    // surface can otherwise composite above ordinary Compose content regardless of tree order.
-    Popup(
-        properties =
-            PopupProperties(
-                focusable = false,
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false,
-                clippingEnabled = false,
-                usePlatformDefaultWidth = false,
-            ),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .then(
-                        when {
-                            hasTransientCard ->
-                                Modifier.pointerInput(Unit) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            currentCards.filter { card -> !card.isPinned }.forEach { card -> userPopupViewModel.dismiss(card.id) }
-                                        },
-                                    )
-                                }
+    // Each card gets its OWN window, sized to just that card - not one window covering the whole
+    // screen. That keeps every pixel outside the card(s) free of any popup window, so taps there
+    // reach the chat/stream underneath normally, letting you interact with anything outside the
+    // card (or open more cards) even while one is pinned. Windows still draw above the WebView
+    // stream player regardless, since each is its own Android window on top of the host window.
+    // At most one transient card exists at a time (show() clears prior unpinned ones), so per-card
+    // "dismiss on outside tap" can never cross-dismiss a second transient card.
+    cards.sortedBy { it.zSequence }.forEach { card ->
+        key(card.id) {
+            val dismissOnOutsideTap = !card.isPinned
+            val popupProperties = remember(dismissOnOutsideTap) {
+                PopupProperties(
+                    focusable = false,
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = dismissOnOutsideTap,
+                    clippingEnabled = false,
+                    usePlatformDefaultWidth = false,
+                )
+            }
+            Popup(
+                popupPositionProvider = CenteredPopupPositionProvider,
+                onDismissRequest = { userPopupViewModel.dismiss(card.id) },
+                properties = popupProperties,
+            ) {
+                UserPopupDialog(
+                    state = card.popupState,
+                    isPinned = card.isPinned,
+                    offset = IntOffset(card.offsetX, card.offsetY),
+                    onDrag = { newOffset -> userPopupViewModel.updateOffset(card.id, newOffset.x, newOffset.y) },
+                    onTogglePin = { userPopupViewModel.togglePin(card.id) },
+                    onInteraction = { userPopupViewModel.bringToFront(card.id) },
+                    isOwnUser = card.isOwnUser,
+                    canModerate = card.canModerate,
+                    timeoutDurationsSeconds = timeoutDurationsSeconds,
+                    onBlockUser = { userPopupViewModel.blockUser(card.id) },
+                    onUnblockUser = { userPopupViewModel.unblockUser(card.id) },
+                    onBanUser = { userPopupViewModel.banUser(card.id) },
+                    onUnbanUser = { userPopupViewModel.unbanUser(card.id) },
+                    onTimeoutUser = { duration -> userPopupViewModel.timeoutUser(card.id, duration) },
+                    onDismiss = { userPopupViewModel.dismiss(card.id) },
+                    onMention = when {
+                        isHistoryOpen -> null
 
-                            else -> Modifier
-                        },
-                    ),
-        ) {
-            // Later cards draw on top, so bumping the z-sequence brings a card to the front
-            cards.sortedBy { it.zSequence }.forEach { card ->
-                key(card.id) {
-                    Box(modifier = Modifier.align(Alignment.Center)) {
-                        UserPopupDialog(
-                            state = card.popupState,
-                            isPinned = card.isPinned,
-                            offset = IntOffset(card.offsetX, card.offsetY),
-                            onDrag = { newOffset -> userPopupViewModel.updateOffset(card.id, newOffset.x, newOffset.y) },
-                            onTogglePin = { userPopupViewModel.togglePin(card.id) },
-                            onInteraction = { userPopupViewModel.bringToFront(card.id) },
-                            isOwnUser = card.isOwnUser,
-                            canModerate = card.canModerate,
-                            timeoutDurationsSeconds = timeoutDurationsSeconds,
-                            onBlockUser = { userPopupViewModel.blockUser(card.id) },
-                            onUnblockUser = { userPopupViewModel.unblockUser(card.id) },
-                            onBanUser = { userPopupViewModel.banUser(card.id) },
-                            onUnbanUser = { userPopupViewModel.unbanUser(card.id) },
-                            onTimeoutUser = { duration -> userPopupViewModel.timeoutUser(card.id, duration) },
-                            onDismiss = { userPopupViewModel.dismiss(card.id) },
-                            onMention = when {
-                                isHistoryOpen -> null
+                        else -> { name: String, displayName: String ->
+                            chatInputViewModel.mentionUser(UserName(name), DisplayName(displayName))
+                        }
+                    },
+                    onWhisper = when {
+                        isHistoryOpen -> null
 
-                                else -> { name: String, displayName: String ->
-                                    chatInputViewModel.mentionUser(UserName(name), DisplayName(displayName))
-                                }
-                            },
-                            onWhisper = when {
-                                isHistoryOpen -> null
+                        else -> { name: String ->
+                            sheetNavigationViewModel.openWhispers()
+                            chatInputViewModel.setWhisperTarget(UserName(name))
+                        }
+                    },
+                    onOpenChannel = { userName -> onOpenUrl("https://twitch.tv/$userName") },
+                    onReport = { userName -> onOpenUrl("https://twitch.tv/$userName/report") },
+                    onMessageHistory = when {
+                        isHistoryOpen -> null
 
-                                else -> { name: String ->
-                                    sheetNavigationViewModel.openWhispers()
-                                    chatInputViewModel.setWhisperTarget(UserName(name))
-                                }
-                            },
-                            onOpenChannel = { userName -> onOpenUrl("https://twitch.tv/$userName") },
-                            onReport = { userName -> onOpenUrl("https://twitch.tv/$userName/report") },
-                            onMessageHistory = when {
-                                isHistoryOpen -> null
+                        else -> { userName: String ->
+                            card.channel?.let { channel ->
+                                sheetNavigationViewModel.openHistory(HistoryChannel.Channel(channel), "from:$userName")
+                                userPopupViewModel.dismiss(card.id)
+                            }
+                        }
+                    },
+                    onViewHistory = when {
+                        isHistoryOpen -> { userName: String ->
+                            val historyState = currentSheetState as FullScreenSheetState.History
+                            sheetNavigationViewModel.openHistory(historyState.channel, "from:$userName")
+                            userPopupViewModel.dismiss(card.id)
+                        }
 
-                                else -> { userName: String ->
-                                    card.channel?.let { channel ->
-                                        sheetNavigationViewModel.openHistory(HistoryChannel.Channel(channel), "from:$userName")
-                                        userPopupViewModel.dismiss(card.id)
-                                    }
-                                }
-                            },
-                            onViewHistory = when {
-                                isHistoryOpen -> { userName: String ->
-                                    val historyState = currentSheetState as FullScreenSheetState.History
-                                    sheetNavigationViewModel.openHistory(historyState.channel, "from:$userName")
-                                    userPopupViewModel.dismiss(card.id)
-                                }
-
-                                else -> null
-                            },
-                        )
-                    }
-                }
+                        else -> null
+                    },
+                )
             }
         }
     }
