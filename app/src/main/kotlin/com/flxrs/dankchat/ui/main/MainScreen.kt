@@ -99,11 +99,17 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 private val ROUNDED_CORNER_THRESHOLD = 8.dp
+
+// Upper bound on how long we wait for the keyboard-hide animation to settle before
+// letting bottom sheets (user popup, emote info, message options, mod actions) render.
+// Without a bound, a stuck ime inset would leave sheetsReady=false for the rest of the session.
+private const val IME_HIDE_TIMEOUT_MS = 300L
 
 // Per-layout parameters for the movable stream content
 internal data class StreamViewConfig(
@@ -275,8 +281,12 @@ fun MainScreen(
         if (hasBottomSheet && isImeVisible) {
             sheetsReady = false
             keyboardController?.hide()
-            snapshotFlow { imeHeightState.value }
-                .first { it == 0 }
+            // Bounded wait: if the ime inset never settles exactly at 0 (animation gets interrupted,
+            // hide() is a no-op, etc.), sheetsReady must not get stuck false for the rest of the session.
+            withTimeoutOrNull(IME_HIDE_TIMEOUT_MS) {
+                snapshotFlow { imeHeightState.value }
+                    .first { it == 0 }
+            }
         }
         sheetsReady = true
     }
