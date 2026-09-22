@@ -53,14 +53,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.flxrs.dankchat.R
@@ -74,6 +72,11 @@ import kotlin.math.roundToInt
 private val CARD_WIDTH = 320.dp
 private val BANNER_HEIGHT = 64.dp
 private val BANNER_FADE_HEIGHT = 52.dp
+
+// How far the card can be dragged from its initial centered position, in any direction.
+// The window reserves exactly this much space around the card (see the Box wrapper in
+// UserPopupDialog), so the card can never be dragged far enough to hit its own window edge.
+private val DRAG_MARGIN = 160.dp
 
 // Where the card-color fade starts on the banner (top part stays fully visible)
 private const val BANNER_FADE_START_FRACTION = 0.35f
@@ -109,35 +112,43 @@ fun UserPopupDialog(
     var showBlockConfirmation by remember { mutableStateOf(false) }
 
     val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
-    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-    // The card's own measured size, so the drag clamp keeps the whole card on screen
-    // (not just its center) regardless of how tall its content ends up being.
-    var cardSize by remember { mutableStateOf(IntSize.Zero) }
+    // Drag position is tracked locally for smooth, 1:1 60fps updates, and mirrored to the
+    // view model via onDrag so it survives configuration changes.
+    var dragOffset by remember { mutableStateOf(offset) }
 
-    // This card is its own top-level window now (see UserPopupSheetContainer): the window
-    // itself is moved to follow the drag via the popup's position provider, so this composable
-    // must NOT also offset its content internally - doing both clips the card against its own
-    // window bounds as soon as it's dragged away from its initial position.
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shadowElevation = 8.dp,
+    // This card is its own top-level window (see UserPopupSheetContainer). The wrapper below
+    // reserves a fixed margin around the card so the window is always big enough to contain the
+    // full drag range - the card can never be offset far enough to exceed its own window's
+    // bounds, so it can never get clipped, no matter how far (within DRAG_MARGIN) it's dragged.
+    Box(
         modifier =
-            Modifier
-                .width(CARD_WIDTH)
-                .onSizeChanged { cardSize = it }
-                .pointerInput(Unit) {
-                    // Tapping a card moves it above the other open cards
-                    detectTapGestures(onTap = { onInteraction() })
-                },
+            Modifier.layout { measurable, constraints ->
+                val marginPx = DRAG_MARGIN.roundToPx()
+                val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                val width = placeable.width + marginPx * 2
+                val height = placeable.height + marginPx * 2
+                layout(width, height) {
+                    placeable.placeRelative(marginPx + dragOffset.x, marginPx + dragOffset.y)
+                }
+            },
     ) {
-        AnimatedContent(
-            targetState = showBlockConfirmation,
-            label = "UserPopupContent",
-        ) { isBlockConfirmation ->
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            modifier =
+                Modifier
+                    .width(CARD_WIDTH)
+                    .pointerInput(Unit) {
+                        // Tapping a card moves it above the other open cards
+                        detectTapGestures(onTap = { onInteraction() })
+                    },
+        ) {
+            AnimatedContent(
+                targetState = showBlockConfirmation,
+                label = "UserPopupContent",
+            ) { isBlockConfirmation ->
             when {
                 isBlockConfirmation -> {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -178,14 +189,15 @@ fun UserPopupDialog(
                                     onTogglePin = onTogglePin,
                                     onClose = onDismiss,
                                     onDrag = { delta ->
-                                        // Clamp against the card's real size so the whole card stays
-                                        // on screen (previously only the center point was clamped,
-                                        // letting up to half the card hang off the edge).
-                                        val maxX = ((screenWidthPx - cardSize.width) / 2).roundToInt().coerceAtLeast(0)
-                                        val maxY = ((screenHeightPx - cardSize.height) / 2).roundToInt().coerceAtLeast(0)
-                                        val newX = (offset.x + delta.x.roundToInt()).coerceIn(-maxX, maxX)
-                                        val newY = (offset.y + delta.y.roundToInt()).coerceIn(-maxY, maxY)
-                                        onDrag(IntOffset(newX, newY))
+                                        // Fixed margin clamp (see the Box wrapper above) - the card
+                                        // can move up to DRAG_MARGIN from center in each direction,
+                                        // which is exactly the space reserved for it, so it can
+                                        // never be dragged far enough to hit its own window's edge.
+                                        val marginPx = with(density) { DRAG_MARGIN.roundToPx() }
+                                        val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginPx, marginPx)
+                                        val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginPx, marginPx)
+                                        dragOffset = IntOffset(newX, newY)
+                                        onDrag(dragOffset)
                                     },
                                 )
                                 // Space where the banner fade blends into the solid card color
@@ -272,6 +284,7 @@ fun UserPopupDialog(
             }
         }
     }
+}
 }
 
 @Composable
