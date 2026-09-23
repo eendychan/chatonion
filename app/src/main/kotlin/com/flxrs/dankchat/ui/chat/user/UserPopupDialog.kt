@@ -149,134 +149,135 @@ fun UserPopupDialog(
                 targetState = showBlockConfirmation,
                 label = "UserPopupContent",
             ) { isBlockConfirmation ->
-            when {
-                isBlockConfirmation -> {
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text(
-                            text = stringResource(R.string.confirm_user_block_message),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        )
+                when {
+                    isBlockConfirmation -> {
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                            Text(
+                                text = stringResource(R.string.confirm_user_block_message),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            )
 
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-                            OutlinedButton(onClick = { showBlockConfirmation = false }, modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.dialog_cancel))
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Button(
-                                onClick = {
-                                    onBlockUser()
-                                    showBlockConfirmation = false
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                            ) {
-                                Text(stringResource(R.string.confirm_user_block_positive_button))
+                            Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                                OutlinedButton(onClick = { showBlockConfirmation = false }, modifier = Modifier.weight(1f)) {
+                                    Text(stringResource(R.string.dialog_cancel))
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Button(
+                                    onClick = {
+                                        onBlockUser()
+                                        showBlockConfirmation = false
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                ) {
+                                    Text(stringResource(R.string.confirm_user_block_positive_button))
+                                }
                             }
                         }
                     }
-                }
 
-                else -> {
-                    Column {
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                UserBannerHeader(
-                                    state = state,
-                                    isPinned = isPinned,
-                                    onTogglePin = onTogglePin,
-                                    onClose = onDismiss,
-                                    onDrag = { delta ->
-                                        // Fixed margin clamp (see the Box wrapper above) - the card
-                                        // can move up to DRAG_MARGIN from center in each direction,
-                                        // which is exactly the space reserved for it, so it can
-                                        // never be dragged far enough to hit its own window's edge.
-                                        val marginPx = with(density) { DRAG_MARGIN.roundToPx() }
-                                        val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginPx, marginPx)
-                                        val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginPx, marginPx)
-                                        dragOffset = IntOffset(newX, newY)
-                                        onDrag(dragOffset)
-                                    },
-                                )
-                                // Space where the banner fade blends into the solid card color
-                                Spacer(modifier = Modifier.height(BANNER_FADE_HEIGHT))
-                            }
-
-                            // Avatar + name sit right on the banner-to-card gradient
-                            if (state !is UserPopupState.Error) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .align(Alignment.TopCenter)
-                                            .padding(top = BANNER_HEIGHT - IDENTITY_OVERLAP),
-                                ) {
-                                    UserIdentitySection(state = state, onOpenChannel = onOpenChannel)
-                                }
-                            }
-                        }
-
-                        when (state) {
-                            is UserPopupState.Error -> {
-                                SheetErrorContent()
-                            }
-
-                            else -> {
-                                val userName = state.userName
-                                val displayName = state.displayName
-                                val isSuccess = state is UserPopupState.Success
-                                val isLoggedIn = state !is UserPopupState.NotLoggedIn
-                                val isBlocked = (state as? UserPopupState.Success)?.isBlocked == true
-
-                                UserActionsRow(
-                                    isLoggedIn = isLoggedIn,
-                                    isOwnUser = isOwnUser,
-                                    isSuccess = isSuccess,
-                                    isBlocked = isBlocked,
-                                    onMention =
-                                        onMention?.let { callback ->
-                                            {
-                                                callback(userName.value, displayName.value)
-                                                onDismiss()
-                                            }
+                    else -> {
+                        Column {
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    UserBannerHeader(
+                                        state = state,
+                                        isPinned = isPinned,
+                                        onTogglePin = onTogglePin,
+                                        onClose = onDismiss,
+                                        onDrag = { delta ->
+                                            // Fixed margin clamp (see the Box wrapper above) - the card
+                                            // can move up to DRAG_MARGIN from center in each direction,
+                                            // which is exactly the space reserved for it, so it can
+                                            // never be dragged far enough to hit its own window's edge.
+                                            val marginPx = with(density) { DRAG_MARGIN.roundToPx() }
+                                            val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginPx, marginPx)
+                                            val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginPx, marginPx)
+                                            dragOffset = IntOffset(newX, newY)
+                                            onDrag(dragOffset)
                                         },
-                                    onWhisper =
-                                        onWhisper?.let { callback ->
-                                            {
-                                                callback(userName.value)
-                                                onDismiss()
-                                            }
-                                        },
-                                    onHistory =
-                                        (onViewHistory ?: onMessageHistory)?.let { callback ->
-                                            {
-                                                callback(userName.value)
-                                                onDismiss()
-                                            }
-                                        },
-                                    onBlockToggle = {
-                                        when {
-                                            isBlocked -> onUnblockUser()
-                                            else -> showBlockConfirmation = true
-                                        }
-                                    },
-                                    onReport = {
-                                        onReport(userName.value)
-                                        onDismiss()
-                                    },
-                                )
-
-                                if (canModerate && isSuccess && !isOwnUser) {
-                                    ModeratorActionsRow(
-                                        timeoutDurationsSeconds = timeoutDurationsSeconds,
-                                        onBanUser = onBanUser,
-                                        onUnbanUser = onUnbanUser,
-                                        onTimeoutUser = onTimeoutUser,
                                     )
+                                    // Space where the banner fade blends into the solid card color
+                                    Spacer(modifier = Modifier.height(BANNER_FADE_HEIGHT))
                                 }
 
-                                Spacer(modifier = Modifier.height(12.dp))
+                                // Avatar + name sit right on the banner-to-card gradient
+                                if (state !is UserPopupState.Error) {
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.TopCenter)
+                                                .padding(top = BANNER_HEIGHT - IDENTITY_OVERLAP),
+                                    ) {
+                                        UserIdentitySection(state = state, onOpenChannel = onOpenChannel)
+                                    }
+                                }
+                            }
+
+                            when (state) {
+                                is UserPopupState.Error -> {
+                                    SheetErrorContent()
+                                }
+
+                                else -> {
+                                    val userName = state.userName
+                                    val displayName = state.displayName
+                                    val isSuccess = state is UserPopupState.Success
+                                    val isLoggedIn = state !is UserPopupState.NotLoggedIn
+                                    val isBlocked = (state as? UserPopupState.Success)?.isBlocked == true
+
+                                    UserActionsRow(
+                                        isLoggedIn = isLoggedIn,
+                                        isOwnUser = isOwnUser,
+                                        isSuccess = isSuccess,
+                                        isBlocked = isBlocked,
+                                        onMention =
+                                            onMention?.let { callback ->
+                                                {
+                                                    callback(userName.value, displayName.value)
+                                                    onDismiss()
+                                                }
+                                            },
+                                        onWhisper =
+                                            onWhisper?.let { callback ->
+                                                {
+                                                    callback(userName.value)
+                                                    onDismiss()
+                                                }
+                                            },
+                                        onHistory =
+                                            (onViewHistory ?: onMessageHistory)?.let { callback ->
+                                                {
+                                                    callback(userName.value)
+                                                    onDismiss()
+                                                }
+                                            },
+                                        onBlockToggle = {
+                                            when {
+                                                isBlocked -> onUnblockUser()
+                                                else -> showBlockConfirmation = true
+                                            }
+                                        },
+                                        onReport = {
+                                            onReport(userName.value)
+                                            onDismiss()
+                                        },
+                                    )
+
+                                    if (canModerate && isSuccess && !isOwnUser) {
+                                        ModeratorActionsRow(
+                                            timeoutDurationsSeconds = timeoutDurationsSeconds,
+                                            onBanUser = onBanUser,
+                                            onUnbanUser = onUnbanUser,
+                                            onTimeoutUser = onTimeoutUser,
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
                             }
                         }
                     }
@@ -284,7 +285,6 @@ fun UserPopupDialog(
             }
         }
     }
-}
 }
 
 @Composable
