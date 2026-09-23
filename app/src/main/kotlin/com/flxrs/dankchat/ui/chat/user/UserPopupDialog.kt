@@ -1,5 +1,6 @@
 package com.flxrs.dankchat.ui.chat.user
 
+import android.view.ViewTreeObserver
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
@@ -41,9 +42,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,11 +58,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.flxrs.dankchat.R
@@ -72,11 +78,6 @@ import kotlin.math.roundToInt
 private val CARD_WIDTH = 320.dp
 private val BANNER_HEIGHT = 64.dp
 private val BANNER_FADE_HEIGHT = 52.dp
-
-// How far the card can be dragged from its initial centered position, in any direction.
-// The window reserves exactly this much space around the card (see the Box wrapper in
-// UserPopupDialog), so the card can never be dragged far enough to hit its own window edge.
-private val DRAG_MARGIN = 160.dp
 
 // Where the card-color fade starts on the banner (top part stays fully visible)
 private const val BANNER_FADE_START_FRACTION = 0.35f
@@ -111,27 +112,45 @@ fun UserPopupDialog(
 ) {
     var showBlockConfirmation by remember { mutableStateOf(false) }
 
-    val density = LocalDensity.current
-
     // Drag position is tracked locally for smooth, 1:1 60fps updates, and mirrored to the
     // view model via onDrag so it survives configuration changes.
     var dragOffset by remember { mutableStateOf(offset) }
 
+    // The card's own measured size, kept in sync from the layout pass below. Used both to size
+    // the drag margin (half the card can go off any edge - top/bottom now behave the same way
+    // dragging to the sides already did) and to restrict this window's touchable area to just
+    // the card itself, in cardTouchableRegion below.
+    var cardSize by remember { mutableStateOf(IntSize.Zero) }
+    var cardBoundsInWindow by remember { mutableStateOf(IntRect.Zero) }
+
     // This card is its own top-level window (see UserPopupSheetContainer). The wrapper below
-    // reserves a fixed margin around the card so the window is always big enough to contain the
-    // full drag range - the card can never be offset far enough to exceed its own window's
-    // bounds, so it can never get clipped, no matter how far (within DRAG_MARGIN) it's dragged.
+    // reserves margin around the card - half its own width and half its own height on every
+    // side - so the window is always big enough to contain the full drag range: the card can be
+    // dragged until only half of it remains on screen, in any direction, but never far enough to
+    // exceed its own window's bounds, so it's never clipped and can always be dragged back.
     Box(
         modifier =
-            Modifier.layout { measurable, constraints ->
-                val marginPx = DRAG_MARGIN.roundToPx()
-                val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
-                val width = placeable.width + marginPx * 2
-                val height = placeable.height + marginPx * 2
-                layout(width, height) {
-                    placeable.placeRelative(marginPx + dragOffset.x, marginPx + dragOffset.y)
+            Modifier
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                    if (placeable.width != cardSize.width || placeable.height != cardSize.height) {
+                        cardSize = IntSize(placeable.width, placeable.height)
+                    }
+                    val marginX = placeable.width / 2
+                    val marginY = placeable.height / 2
+                    val width = placeable.width + marginX * 2
+                    val height = placeable.height + marginY * 2
+                    layout(width, height) {
+                        val left = marginX + dragOffset.x
+                        val top = marginY + dragOffset.y
+                        placeable.placeRelative(left, top)
+                        val bounds = IntRect(left, top, left + placeable.width, top + placeable.height)
+                        if (bounds != cardBoundsInWindow) {
+                            cardBoundsInWindow = bounds
+                        }
+                    }
                 }
-            },
+                .cardTouchableRegion(cardBoundsInWindow),
     ) {
         Surface(
             shape = RoundedCornerShape(16.dp),
@@ -189,13 +208,14 @@ fun UserPopupDialog(
                                         onTogglePin = onTogglePin,
                                         onClose = onDismiss,
                                         onDrag = { delta ->
-                                            // Fixed margin clamp (see the Box wrapper above) - the card
-                                            // can move up to DRAG_MARGIN from center in each direction,
-                                            // which is exactly the space reserved for it, so it can
-                                            // never be dragged far enough to hit its own window's edge.
-                                            val marginPx = with(density) { DRAG_MARGIN.roundToPx() }
-                                            val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginPx, marginPx)
-                                            val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginPx, marginPx)
+                                            // Clamp to the card's own measured size (see the Box
+                                            // wrapper above) - half the card can go off any edge,
+                                            // same range in every direction, and it can never be
+                                            // dragged far enough to hit its own window's edge.
+                                            val marginX = cardSize.width / 2
+                                            val marginY = cardSize.height / 2
+                                            val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginX, marginX)
+                                            val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginY, marginY)
                                             dragOffset = IntOffset(newX, newY)
                                             onDrag(dragOffset)
                                         },
@@ -285,6 +305,33 @@ fun UserPopupDialog(
             }
         }
     }
+}
+
+// A card's own window is made larger than the card itself so it has room to be dragged around
+// without getting clipped (see the Box wrapper in UserPopupDialog). But an Android window's
+// touchable area is its whole rectangle by default, regardless of what's actually drawn there -
+// so without this, the empty margin reserved for dragging would silently swallow taps meant for
+// whatever's underneath (chat, another card, the stream), even though nothing is visible there.
+// This restricts the window's touchable area to just `bounds` (in the window's own local pixel
+// coordinates), the same low-level mechanism Android uses for things like floating overlay
+// buttons, so every other pixel of the window passes taps straight through to what's beneath it.
+@Composable
+private fun Modifier.cardTouchableRegion(bounds: IntRect): Modifier {
+    val view = LocalView.current
+    val latestBounds by rememberUpdatedState(bounds)
+    DisposableEffect(view) {
+        val listener =
+            ViewTreeObserver.OnComputeInternalInsetsListener { info ->
+                info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION)
+                info.touchableRegion.set(latestBounds.left, latestBounds.top, latestBounds.right, latestBounds.bottom)
+            }
+        view.viewTreeObserver.addOnComputeInternalInsetsListener(listener)
+        onDispose { view.viewTreeObserver.removeOnComputeInternalInsetsListener(listener) }
+    }
+    // The listener above only fires on the system's own layout passes; explicitly requesting one
+    // whenever bounds changes (e.g. every drag frame) guarantees the touchable area keeps up.
+    SideEffect { view.requestLayout() }
+    return this
 }
 
 @Composable
