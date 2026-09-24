@@ -54,6 +54,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -111,13 +113,17 @@ fun UserPopupDialog(
     // view model so it survives configuration changes.
     var dragOffset by remember { mutableStateOf(offset) }
 
-    // The card's own measured size, so the drag clamp keeps the whole card reachable - half of it
-    // can go off any edge (matches how dragging to the sides already behaved), same range in
-    // every direction. This card's window always matches the card exactly (see
-    // UserPopupSheetContainer, which moves the window itself to follow dragOffset), so there's no
-    // separate margin to reserve here and nothing around the card that could block taps on
-    // whatever's underneath.
+    // The card's own measured size, so the horizontal drag clamp keeps the whole card reachable -
+    // half of it can go off either side, same as before.
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Vertically, half the card's own height is nowhere near enough to reach the top/bottom of a
+    // typical (much taller) screen - it was stopping well short, in the middle of the screen,
+    // wherever that happened to land relative to the chat input or a pinned message, which only
+    // looked like it was bounded by the app's UI. The vertical clamp is measured against the
+    // actual screen height instead, so the card can be dragged until it reaches the real top or
+    // bottom edge of the phone screen, the same way it already reaches past the sides.
+    val screenHeightPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.roundToPx() }
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -175,13 +181,14 @@ fun UserPopupDialog(
                                     isPinned = isPinned,
                                     onTogglePin = onTogglePin,
                                     onClose = onDismiss,
+                                    onInteraction = onInteraction,
                                     onDrag = { delta ->
-                                        // Clamp to the card's own measured size (see the Box
-                                        // wrapper above) - half the card can go off any edge,
-                                        // same range in every direction, and it can never be
-                                        // dragged far enough to hit its own window's edge.
+                                        // Horizontal: clamp to the card's own width, unchanged.
+                                        // Vertical: clamp to the actual screen height, so it
+                                        // reaches the real top/bottom edge of the phone screen
+                                        // (see the comment above screenHeightPx).
                                         val marginX = cardSize.width / 2
-                                        val marginY = cardSize.height / 2
+                                        val marginY = screenHeightPx / 2
                                         val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginX, marginX)
                                         val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginY, marginY)
                                         dragOffset = IntOffset(newX, newY)
@@ -280,6 +287,7 @@ private fun UserBannerHeader(
     isPinned: Boolean,
     onTogglePin: () -> Unit,
     onClose: () -> Unit,
+    onInteraction: () -> Unit,
     onDrag: (Offset) -> Unit,
 ) {
     // The Twitch profile banner comes from ivr.fi, the Helix offline image is the fallback
@@ -293,7 +301,12 @@ private fun UserBannerHeader(
                 .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
+                    detectDragGestures(
+                        // Picking up a card to drag it should bring it to front too, exactly
+                        // like tapping it does - otherwise starting a drag on a card that's
+                        // currently behind another one just moves it while it stays behind.
+                        onDragStart = { onInteraction() },
+                    ) { change, dragAmount ->
                         change.consume()
                         onDrag(dragAmount)
                     }
