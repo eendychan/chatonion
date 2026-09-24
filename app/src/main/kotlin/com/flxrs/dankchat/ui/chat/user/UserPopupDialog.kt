@@ -123,7 +123,10 @@ fun UserPopupDialog(
     // looked like it was bounded by the app's UI. The vertical clamp is measured against the
     // actual screen height instead, so the card can be dragged until it reaches the real top or
     // bottom edge of the phone screen, the same way it already reaches past the sides.
-    val screenHeightPx = with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.roundToPx() }
+    val screenHeightPx = with(LocalDensity.current) {
+        LocalConfiguration.current.screenHeightDp.dp
+            .roundToPx()
+    }
 
     Surface(
         shape = RoundedCornerShape(16.dp),
