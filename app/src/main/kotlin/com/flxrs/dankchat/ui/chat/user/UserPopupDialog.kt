@@ -1,6 +1,5 @@
 package com.flxrs.dankchat.ui.chat.user
 
-import android.view.ViewTreeObserver
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
@@ -42,12 +41,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,13 +53,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -112,192 +106,165 @@ fun UserPopupDialog(
 ) {
     var showBlockConfirmation by remember { mutableStateOf(false) }
 
-    // Drag position is tracked locally for smooth, 1:1 60fps updates, and mirrored to the
-    // view model via onDrag so it survives configuration changes.
+    // Drag position is tracked locally for smooth, 1:1 60fps updates, and mirrored up via onDrag
+    // (see UserPopupSheetContainer) so it also moves this card's own window, and persists to the
+    // view model so it survives configuration changes.
     var dragOffset by remember { mutableStateOf(offset) }
 
-    // The card's own measured size, kept in sync from the layout pass below. Used both to size
-    // the drag margin (half the card can go off any edge - top/bottom now behave the same way
-    // dragging to the sides already did) and to restrict this window's touchable area to just
-    // the card itself, in cardTouchableRegion below.
+    // The card's own measured size, so the drag clamp keeps the whole card reachable - half of it
+    // can go off any edge (matches how dragging to the sides already behaved), same range in
+    // every direction. This card's window always matches the card exactly (see
+    // UserPopupSheetContainer, which moves the window itself to follow dragOffset), so there's no
+    // separate margin to reserve here and nothing around the card that could block taps on
+    // whatever's underneath.
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
-    var cardBoundsInWindow by remember { mutableStateOf(IntRect.Zero) }
 
-    // This card is its own top-level window (see UserPopupSheetContainer). The wrapper below
-    // reserves margin around the card - half its own width and half its own height on every
-    // side - so the window is always big enough to contain the full drag range: the card can be
-    // dragged until only half of it remains on screen, in any direction, but never far enough to
-    // exceed its own window's bounds, so it's never clipped and can always be dragged back.
-    Box(
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 8.dp,
         modifier =
             Modifier
-                .layout { measurable, constraints ->
-                    val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
-                    if (placeable.width != cardSize.width || placeable.height != cardSize.height) {
-                        cardSize = IntSize(placeable.width, placeable.height)
-                    }
-                    val marginX = placeable.width / 2
-                    val marginY = placeable.height / 2
-                    val width = placeable.width + marginX * 2
-                    val height = placeable.height + marginY * 2
-                    layout(width, height) {
-                        val left = marginX + dragOffset.x
-                        val top = marginY + dragOffset.y
-                        placeable.placeRelative(left, top)
-                        val bounds = IntRect(left, top, left + placeable.width, top + placeable.height)
-                        if (bounds != cardBoundsInWindow) {
-                            cardBoundsInWindow = bounds
+                .width(CARD_WIDTH)
+                .onSizeChanged { cardSize = it }
+                .pointerInput(Unit) {
+                    // Tapping a card moves it above the other open cards
+                    detectTapGestures(onTap = { onInteraction() })
+                },
+    ) {
+        AnimatedContent(
+            targetState = showBlockConfirmation,
+            label = "UserPopupContent",
+        ) { isBlockConfirmation ->
+            when {
+                isBlockConfirmation -> {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text(
+                            text = stringResource(R.string.confirm_user_block_message),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        )
+
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                            OutlinedButton(onClick = { showBlockConfirmation = false }, modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.dialog_cancel))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Button(
+                                onClick = {
+                                    onBlockUser()
+                                    showBlockConfirmation = false
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            ) {
+                                Text(stringResource(R.string.confirm_user_block_positive_button))
+                            }
                         }
                     }
                 }
-                .cardTouchableRegion(cardBoundsInWindow),
-    ) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 8.dp,
-            modifier =
-                Modifier
-                    .width(CARD_WIDTH)
-                    .pointerInput(Unit) {
-                        // Tapping a card moves it above the other open cards
-                        detectTapGestures(onTap = { onInteraction() })
-                    },
-        ) {
-            AnimatedContent(
-                targetState = showBlockConfirmation,
-                label = "UserPopupContent",
-            ) { isBlockConfirmation ->
-                when {
-                    isBlockConfirmation -> {
-                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                            Text(
-                                text = stringResource(R.string.confirm_user_block_message),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            )
 
-                            Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-                                OutlinedButton(onClick = { showBlockConfirmation = false }, modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.dialog_cancel))
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Button(
-                                    onClick = {
-                                        onBlockUser()
-                                        showBlockConfirmation = false
+                else -> {
+                    Column {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                UserBannerHeader(
+                                    state = state,
+                                    isPinned = isPinned,
+                                    onTogglePin = onTogglePin,
+                                    onClose = onDismiss,
+                                    onDrag = { delta ->
+                                        // Clamp to the card's own measured size (see the Box
+                                        // wrapper above) - half the card can go off any edge,
+                                        // same range in every direction, and it can never be
+                                        // dragged far enough to hit its own window's edge.
+                                        val marginX = cardSize.width / 2
+                                        val marginY = cardSize.height / 2
+                                        val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginX, marginX)
+                                        val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginY, marginY)
+                                        dragOffset = IntOffset(newX, newY)
+                                        onDrag(dragOffset)
                                     },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                )
+                                // Space where the banner fade blends into the solid card color
+                                Spacer(modifier = Modifier.height(BANNER_FADE_HEIGHT))
+                            }
+
+                            // Avatar + name sit right on the banner-to-card gradient
+                            if (state !is UserPopupState.Error) {
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.TopCenter)
+                                            .padding(top = BANNER_HEIGHT - IDENTITY_OVERLAP),
                                 ) {
-                                    Text(stringResource(R.string.confirm_user_block_positive_button))
+                                    UserIdentitySection(state = state, onOpenChannel = onOpenChannel)
                                 }
                             }
                         }
-                    }
 
-                    else -> {
-                        Column {
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    UserBannerHeader(
-                                        state = state,
-                                        isPinned = isPinned,
-                                        onTogglePin = onTogglePin,
-                                        onClose = onDismiss,
-                                        onDrag = { delta ->
-                                            // Clamp to the card's own measured size (see the Box
-                                            // wrapper above) - half the card can go off any edge,
-                                            // same range in every direction, and it can never be
-                                            // dragged far enough to hit its own window's edge.
-                                            val marginX = cardSize.width / 2
-                                            val marginY = cardSize.height / 2
-                                            val newX = (dragOffset.x + delta.x.roundToInt()).coerceIn(-marginX, marginX)
-                                            val newY = (dragOffset.y + delta.y.roundToInt()).coerceIn(-marginY, marginY)
-                                            dragOffset = IntOffset(newX, newY)
-                                            onDrag(dragOffset)
-                                        },
-                                    )
-                                    // Space where the banner fade blends into the solid card color
-                                    Spacer(modifier = Modifier.height(BANNER_FADE_HEIGHT))
-                                }
-
-                                // Avatar + name sit right on the banner-to-card gradient
-                                if (state !is UserPopupState.Error) {
-                                    Box(
-                                        modifier =
-                                            Modifier
-                                                .align(Alignment.TopCenter)
-                                                .padding(top = BANNER_HEIGHT - IDENTITY_OVERLAP),
-                                    ) {
-                                        UserIdentitySection(state = state, onOpenChannel = onOpenChannel)
-                                    }
-                                }
+                        when (state) {
+                            is UserPopupState.Error -> {
+                                SheetErrorContent()
                             }
 
-                            when (state) {
-                                is UserPopupState.Error -> {
-                                    SheetErrorContent()
-                                }
+                            else -> {
+                                val userName = state.userName
+                                val displayName = state.displayName
+                                val isSuccess = state is UserPopupState.Success
+                                val isLoggedIn = state !is UserPopupState.NotLoggedIn
+                                val isBlocked = (state as? UserPopupState.Success)?.isBlocked == true
 
-                                else -> {
-                                    val userName = state.userName
-                                    val displayName = state.displayName
-                                    val isSuccess = state is UserPopupState.Success
-                                    val isLoggedIn = state !is UserPopupState.NotLoggedIn
-                                    val isBlocked = (state as? UserPopupState.Success)?.isBlocked == true
-
-                                    UserActionsRow(
-                                        isLoggedIn = isLoggedIn,
-                                        isOwnUser = isOwnUser,
-                                        isSuccess = isSuccess,
-                                        isBlocked = isBlocked,
-                                        onMention =
-                                            onMention?.let { callback ->
-                                                {
-                                                    callback(userName.value, displayName.value)
-                                                    onDismiss()
-                                                }
-                                            },
-                                        onWhisper =
-                                            onWhisper?.let { callback ->
-                                                {
-                                                    callback(userName.value)
-                                                    onDismiss()
-                                                }
-                                            },
-                                        onHistory =
-                                            (onViewHistory ?: onMessageHistory)?.let { callback ->
-                                                {
-                                                    callback(userName.value)
-                                                    onDismiss()
-                                                }
-                                            },
-                                        onBlockToggle = {
-                                            when {
-                                                isBlocked -> onUnblockUser()
-                                                else -> showBlockConfirmation = true
+                                UserActionsRow(
+                                    isLoggedIn = isLoggedIn,
+                                    isOwnUser = isOwnUser,
+                                    isSuccess = isSuccess,
+                                    isBlocked = isBlocked,
+                                    onMention =
+                                        onMention?.let { callback ->
+                                            {
+                                                callback(userName.value, displayName.value)
+                                                onDismiss()
                                             }
                                         },
-                                        onReport = {
-                                            onReport(userName.value)
-                                            onDismiss()
+                                    onWhisper =
+                                        onWhisper?.let { callback ->
+                                            {
+                                                callback(userName.value)
+                                                onDismiss()
+                                            }
                                         },
+                                    onHistory =
+                                        (onViewHistory ?: onMessageHistory)?.let { callback ->
+                                            {
+                                                callback(userName.value)
+                                                onDismiss()
+                                            }
+                                        },
+                                    onBlockToggle = {
+                                        when {
+                                            isBlocked -> onUnblockUser()
+                                            else -> showBlockConfirmation = true
+                                        }
+                                    },
+                                    onReport = {
+                                        onReport(userName.value)
+                                        onDismiss()
+                                    },
+                                )
+
+                                if (canModerate && isSuccess && !isOwnUser) {
+                                    ModeratorActionsRow(
+                                        timeoutDurationsSeconds = timeoutDurationsSeconds,
+                                        onBanUser = onBanUser,
+                                        onUnbanUser = onUnbanUser,
+                                        onTimeoutUser = onTimeoutUser,
                                     )
-
-                                    if (canModerate && isSuccess && !isOwnUser) {
-                                        ModeratorActionsRow(
-                                            timeoutDurationsSeconds = timeoutDurationsSeconds,
-                                            onBanUser = onBanUser,
-                                            onUnbanUser = onUnbanUser,
-                                            onTimeoutUser = onTimeoutUser,
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(12.dp))
                                 }
+
+                                Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
                     }
@@ -305,33 +272,6 @@ fun UserPopupDialog(
             }
         }
     }
-}
-
-// A card's own window is made larger than the card itself so it has room to be dragged around
-// without getting clipped (see the Box wrapper in UserPopupDialog). But an Android window's
-// touchable area is its whole rectangle by default, regardless of what's actually drawn there -
-// so without this, the empty margin reserved for dragging would silently swallow taps meant for
-// whatever's underneath (chat, another card, the stream), even though nothing is visible there.
-// This restricts the window's touchable area to just `bounds` (in the window's own local pixel
-// coordinates), the same low-level mechanism Android uses for things like floating overlay
-// buttons, so every other pixel of the window passes taps straight through to what's beneath it.
-@Composable
-private fun Modifier.cardTouchableRegion(bounds: IntRect): Modifier {
-    val view = LocalView.current
-    val latestBounds by rememberUpdatedState(bounds)
-    DisposableEffect(view) {
-        val listener =
-            ViewTreeObserver.OnComputeInternalInsetsListener { info ->
-                info.setTouchableInsets(ViewTreeObserver.InternalInsetsInfo.TOUCHABLE_INSETS_REGION)
-                info.touchableRegion.set(latestBounds.left, latestBounds.top, latestBounds.right, latestBounds.bottom)
-            }
-        view.viewTreeObserver.addOnComputeInternalInsetsListener(listener)
-        onDispose { view.viewTreeObserver.removeOnComputeInternalInsetsListener(listener) }
-    }
-    // The listener above only fires on the system's own layout passes; explicitly requesting one
-    // whenever bounds changes (e.g. every drag frame) guarantees the touchable area keeps up.
-    SideEffect { view.requestLayout() }
-    return this
 }
 
 @Composable
