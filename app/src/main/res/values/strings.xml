@@ -523,8 +523,11 @@
     <string name="preference_suggestion_mode_prefix_only">Only suggest after a trigger character</string>
     <string name="preference_about_header">About</string>
     <string name="preference_appearance_header">Appearance</string>
-    <string name="preference_about_summary">DankChat %1$s made by @flex3rs and contributors</string>
-    <string name="preference_about_chatonion_summary">"chatonion" — created by @endychan, with the help of AI:</string>
+    <string name="preference_about_summary">DankChat, by @flex3rs</string>
+    <string name="preference_about_chatonion_summary">chatonion, by @endychan</string>
+    <string name="preference_about_telegram_button" translatable="false">Telegram</string>
+    <string name="preference_about_github_button" translatable="false">GitHub</string>
+    <string name="preference_about_dankchat_badge_button">DankChat Badge</string>
     <string name="preference_show_input_key" translatable="false">show_input_key</string>
     <string name="preference_show_input_title">Show input</string>
     <string name="preference_show_input_summary">Displays the input field to send messages</string>
@@ -664,7 +667,7 @@
     <string name="preference_visible_emotes_title">Visible third party emotes</string>
     <string name="preference_visible_emotes_key" translatable="false">visible_emotes_key</string>
     <string name="preference_commands_key" translatable="false">custom_commands_key</string>
-    <string name="preference_about_tos">Twitch terms of service &amp; user policy:</string>
+    <string name="preference_about_tos">Terms of Service</string>
     <string name="preference_show_chip_actions_title">Show chip actions</string>
     <string name="preference_show_chip_actions_key" translatable="false">show_chip_actions_key</string>
     <string name="preference_show_chip_actions_summary">Displays chips for toggling fullscreen, streams and adjusting chat modes</string>
