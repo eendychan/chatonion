@@ -1,7 +1,9 @@
 package com.flxrs.dankchat.preferences.overview
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -34,13 +37,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.PreviewDynamicColors
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import com.flxrs.dankchat.BuildConfig
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.preferences.components.NavigationBarSpacer
 import com.flxrs.dankchat.preferences.components.PreferenceCategoryTitle
@@ -51,9 +54,11 @@ import com.flxrs.dankchat.ui.theme.DankChatTheme
 import com.flxrs.dankchat.utils.compose.buildClickableAnnotation
 import com.flxrs.dankchat.utils.compose.buildLinkAnnotation
 
-private const val GITHUB_URL = "https://github.com/flex3r/dankchat"
-private const val CHATONION_AUTHOR_URL = "https://t.me/echpzdzh"
-private const val TWITCH_TOS_URL = "https://www.twitch.tv/p/terms-of-service"
+private const val CHATONION_TELEGRAM_URL = "https://t.me/echpzdzh"
+private const val CHATONION_GITHUB_URL = "https://github.com/eendychan/chatonion"
+private const val DANKCHAT_GITHUB_URL = "https://github.com/flex3r/DankChat"
+private const val DANKCHAT_BADGE_URL = "https://streamelements.com/flex3rs/tip"
+private const val TWITCH_TOS_URL = "https://legal.twitch.com/legal/terms-of-service"
 
 sealed interface SettingsNavigation {
     data object Appearance : SettingsNavigation
@@ -169,38 +174,51 @@ fun OverviewSettingsScreen(
                         )
                     },
                 ) {
-                    val chatonionAboutText = stringResource(R.string.preference_about_chatonion_summary)
-                    val aboutSummary = stringResource(R.string.preference_about_summary, BuildConfig.VERSION_NAME)
-                    val aboutTos = stringResource(R.string.preference_about_tos)
-                    val annotated =
-                        buildAnnotatedString {
-                            append(chatonionAboutText)
-                            appendLine()
-                            withLink(link = buildLinkAnnotation(CHATONION_AUTHOR_URL)) {
-                                append(CHATONION_AUTHOR_URL)
-                            }
-                            appendLine()
-                            appendLine()
-                            append(aboutSummary)
-                            appendLine()
-                            withLink(link = buildLinkAnnotation(GITHUB_URL)) {
-                                append(GITHUB_URL)
-                            }
-                            appendLine()
-                            appendLine()
-                            append(aboutTos)
-                            appendLine()
-                            withLink(link = buildLinkAnnotation(TWITCH_TOS_URL)) {
-                                append(TWITCH_TOS_URL)
-                            }
-                            appendLine()
-                            appendLine()
-                            val licenseText = stringResource(R.string.open_source_licenses)
-                            withLink(link = buildClickableAnnotation(text = licenseText, onClick = { onNavigate(SettingsNavigation.About) })) {
-                                append(licenseText)
+                    val uriHandler = LocalUriHandler.current
+                    Column(
+                        modifier = Modifier.padding(top = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PreferenceSummary(stringResource(R.string.preference_about_chatonion_summary))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AssistChip(
+                                    onClick = { uriHandler.openUri(CHATONION_TELEGRAM_URL) },
+                                    label = { Text(stringResource(R.string.preference_about_telegram_button)) },
+                                )
+                                AssistChip(
+                                    onClick = { uriHandler.openUri(CHATONION_GITHUB_URL) },
+                                    label = { Text(stringResource(R.string.preference_about_github_button)) },
+                                )
                             }
                         }
-                    PreferenceSummary(annotated, Modifier.padding(top = 16.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PreferenceSummary(stringResource(R.string.preference_about_summary))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AssistChip(
+                                    onClick = { uriHandler.openUri(DANKCHAT_GITHUB_URL) },
+                                    label = { Text(stringResource(R.string.preference_about_github_button)) },
+                                )
+                                AssistChip(
+                                    onClick = { uriHandler.openUri(DANKCHAT_BADGE_URL) },
+                                    label = { Text(stringResource(R.string.preference_about_dankchat_badge_button)) },
+                                )
+                            }
+                        }
+                        val tosText = stringResource(R.string.preference_about_tos)
+                        val licenseText = stringResource(R.string.open_source_licenses)
+                        val links =
+                            buildAnnotatedString {
+                                withLink(link = buildLinkAnnotation(TWITCH_TOS_URL)) {
+                                    append(tosText)
+                                }
+                                appendLine()
+                                withLink(link = buildClickableAnnotation(text = licenseText, onClick = { onNavigate(SettingsNavigation.About) })) {
+                                    append(licenseText)
+                                }
+                            }
+                        PreferenceSummary(links)
+                    }
                 }
             }
             NavigationBarSpacer()
