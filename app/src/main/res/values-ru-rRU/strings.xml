@@ -525,8 +525,11 @@
     <string name="preference_suggestion_mode_prefix_only">Предлагать только после символа-триггера</string>
     <string name="preference_about_header">О программе</string>
     <string name="preference_appearance_header">Внешний вид</string>
-    <string name="preference_about_summary">DankChat %1$s создан @flex3rs и другими участниками</string>
-    <string name="preference_about_chatonion_summary">«chatonion» — создан @endychan, при помощи ИИ:</string>
+    <string name="preference_about_summary">dankchat by flex3rs</string>
+    <string name="preference_about_chatonion_summary">chatonion by endychan</string>
+    <string name="preference_about_telegram_button" translatable="false">Telegram</string>
+    <string name="preference_about_github_button" translatable="false">GitHub</string>
+    <string name="preference_about_dankchat_badge_button">DankChat Badge</string>
     <string name="preference_show_input_title">Отображать строку ввода</string>
     <string name="preference_show_input_summary">Отображать строку для ввода сообщений</string>
     <string name="preference_follow_system_title">В соответствии с системой</string>
@@ -636,7 +639,7 @@
     <string name="preference_tts_force_english_title">Переключить язык на английский</string>
     <string name="preference_tts_force_english_summary">Переключить язык синтезатора речи с системного на английский</string>
     <string name="preference_visible_emotes_title">Видимые сторонние смайлы</string>
-    <string name="preference_about_tos">Условия пользования и политика пользователя Twitch:</string>
+    <string name="preference_about_tos">Пользовательское соглашение</string>
     <string name="preference_show_chip_actions_title">Отображать быстрые переключатели</string>
     <string name="preference_show_chip_actions_summary">Отображать переключатели для полноэкранного режима, трансляций и настройки режимов чата</string>
     <string name="preference_show_character_counter_title">Показывать счётчик символов</string>
@@ -869,7 +872,7 @@
         <item quantity="many">%d месяцев</item>
         <item quantity="other">%d месяца</item>
     </plurals>
-    <string name="open_source_licenses">Лицензии с открытым исходным кодом</string>
+    <string name="open_source_licenses">Опенсорс-лицензии</string>
     <plurals name="viewers_and_uptime_with_cateogry" comment="Live with 1 viewer in Just Chatting for 1h 1m&#13;&#10;Live with 10 viewers in Just Chatting for 1h 1m">
         <item quantity="one">В эфире %3$s с %1$d зрителем в %2$s</item>
         <item quantity="few">В эфире %3$s с %1$d зрителями в %2$s</item>
