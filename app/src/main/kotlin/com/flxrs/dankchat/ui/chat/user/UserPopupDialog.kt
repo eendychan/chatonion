@@ -305,10 +305,14 @@ private fun UserBannerHeader(
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 .pointerInput(Unit) {
                     detectDragGestures(
-                        // Picking up a card to drag it should bring it to front too, exactly
-                        // like tapping it does - otherwise starting a drag on a card that's
-                        // currently behind another one just moves it while it stays behind.
-                        onDragStart = { onInteraction() },
+                        // Bringing a card to front recreates its window (see
+                        // UserPopupSheetContainer - Android only restacks windows by re-adding
+                        // them), which would cancel an in-progress drag gesture on this same
+                        // card if it happened at the start of it. Doing it at the end instead
+                        // means picking up a card that's currently behind another one drags on
+                        // the very first press - no second attempt needed - and it still ends up
+                        // on top the moment you let go.
+                        onDragEnd = { onInteraction() },
                     ) { change, dragAmount ->
                         change.consume()
                         onDrag(dragAmount)
