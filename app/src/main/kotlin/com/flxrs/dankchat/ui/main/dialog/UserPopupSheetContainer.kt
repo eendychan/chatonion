@@ -82,16 +82,12 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
     // draw above the WebView stream player regardless, since each is its own Android window on
     // top of the host window. At most one transient card exists at a time (show() clears prior
     // unpinned ones), so per-card "dismiss on outside tap" can never cross-dismiss a second one.
-    cards.sortedBy { it.zSequence }.forEachIndexed { slotIndex, card ->
-        // The window is keyed by its STACK POSITION, not by which card currently occupies it.
-        // Android stacks a newly-added window above whatever already exists, and "bring to
-        // front" always means "show this card in the topmost slot" - so reassigning which card's
-        // data a slot displays is all that's needed; no window is ever destroyed and recreated
-        // just to reorder it, which is what caused the popups to visibly flicker before.
-        key(slotIndex) {
-            // Everything below is additionally keyed by card.id, so it correctly resets whenever
-            // this slot starts showing a different card after a reorder - even though the window
-            // itself (this key(slotIndex) block, and the Popup inside it) stays exactly as is.
+    cards.sortedBy { it.zSequence }.forEach { card ->
+        // Android only restacks sibling windows above one another by re-adding them, so bringing
+        // a card to front does mean recreating its window - but ONLY this card's, keyed by its
+        // own id, so it always stays tied to the same card and never jumps to a different one's
+        // position (which is what reassigning cards between fixed "slots" caused before).
+        key(card.id, card.zSequence) {
             var dragOffset by remember(card.id) { mutableStateOf(IntOffset(card.offsetX, card.offsetY)) }
             val latestDragOffset by rememberUpdatedState(dragOffset)
             val positionProvider = remember(card.id) { DraggableCenteredPopupPositionProvider { latestDragOffset } }
@@ -111,64 +107,62 @@ fun UserPopupSheetContainer(onOpenUrl: (String) -> Unit) {
                 onDismissRequest = { userPopupViewModel.dismiss(card.id) },
                 properties = popupProperties,
             ) {
-                key(card.id) {
-                    UserPopupDialog(
-                        state = card.popupState,
-                        isPinned = card.isPinned,
-                        offset = dragOffset,
-                        onDrag = { newOffset ->
-                            dragOffset = newOffset
-                            userPopupViewModel.updateOffset(card.id, newOffset.x, newOffset.y)
-                        },
-                        onTogglePin = { userPopupViewModel.togglePin(card.id) },
-                        onInteraction = { userPopupViewModel.bringToFront(card.id) },
-                        isOwnUser = card.isOwnUser,
-                        canModerate = card.canModerate,
-                        timeoutDurationsSeconds = timeoutDurationsSeconds,
-                        onBlockUser = { userPopupViewModel.blockUser(card.id) },
-                        onUnblockUser = { userPopupViewModel.unblockUser(card.id) },
-                        onBanUser = { userPopupViewModel.banUser(card.id) },
-                        onUnbanUser = { userPopupViewModel.unbanUser(card.id) },
-                        onTimeoutUser = { duration -> userPopupViewModel.timeoutUser(card.id, duration) },
-                        onDismiss = { userPopupViewModel.dismiss(card.id) },
-                        onMention = when {
-                            isHistoryOpen -> null
+                UserPopupDialog(
+                    state = card.popupState,
+                    isPinned = card.isPinned,
+                    offset = dragOffset,
+                    onDrag = { newOffset ->
+                        dragOffset = newOffset
+                        userPopupViewModel.updateOffset(card.id, newOffset.x, newOffset.y)
+                    },
+                    onTogglePin = { userPopupViewModel.togglePin(card.id) },
+                    onInteraction = { userPopupViewModel.bringToFront(card.id) },
+                    isOwnUser = card.isOwnUser,
+                    canModerate = card.canModerate,
+                    timeoutDurationsSeconds = timeoutDurationsSeconds,
+                    onBlockUser = { userPopupViewModel.blockUser(card.id) },
+                    onUnblockUser = { userPopupViewModel.unblockUser(card.id) },
+                    onBanUser = { userPopupViewModel.banUser(card.id) },
+                    onUnbanUser = { userPopupViewModel.unbanUser(card.id) },
+                    onTimeoutUser = { duration -> userPopupViewModel.timeoutUser(card.id, duration) },
+                    onDismiss = { userPopupViewModel.dismiss(card.id) },
+                    onMention = when {
+                        isHistoryOpen -> null
 
-                            else -> { name: String, displayName: String ->
-                                chatInputViewModel.mentionUser(UserName(name), DisplayName(displayName))
-                            }
-                        },
-                        onWhisper = when {
-                            isHistoryOpen -> null
+                        else -> { name: String, displayName: String ->
+                            chatInputViewModel.mentionUser(UserName(name), DisplayName(displayName))
+                        }
+                    },
+                    onWhisper = when {
+                        isHistoryOpen -> null
 
-                            else -> { name: String ->
-                                sheetNavigationViewModel.openWhispers()
-                                chatInputViewModel.setWhisperTarget(UserName(name))
-                            }
-                        },
-                        onOpenChannel = { userName -> onOpenUrl("https://twitch.tv/$userName") },
-                        onReport = { userName -> onOpenUrl("https://twitch.tv/$userName/report") },
-                        onMessageHistory = when {
-                            isHistoryOpen -> null
+                        else -> { name: String ->
+                            sheetNavigationViewModel.openWhispers()
+                            chatInputViewModel.setWhisperTarget(UserName(name))
+                        }
+                    },
+                    onOpenChannel = { userName -> onOpenUrl("https://twitch.tv/$userName") },
+                    onReport = { userName -> onOpenUrl("https://twitch.tv/$userName/report") },
+                    onMessageHistory = when {
+                        isHistoryOpen -> null
 
-                            else -> { userName: String ->
-                                card.channel?.let { channel ->
-                                    sheetNavigationViewModel.openHistory(HistoryChannel.Channel(channel), "from:$userName")
-                                    userPopupViewModel.dismiss(card.id)
-                                }
-                            }
-                        },
-                        onViewHistory = when {
-                            isHistoryOpen -> { userName: String ->
-                                val historyState = currentSheetState as FullScreenSheetState.History
-                                sheetNavigationViewModel.openHistory(historyState.channel, "from:$userName")
+                        else -> { userName: String ->
+                            card.channel?.let { channel ->
+                                sheetNavigationViewModel.openHistory(HistoryChannel.Channel(channel), "from:$userName")
                                 userPopupViewModel.dismiss(card.id)
                             }
+                        }
+                    },
+                    onViewHistory = when {
+                        isHistoryOpen -> { userName: String ->
+                            val historyState = currentSheetState as FullScreenSheetState.History
+                            sheetNavigationViewModel.openHistory(historyState.channel, "from:$userName")
+                            userPopupViewModel.dismiss(card.id)
+                        }
 
-                            else -> null
-                        },
-                    )
-                }
+                        else -> null
+                    },
+                )
             }
         }
     }
