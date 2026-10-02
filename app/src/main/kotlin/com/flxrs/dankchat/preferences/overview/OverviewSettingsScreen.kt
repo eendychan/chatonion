@@ -1,9 +1,7 @@
 package com.flxrs.dankchat.preferences.overview
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +24,6 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -37,7 +34,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
@@ -174,51 +170,47 @@ fun OverviewSettingsScreen(
                         )
                     },
                 ) {
-                    val uriHandler = LocalUriHandler.current
-                    Column(
-                        modifier = Modifier.padding(top = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            PreferenceSummary(stringResource(R.string.preference_about_chatonion_summary))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                AssistChip(
-                                    onClick = { uriHandler.openUri(CHATONION_TELEGRAM_URL) },
-                                    label = { Text(stringResource(R.string.preference_about_telegram_button)) },
-                                )
-                                AssistChip(
-                                    onClick = { uriHandler.openUri(CHATONION_GITHUB_URL) },
-                                    label = { Text(stringResource(R.string.preference_about_github_button)) },
-                                )
+                    val chatonionText = stringResource(R.string.preference_about_chatonion_summary)
+                    val telegramText = stringResource(R.string.preference_about_telegram_button)
+                    val chatonionGithubText = stringResource(R.string.preference_about_github_button)
+                    val dankchatText = stringResource(R.string.preference_about_summary)
+                    val dankchatGithubText = stringResource(R.string.preference_about_github_button)
+                    val dankchatBadgeText = stringResource(R.string.preference_about_dankchat_badge_button)
+                    val tosText = stringResource(R.string.preference_about_tos)
+                    val licenseText = stringResource(R.string.open_source_licenses)
+                    val links =
+                        buildAnnotatedString {
+                            append(chatonionText)
+                            appendLine()
+                            withLink(link = buildLinkAnnotation(CHATONION_TELEGRAM_URL)) {
+                                append(telegramText)
+                            }
+                            append("   ")
+                            withLink(link = buildLinkAnnotation(CHATONION_GITHUB_URL)) {
+                                append(chatonionGithubText)
+                            }
+                            appendLine()
+                            appendLine()
+                            append(dankchatText)
+                            appendLine()
+                            withLink(link = buildLinkAnnotation(DANKCHAT_GITHUB_URL)) {
+                                append(dankchatGithubText)
+                            }
+                            append("   ")
+                            withLink(link = buildLinkAnnotation(DANKCHAT_BADGE_URL)) {
+                                append(dankchatBadgeText)
+                            }
+                            appendLine()
+                            appendLine()
+                            withLink(link = buildLinkAnnotation(TWITCH_TOS_URL)) {
+                                append(tosText)
+                            }
+                            appendLine()
+                            withLink(link = buildClickableAnnotation(text = licenseText, onClick = { onNavigate(SettingsNavigation.About) })) {
+                                append(licenseText)
                             }
                         }
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            PreferenceSummary(stringResource(R.string.preference_about_summary))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                AssistChip(
-                                    onClick = { uriHandler.openUri(DANKCHAT_GITHUB_URL) },
-                                    label = { Text(stringResource(R.string.preference_about_github_button)) },
-                                )
-                                AssistChip(
-                                    onClick = { uriHandler.openUri(DANKCHAT_BADGE_URL) },
-                                    label = { Text(stringResource(R.string.preference_about_dankchat_badge_button)) },
-                                )
-                            }
-                        }
-                        val tosText = stringResource(R.string.preference_about_tos)
-                        val licenseText = stringResource(R.string.open_source_licenses)
-                        val links =
-                            buildAnnotatedString {
-                                withLink(link = buildLinkAnnotation(TWITCH_TOS_URL)) {
-                                    append(tosText)
-                                }
-                                appendLine()
-                                withLink(link = buildClickableAnnotation(text = licenseText, onClick = { onNavigate(SettingsNavigation.About) })) {
-                                    append(licenseText)
-                                }
-                            }
-                        PreferenceSummary(links)
-                    }
+                    PreferenceSummary(links, Modifier.padding(top = 16.dp))
                 }
             }
             NavigationBarSpacer()
