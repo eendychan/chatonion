@@ -1,11 +1,13 @@
 package com.flxrs.dankchat.ui.main
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CloudUpload
@@ -16,25 +18,28 @@ import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Theaters
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.preferences.appearance.InputAction
 
 /**
- * The old configurable/overflow-able action row is gone - these five actions always live behind
- * the overflow trigger next to the input field, shown vertically with labels.
+ * These actions always live behind the overflow trigger next to the input field. Shown as a
+ * horizontally scrollable row of icon+label chips - a continuation of the input field itself
+ * (no surface/background of its own; the caller places this inside the input panel), the same
+ * way the top bar's own overflow row works, just with labels next to the icons instead of
+ * icon-only.
  */
 @Composable
 fun QuickActionsMenu(
-    surfaceColor: Color,
     enabled: Boolean,
     isStreamActive: Boolean,
     isAudioOnly: Boolean,
@@ -50,108 +55,107 @@ fun QuickActionsMenu(
 ) {
     val scrollState = rememberScrollState()
 
-    Surface(
-        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
-        color = surfaceColor,
-        modifier = modifier,
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        modifier =
+            modifier
+                .horizontalScroll(scrollState)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .width(IntrinsicSize.Max)
-                .verticalScroll(scrollState),
-        ) {
-            // Theater mode is already fullscreen, so toggling chat fullscreen makes no sense there -
-            // still shown per the fixed order, just disabled.
-            DropdownMenuItem(
-                text = { Text(stringResource(if (isFullscreen) R.string.menu_exit_fullscreen else R.string.menu_fullscreen)) },
-                onClick = { onActionClick(InputAction.Fullscreen) },
-                enabled = enabled && !isTheaterMode,
-                leadingIcon = {
-                    Icon(
-                        imageVector = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
-                        contentDescription = null,
-                    )
-                },
-            )
+        // Used to live in the top toolbar's overflow menu - now first here per the fixed order.
+        QuickActionItem(
+            text = stringResource(R.string.upload_media),
+            icon = Icons.Default.CloudUpload,
+            enabled = enabled,
+            onClick = onUploadClick,
+        )
 
-            // Always visible per the fixed 5-item order - disabled rather than hidden when there's
-            // no stream to switch modes for.
-            DropdownMenuItem(
-                text = { Text(stringResource(if (isTheaterMode) R.string.menu_exit_theater_mode else R.string.menu_theater_mode)) },
-                onClick = { onActionClick(InputAction.Theater) },
-                enabled = enabled && isStreamActive,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Theaters,
-                        contentDescription = null,
-                    )
-                },
-            )
-
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_hide_input)) },
-                onClick = { onActionClick(InputAction.HideInput) },
+        if (showDonations) {
+            QuickActionItem(
+                text = stringResource(R.string.donations_menu_item),
+                icon = Icons.Default.Paid,
                 enabled = enabled,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.VisibilityOff,
-                        contentDescription = null,
-                    )
-                },
+                onClick = onDonationsClick,
             )
-
-            DropdownMenuItem(
-                text = { Text(stringResource(if (isAudioOnly) R.string.menu_exit_audio_only else R.string.menu_audio_only)) },
-                onClick = onAudioOnly,
-                enabled = enabled && isStreamActive,
-                leadingIcon = {
-                    Icon(
-                        imageVector = if (isAudioOnly) Icons.Outlined.Videocam else Icons.Default.Headphones,
-                        contentDescription = null,
-                    )
-                },
-            )
-
-            // Second-to-last, right before Debug - this used to live in the top toolbar's overflow menu.
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.upload_media)) },
-                onClick = onUploadClick,
-                enabled = enabled,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.CloudUpload,
-                        contentDescription = null,
-                    )
-                },
-            )
-
-            if (showDonations) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.donations_menu_item)) },
-                    onClick = onDonationsClick,
-                    enabled = enabled,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Paid,
-                            contentDescription = null,
-                        )
-                    },
-                )
-            }
-
-            if (debugMode) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.input_action_debug)) },
-                    onClick = { onActionClick(InputAction.Debug) },
-                    enabled = enabled,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.BugReport,
-                            contentDescription = null,
-                        )
-                    },
-                )
-            }
         }
+
+        // Theater mode is already fullscreen, so toggling chat fullscreen makes no sense there -
+        // still shown per the fixed order, just disabled.
+        QuickActionItem(
+            text = stringResource(if (isFullscreen) R.string.menu_exit_fullscreen else R.string.menu_fullscreen),
+            icon = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
+            enabled = enabled && !isTheaterMode,
+            onClick = { onActionClick(InputAction.Fullscreen) },
+        )
+
+        // Always visible per the fixed order - disabled rather than hidden when there's no
+        // stream to switch modes for.
+        QuickActionItem(
+            text = stringResource(if (isTheaterMode) R.string.menu_exit_theater_mode else R.string.menu_theater_mode),
+            icon = Icons.Default.Theaters,
+            enabled = enabled && isStreamActive,
+            onClick = { onActionClick(InputAction.Theater) },
+        )
+
+        QuickActionItem(
+            text = stringResource(R.string.menu_hide_input),
+            icon = Icons.Default.VisibilityOff,
+            enabled = enabled,
+            onClick = { onActionClick(InputAction.HideInput) },
+        )
+
+        QuickActionItem(
+            text = stringResource(if (isAudioOnly) R.string.menu_exit_audio_only else R.string.menu_audio_only),
+            icon = if (isAudioOnly) Icons.Outlined.Videocam else Icons.Default.Headphones,
+            enabled = enabled && isStreamActive,
+            onClick = onAudioOnly,
+        )
+
+        if (debugMode) {
+            QuickActionItem(
+                text = stringResource(R.string.input_action_debug),
+                icon = Icons.Default.BugReport,
+                enabled = enabled,
+                onClick = { onActionClick(InputAction.Debug) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuickActionItem(
+    text: String,
+    icon: ImageVector,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val contentColor =
+        when {
+            enabled -> MaterialTheme.colorScheme.onSurface
+            else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+        }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .clickable(enabled = enabled, onClick = onClick)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = text,
+            color = contentColor,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
