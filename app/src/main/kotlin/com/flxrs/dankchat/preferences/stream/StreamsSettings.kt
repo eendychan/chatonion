@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class StreamsSettings(
     val fetchStreams: Boolean = true,
     val showStreamInfo: Boolean = true,
-    val showStreamCategory: Boolean = false,
+    val showStreamCategory: Boolean = true,
     val showLiveMessages: Boolean = true,
     val showStreamExtensions: Boolean = false,
     val preventStreamReloads: Boolean = true,
