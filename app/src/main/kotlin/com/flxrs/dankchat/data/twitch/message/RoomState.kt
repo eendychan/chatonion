@@ -1,14 +1,11 @@
 package com.flxrs.dankchat.data.twitch.message
 
 import androidx.compose.runtime.Immutable
-import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserId
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.irc.IrcMessage
 import com.flxrs.dankchat.utils.DateTimeUtils
-import com.flxrs.dankchat.utils.TextResource
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 @Immutable
@@ -54,34 +51,16 @@ data class RoomState(
             }
         }.joinToString()
 
-    fun toDisplayTextResources(): ImmutableList<TextResource> = tags
+    /**
+     * Which modes are currently active, in a fixed display order. The compact helper text shows
+     * these as small icons (see RoomStateIcon in ChatInputLayout) rather than full labels, so
+     * only the tag identity is needed here - not the duration text (that's still shown in full,
+     * with labels, in the moderation menu, which reads the tags/durations above directly).
+     */
+    fun toActiveTags(): ImmutableList<RoomStateTag> = tags
         .filter { (it.key == RoomStateTag.FOLLOW && it.value >= 0) || it.value > 0 }
-        .map { (tag, value) ->
-            when (tag) {
-                RoomStateTag.EMOTE -> {
-                    TextResource.Res(R.string.room_state_emote_only)
-                }
-
-                RoomStateTag.SUBS -> {
-                    TextResource.Res(R.string.room_state_subscriber_only)
-                }
-
-                RoomStateTag.R9K -> {
-                    TextResource.Res(R.string.room_state_unique_chat)
-                }
-
-                RoomStateTag.SLOW -> {
-                    TextResource.Res(R.string.room_state_slow_mode_duration, persistentListOf(DateTimeUtils.formatSeconds(value)))
-                }
-
-                RoomStateTag.FOLLOW -> {
-                    when (value) {
-                        0 -> TextResource.Res(R.string.room_state_follower_only)
-                        else -> TextResource.Res(R.string.room_state_follower_only_duration, persistentListOf(DateTimeUtils.formatSeconds(value * 60)))
-                    }
-                }
-            }
-        }.toImmutableList()
+        .keys
+        .toImmutableList()
 
     fun copyFromIrcMessage(msg: IrcMessage): RoomState = copy(
         tags = tags.mapValues { (key, value) -> msg.getRoomStateTag(key, value) },
