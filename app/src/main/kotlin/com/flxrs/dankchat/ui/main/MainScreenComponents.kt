@@ -40,10 +40,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.StrokeCap
@@ -388,12 +390,33 @@ internal fun EmoteMenuOverlay(
                         scaleY = scale
                         alpha = 1f - backProgress
                         translationY = backProgress * 100f
-                    }.background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                    }
+                    // Same background as the chat behind it, rather than its own distinct
+                    // surface color, since the chat is what visually lifts up with this menu.
+                    .background(MaterialTheme.colorScheme.background),
         ) {
             EmoteMenu(
                 onEmoteClick = onEmoteClick,
                 onBackspace = onBackspace,
                 modifier = Modifier.fillMaxSize(),
+            )
+
+            // A very subtle, tall fade at the bottom edge of the menu for a bit of depth.
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                colors =
+                                    listOf(
+                                        Color.Transparent,
+                                        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
+                                    ),
+                            ),
+                        ),
             )
         }
     }
