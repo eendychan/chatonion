@@ -2,8 +2,8 @@ package com.flxrs.dankchat.ui.main.input
 
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.PredictiveBackHandler
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
@@ -37,10 +37,14 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.EmojiEmotions
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,6 +71,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -81,24 +86,24 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flxrs.dankchat.R
+import com.flxrs.dankchat.data.twitch.message.RoomStateTag
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
 import com.flxrs.dankchat.preferences.appearance.InputAction
 import com.flxrs.dankchat.ui.main.InputState
 import com.flxrs.dankchat.ui.main.QuickActionsMenu
+import com.flxrs.dankchat.ui.theme.toolbarPillColor
 import com.flxrs.dankchat.utils.compose.predictiveBackScale
-import com.flxrs.dankchat.utils.resolve
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.StateFlow
 
@@ -183,15 +188,20 @@ fun ChatInputLayout(
     val view = LocalView.current
     val inputMethodManager = remember(view) { view.context.getSystemService(InputMethodManager::class.java) }
     val quickActionsExpanded = overflowExpanded || tourState.forceOverflowOpen
+    // The recent-messages popup is still a separate floating overlay above the panel, so the
+    // corner still flattens to merge with it. The overflow menu isn't anymore - it's now a
+    // row that lives inside this same panel (see below), so it no longer needs this.
     val topEndRadius by animateDpAsState(
-        targetValue = if (quickActionsExpanded || recentMessagesExpanded) 0.dp else 24.dp,
+        targetValue = if (recentMessagesExpanded) 0.dp else 24.dp,
         label = "topEndCornerRadius",
     )
 
     val inputContent: @Composable () -> Unit = {
         Surface(
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = topEndRadius),
-            color = surfaceColor,
+            // Same color as the top bar's pill, so the input panel reads as the same kind of
+            // distinct, elevated surface rather than its own one-off treatment.
+            color = MaterialTheme.colorScheme.toolbarPillColor,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
@@ -258,12 +268,14 @@ fun ChatInputLayout(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 8.dp, end = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.padding(start = 6.dp, end = 4.dp),
                 ) {
-                    chatTextField(Modifier.weight(1f), TextFieldDefaults.contentPaddingWithoutLabel(end = 8.dp))
+                    chatTextField(Modifier.weight(1f), TextFieldDefaults.contentPaddingWithoutLabel(end = 4.dp))
                     if (onNewWhisper != null) {
                         IconButton(
                             onClick = onNewWhisper,
+                            modifier = Modifier.size(40.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.AddComment,
@@ -276,12 +288,14 @@ fun ChatInputLayout(
                         enabled = textFieldEnabled,
                         focusRequester = focusRequester,
                         onEmoteClick = onEmoteClick,
+                        modifier = Modifier.size(40.dp),
                     )
                     if (showQuickActions) {
                         OverflowButton(
                             quickActionsExpanded = quickActionsExpanded,
                             tourState = tourState,
                             onOverflowExpandedChange = onOverflowExpandedChange,
+                            modifier = Modifier.size(40.dp),
                         )
                     }
                     if (uiState.showSendButton) {
@@ -293,12 +307,55 @@ fun ChatInputLayout(
                                 inputMethodManager?.restartInput(view)
                             },
                             onRepeatedSendChange = onRepeatedSendChange,
-                            modifier = Modifier.size(44.dp),
+                            modifier = Modifier.size(40.dp),
                         )
                     }
                 }
 
-                HelperTextRow(helperText = helperText)
+                // The overflow menu is a continuation of this same panel now (not a separate
+                // floating surface above it) - revealed by the panel growing a little taller,
+                // with its own content laid out as a horizontally scrollable row of icon+label
+                // items rather than the old vertical list.
+                AnimatedVisibility(
+                    visible = quickActionsExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    QuickActionsMenu(
+                        enabled = enabled,
+                        isStreamActive = isStreamActive,
+                        isAudioOnly = isAudioOnly,
+                        isFullscreen = isFullscreen,
+                        isTheaterMode = isTheaterMode,
+                        debugMode = debugMode,
+                        onActionClick = { action ->
+                            when (action) {
+                                InputAction.Search -> onSearchClick()
+                                InputAction.LastMessage -> onLastMessageClick()
+                                InputAction.Stream -> onToggleStream()
+                                InputAction.ModActions -> onModActions()
+                                InputAction.Fullscreen -> onToggleFullscreen()
+                                InputAction.Theater -> onToggleTheater()
+                                InputAction.HideInput -> onToggleInput()
+                                InputAction.Debug -> onDebugInfoClick()
+                            }
+                            onOverflowExpandedChange(false)
+                        },
+                        onAudioOnly = {
+                            callbacks.onAudioOnly()
+                            onOverflowExpandedChange(false)
+                        },
+                        onUploadClick = {
+                            callbacks.onChooseMedia()
+                            onOverflowExpandedChange(false)
+                        },
+                        showDonations = showDonations,
+                        onDonationsClick = {
+                            onDonationsClick()
+                            onOverflowExpandedChange(false)
+                        },
+                    )
+                }
 
                 // Progress indicator for uploads and data loading
                 AnimatedVisibility(
@@ -318,13 +375,19 @@ fun ChatInputLayout(
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        OptionalTourTooltip(
-            tooltipState = tourState.swipeGestureTooltipState,
-            text = stringResource(R.string.tour_swipe_gesture),
-            onAdvance = tourState.onAdvance,
-            onSkip = tourState.onSkip,
-        ) {
-            inputContent()
+        Column {
+            OptionalTourTooltip(
+                tooltipState = tourState.swipeGestureTooltipState,
+                text = stringResource(R.string.tour_swipe_gesture),
+                onAdvance = tourState.onAdvance,
+                onSkip = tourState.onSkip,
+            ) {
+                inputContent()
+            }
+
+            // Plain text below the panel - no surface/background of its own - rather than
+            // living inside the input panel's own surface.
+            HelperTextRow(helperText = helperText)
         }
 
         // Recent messages popup — overlays above input, end-aligned
@@ -374,71 +437,6 @@ fun ChatInputLayout(
             )
         }
 
-        // Overflow menu — overlays above input, end-aligned
-        AnimatedVisibility(
-            visible = quickActionsExpanded,
-            enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
-            exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
-            modifier =
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints)
-                        layout(placeable.width, 0) {
-                            placeable.placeRelative(0, -placeable.height)
-                        }
-                    },
-        ) {
-            var backProgress by remember { mutableFloatStateOf(0f) }
-            PredictiveBackHandler { progress ->
-                try {
-                    progress.collect { event ->
-                        backProgress = event.progress
-                    }
-                    onOverflowExpandedChange(false)
-                } catch (_: CancellationException) {
-                    backProgress = 0f
-                }
-            }
-            QuickActionsMenu(
-                modifier = Modifier
-                    .predictiveBackScale(backProgress)
-                    .heightIn(max = overflowMenuMaxHeightDp),
-                surfaceColor = surfaceColor,
-                enabled = enabled,
-                isStreamActive = isStreamActive,
-                isAudioOnly = isAudioOnly,
-                isFullscreen = isFullscreen,
-                isTheaterMode = isTheaterMode,
-                debugMode = debugMode,
-                onActionClick = { action ->
-                    when (action) {
-                        InputAction.Search -> onSearchClick()
-                        InputAction.LastMessage -> onLastMessageClick()
-                        InputAction.Stream -> onToggleStream()
-                        InputAction.ModActions -> onModActions()
-                        InputAction.Fullscreen -> onToggleFullscreen()
-                        InputAction.Theater -> onToggleTheater()
-                        InputAction.HideInput -> onToggleInput()
-                        InputAction.Debug -> onDebugInfoClick()
-                    }
-                    onOverflowExpandedChange(false)
-                },
-                onAudioOnly = {
-                    callbacks.onAudioOnly()
-                    onOverflowExpandedChange(false)
-                },
-                onUploadClick = {
-                    callbacks.onChooseMedia()
-                    onOverflowExpandedChange(false)
-                },
-                showDonations = showDonations,
-                onDonationsClick = {
-                    onDonationsClick()
-                    onOverflowExpandedChange(false)
-                },
-            )
-        }
     }
 }
 
@@ -719,100 +717,72 @@ private fun HelperTextRow(helperText: HelperText) {
     }
 }
 
+// A vivid, dedicated red for the live indicator - MaterialTheme's semantic "error" color is
+// tuned for form validation and isn't necessarily a strong enough red for this on every theme.
+private val LiveIndicatorColor = Color(0xFFFF3B30)
+
 @Composable
 internal fun ExpandableHelperText(
     helperText: HelperText,
     modifier: Modifier = Modifier,
 ) {
-    val resolvedRoomState = helperText.roomStateParts.map { it.resolve() }
-    val partSeparator = if (helperText.isCompact) " · " else ", "
-    val sectionSeparator = if (helperText.isCompact) " · " else " - "
-    val roomStateText = resolvedRoomState.joinToString(separator = partSeparator)
     val streamInfoText = helperText.streamInfo
-    val combinedText = listOfNotNull(roomStateText.ifEmpty { null }, streamInfoText).joinToString(separator = sectionSeparator)
+    val hasRoomState = helperText.roomStateParts.isNotEmpty()
     val style = MaterialTheme.typography.labelSmall
 
-    when {
-        helperText.isCompact -> {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        if (hasRoomState) {
+            RoomStateIconsRow(tags = helperText.roomStateParts)
+        }
+        if (hasRoomState && streamInfoText != null) {
             Text(
-                text = coloredHelperText(combinedText, MaterialTheme.colorScheme.error),
+                text = "|",
+                style = style,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (streamInfoText != null) {
+            Text(
+                text = coloredHelperText(streamInfoText, LiveIndicatorColor),
                 style = style,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = modifier.fillMaxWidth(),
-            )
-        }
-
-        else -> {
-            ExpandableMarqueeHelperText(
-                roomStateText = roomStateText,
-                streamInfoText = streamInfoText,
-                combinedText = combinedText,
-                style = style,
-                modifier = modifier,
+                modifier =
+                    Modifier
+                        .weight(1f, fill = false)
+                        .then(if (helperText.isCompact) Modifier else Modifier.basicMarquee()),
             )
         }
     }
 }
 
+/**
+ * Small icons instead of full labels for the modes that are just on/off (follower-only, slow
+ * mode, sub-only, emote-only) - R9K stays as text, same as before. The moderation menu still
+ * shows full labels (and durations) for all of these; this is just the compact helper text.
+ */
 @Composable
-private fun ExpandableMarqueeHelperText(
-    roomStateText: String,
-    streamInfoText: String?,
-    combinedText: String,
-    style: TextStyle,
-    modifier: Modifier = Modifier,
-) {
-    val textMeasurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    var expanded by remember { mutableStateOf(false) }
-
-    BoxWithConstraints(
-        modifier =
-            modifier
-                .fillMaxWidth(),
+private fun RoomStateIconsRow(tags: ImmutableList<RoomStateTag>) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        val maxWidthPx = with(density) { maxWidth.roundToPx() }
-        val fitsOnOneLine =
-            remember(combinedText, style, maxWidthPx) {
-                textMeasurer.measure(combinedText, style).size.width <= maxWidthPx
-            }
-        val canExpand = !fitsOnOneLine && streamInfoText != null && roomStateText.isNotEmpty()
-        val showTwoLines = expanded && canExpand
-        val contentModifier =
-            when {
-                canExpand -> Modifier.clickable { expanded = !expanded }
-                else -> Modifier
-            }
-        Box(modifier = contentModifier.fillMaxWidth().animateContentSize()) {
-            when {
-                showTwoLines -> {
-                    Column {
-                        Text(
-                            text = roomStateText,
-                            style = style,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            modifier = Modifier.fillMaxWidth().basicMarquee(),
-                        )
-                        Text(
-                            text = streamInfoText.let { coloredHelperText(it, MaterialTheme.colorScheme.error) },
-                            style = style,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            modifier = Modifier.fillMaxWidth().basicMarquee(),
-                        )
-                    }
-                }
-
-                else -> {
+        tags.forEach { tag ->
+            when (tag) {
+                RoomStateTag.FOLLOW -> RoomStateIcon(Icons.Default.Favorite, R.string.room_state_follower_only)
+                RoomStateTag.SLOW -> RoomStateIcon(Icons.Default.AccessTime, R.string.room_state_slow_mode)
+                RoomStateTag.SUBS -> RoomStateIcon(Icons.Default.Star, R.string.room_state_subscriber_only)
+                RoomStateTag.EMOTE -> RoomStateIcon(Icons.Default.EmojiEmotions, R.string.room_state_emote_only)
+                RoomStateTag.R9K -> {
                     Text(
-                        text = coloredHelperText(combinedText, MaterialTheme.colorScheme.error),
-                        style = style,
+                        text = stringResource(R.string.room_state_unique_chat),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        modifier = Modifier.fillMaxWidth().basicMarquee(),
                     )
                 }
             }
@@ -820,7 +790,20 @@ private fun ExpandableMarqueeHelperText(
     }
 }
 
-/** Colors the "●" live indicator (see [DankChatPreferenceStore.LIVE_DOT]) instead of showing a "Live"/"is live" label. */
+@Composable
+private fun RoomStateIcon(
+    icon: ImageVector,
+    @StringRes contentDescriptionRes: Int,
+) {
+    Icon(
+        imageVector = icon,
+        contentDescription = stringResource(contentDescriptionRes),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.size(14.dp),
+    )
+}
+
+/** Colors the "●" live indicator (see [DankChatPreferenceStore.LIVE_DOT]) and the uptime right after it, instead of showing a "Live"/"is live" label. */
 private fun coloredHelperText(
     text: String,
     dotColor: Color,
@@ -829,7 +812,9 @@ private fun coloredHelperText(
     return buildAnnotatedString {
         append(text)
         if (dotIndex >= 0) {
-            addStyle(SpanStyle(color = dotColor), dotIndex, dotIndex + DankChatPreferenceStore.LIVE_DOT.length)
+            val nextSeparatorIndex = text.indexOf(" · ", startIndex = dotIndex)
+            val endIndex = if (nextSeparatorIndex >= 0) nextSeparatorIndex else text.length
+            addStyle(SpanStyle(color = dotColor), dotIndex, endIndex)
         }
     }
 }
