@@ -436,7 +436,6 @@ fun ChatInputLayout(
                         .heightIn(max = overflowMenuMaxHeightDp),
             )
         }
-
     }
 }
 
@@ -775,9 +774,13 @@ private fun RoomStateIconsRow(tags: ImmutableList<RoomStateTag>) {
         tags.forEach { tag ->
             when (tag) {
                 RoomStateTag.FOLLOW -> RoomStateIcon(Icons.Default.Favorite, R.string.room_state_follower_only)
+
                 RoomStateTag.SLOW -> RoomStateIcon(Icons.Default.AccessTime, R.string.room_state_slow_mode)
+
                 RoomStateTag.SUBS -> RoomStateIcon(Icons.Default.Star, R.string.room_state_subscriber_only)
+
                 RoomStateTag.EMOTE -> RoomStateIcon(Icons.Default.EmojiEmotions, R.string.room_state_emote_only)
+
                 RoomStateTag.R9K -> {
                     Text(
                         text = stringResource(R.string.room_state_unique_chat),
