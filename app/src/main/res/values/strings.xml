@@ -126,6 +126,9 @@
     <string name="emote_menu_tab_subs">Subs</string>
     <string name="emote_menu_tab_channel">Channel</string>
     <string name="emote_menu_tab_global">Global</string>
+    <string name="emote_menu_tab_effects">Effects</string>
+    <string name="emote_menu_tab_gif" translatable="false">GIF</string>
+    <string name="emote_menu_gif_tier_reminder">Sending GIFs is only available with Sub Tier 2 or higher.</string>
     <string name="system_message_connected">Connected</string>
     <string name="system_message_reconnected">Reconnected</string>
     <string name="system_message_channel_non_existent">This channel does not exist</string>
