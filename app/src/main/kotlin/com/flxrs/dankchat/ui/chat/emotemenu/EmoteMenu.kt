@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +26,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -44,12 +46,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -97,14 +103,17 @@ fun EmoteMenu(
         subsGridState.scrollToItem(0)
     }
 
+    // Matches the chat's own background, not the input panel's - this is the actual surface the
+    // whole menu renders on, so setting the color only on the wrapper around this (as before)
+    // did nothing: this one sits on top and covers it entirely.
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = MaterialTheme.colorScheme.background,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             PrimaryTabRow(
                 selectedTabIndex = pagerState.currentPage,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                containerColor = MaterialTheme.colorScheme.background,
             ) {
                 tabItems.forEachIndexed { index, tabItem ->
                     val selected = pagerState.currentPage == index
@@ -126,13 +135,31 @@ fun EmoteMenu(
                     beyondViewportPageCount = 1,
                 ) { page ->
                     val tab = tabItems[page]
-                    EmoteGridPage(
-                        tab = tab,
-                        subsGridState = subsGridState,
-                        navBarBottomDp = navBarBottomDp,
-                        onEmoteClick = onEmoteClick,
-                        onEmoteLongClick = { emote -> emoteInfoViewModel.show(listOf(emote.toEmoteSheetData())) },
-                    )
+                    val onEmoteLongClick: (GenericEmote) -> Unit = { emote -> emoteInfoViewModel.show(listOf(emote.toEmoteSheetData())) }
+                    when (tab.type) {
+                        EmoteMenuTab.EFFECTS -> {
+                            EffectsPage(
+                                tab = tab,
+                                navBarBottomDp = navBarBottomDp,
+                                onEmoteClick = onEmoteClick,
+                                onEmoteLongClick = onEmoteLongClick,
+                            )
+                        }
+
+                        EmoteMenuTab.GIF -> {
+                            GifPage()
+                        }
+
+                        else -> {
+                            EmoteGridPage(
+                                tab = tab,
+                                subsGridState = subsGridState,
+                                navBarBottomDp = navBarBottomDp,
+                                onEmoteClick = onEmoteClick,
+                                onEmoteLongClick = onEmoteLongClick,
+                            )
+                        }
+                    }
                 }
 
                 // Floating backspace button at bottom-end, matching keyboard position
@@ -217,8 +244,123 @@ private fun EmoteMenuTabIcon(
                 )
             }
 
+            EmoteMenuTab.EFFECTS -> {
+                Icon(
+                    imageVector = Icons.Default.Celebration,
+                    contentDescription = stringResource(R.string.emote_menu_tab_effects),
+                    tint = contentColor,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+
+            EmoteMenuTab.GIF -> {
+                GifPaperIcon(color = contentColor)
+            }
+
             EmoteMenuTab.RECENT -> Unit
         }
+    }
+}
+
+// A small sheet of paper with one folded corner and "GIF" written on it.
+@Composable
+private fun GifPaperIcon(color: Color) {
+    Box(
+        modifier =
+            Modifier
+                .size(width = 17.dp, height = 19.dp)
+                .drawBehind {
+                    val fold = 5.dp.toPx()
+                    val page =
+                        Path().apply {
+                            moveTo(0f, 0f)
+                            lineTo(size.width - fold, 0f)
+                            lineTo(size.width, fold)
+                            lineTo(size.width, size.height)
+                            lineTo(0f, size.height)
+                            close()
+                        }
+                    drawPath(path = page, color = color, style = Stroke(width = 1.5.dp.toPx()))
+                    val foldedCorner =
+                        Path().apply {
+                            moveTo(size.width - fold, 0f)
+                            lineTo(size.width - fold, fold)
+                            lineTo(size.width, fold)
+                            close()
+                        }
+                    drawPath(path = foldedCorner, color = color)
+                },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "GIF",
+            color = color,
+            fontSize = 6.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 3.dp),
+        )
+    }
+}
+
+private val EFFECT_PREFIXES = listOf("w!", "h!", "v!", "z!", "c!", "l!", "r!", "p!", "s!")
+
+@Composable
+private fun EffectsPage(
+    tab: EmoteMenuTabItem,
+    navBarBottomDp: Dp,
+    onEmoteClick: (code: String, id: String) -> Unit,
+    onEmoteLongClick: (GenericEmote) -> Unit,
+) {
+    val emotes = tab.items.filterIsInstance<EmoteItem.Emote>()
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 64.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 56.dp + navBarBottomDp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // BTTV effect prefixes are plain text added in front of an emote, so they have no image
+        // and no emote id - they just insert their code.
+        items(count = EFFECT_PREFIXES.size, key = { "effect-${EFFECT_PREFIXES[it]}" }) { index ->
+            val code = EFFECT_PREFIXES[index]
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                onClick = { onEmoteClick(code, "") },
+            ) {
+                Box(modifier = Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) {
+                    Text(text = code, style = MaterialTheme.typography.titleSmall)
+                }
+            }
+        }
+        items(count = emotes.size, key = { "ffz-effect-${emotes[it].emote.id}" }) { index ->
+            val emote = emotes[index].emote
+            AsyncImage(
+                model = emote.url,
+                contentDescription = emote.code,
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .pointerInput(emote) {
+                            detectTapGestures(
+                                onTap = { onEmoteClick(emote.code, emote.id) },
+                                onLongPress = { onEmoteLongClick(emote) },
+                            )
+                        },
+            )
+        }
+    }
+}
+
+@Composable
+private fun GifPage() {
+    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+        Text(
+            text = stringResource(R.string.emote_menu_gif_tier_reminder),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
