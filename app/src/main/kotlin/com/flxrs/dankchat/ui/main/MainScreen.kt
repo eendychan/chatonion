@@ -757,7 +757,10 @@ fun MainScreen(
                     backProgress = backProgress,
                     onEmoteClick = { code, id ->
                         chatInputViewModel.insertEmote(code)
-                        chatInputViewModel.addEmoteUsage(id)
+                        // Text-only effect prefixes (w!, c!, ...) have no emote id to track
+                        if (id.isNotEmpty()) {
+                            chatInputViewModel.addEmoteUsage(id)
+                        }
                     },
                     onBackspace = chatInputViewModel::deleteLastWord,
                     modifier = menuModifier,
