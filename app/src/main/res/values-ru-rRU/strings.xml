@@ -133,6 +133,9 @@
     <string name="emote_menu_tab_subs">Смайлы подписки</string>
     <string name="emote_menu_tab_channel">Смайлы канала</string>
     <string name="emote_menu_tab_global">Общедоступные смайлы</string>
+    <string name="emote_menu_tab_effects">Эффекты</string>
+    <string name="emote_menu_tab_gif" translatable="false">GIF</string>
+    <string name="emote_menu_gif_tier_reminder">Отправка GIF доступна только с Саб-тиром 2 или выше.</string>
     <string name="system_message_connected">Подключено</string>
     <string name="system_message_reconnected">Переподключено</string>
     <string name="system_message_channel_non_existent">Такой канал не существует</string>
