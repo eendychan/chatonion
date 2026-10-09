@@ -191,24 +191,19 @@ fun ChatInputLayout(
     // corner still flattens to merge with it. The overflow menu isn't anymore - it's now a
     // row that lives inside this same panel (see below), so it no longer needs this.
     val topEndRadius by animateDpAsState(
-        targetValue = if (recentMessagesExpanded) 0.dp else 24.dp,
+        targetValue = if (recentMessagesExpanded) 0.dp else 20.dp,
         label = "topEndCornerRadius",
     )
 
     val inputContent: @Composable () -> Unit = {
         Surface(
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = topEndRadius),
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = topEndRadius, bottomStart = 20.dp, bottomEnd = 20.dp),
             // Same color as the top bar's pill, so the input panel reads as the same kind of
             // distinct, elevated surface rather than its own one-off treatment.
             color = MaterialTheme.colorScheme.toolbarPillColor,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding(),
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 // Input mode overlay header
                 AnimatedVisibility(
                     visible = overlay != InputOverlay.None,
@@ -270,7 +265,10 @@ fun ChatInputLayout(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.padding(start = 6.dp, end = 4.dp),
                 ) {
-                    chatTextField(Modifier.weight(1f), TextFieldDefaults.contentPaddingWithoutLabel(end = 4.dp))
+                    chatTextField(
+                        Modifier.weight(1f),
+                        TextFieldDefaults.contentPaddingWithoutLabel(start = 14.dp, top = 12.dp, end = 4.dp, bottom = 12.dp),
+                    )
                     if (onNewWhisper != null) {
                         IconButton(
                             onClick = onNewWhisper,
@@ -297,7 +295,11 @@ fun ChatInputLayout(
                             modifier = Modifier.size(40.dp),
                         )
                     }
-                    if (uiState.showSendButton) {
+                    AnimatedVisibility(
+                        visible = uiState.showSendButton && textFieldState.text.isNotEmpty(),
+                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start),
+                    ) {
                         SendButton(
                             enabled = canSend,
                             isRepeatedSendEnabled = isRepeatedSendEnabled,
@@ -374,7 +376,13 @@ fun ChatInputLayout(
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        Column {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 6.dp),
+        ) {
             OptionalTourTooltip(
                 tooltipState = tourState.swipeGestureTooltipState,
                 text = stringResource(R.string.tour_swipe_gesture),
@@ -576,8 +584,12 @@ private fun ChatTextField(
                         else -> false
                     }
                 },
-        contentPadding = contentPadding ?: TextFieldDefaults.contentPaddingWithLabel(),
-        label = { Text(hint) },
+        // A placeholder, not a floating label - a label always reserves extra vertical space
+        // for its animation even when contentPadding is tightened, which was the main reason
+        // this field (and the whole panel around it) stayed tall no matter how much the
+        // surrounding padding was trimmed.
+        contentPadding = contentPadding ?: TextFieldDefaults.contentPaddingWithoutLabel(),
+        placeholder = { Text(hint) },
         suffix = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -709,8 +721,8 @@ private fun HelperTextRow(helperText: HelperText) {
             helperText = helperText,
             modifier =
                 Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 4.dp),
+                    .padding(horizontal = 12.dp)
+                    .padding(vertical = 4.dp),
         )
     }
 }
