@@ -65,18 +65,9 @@ class EmoteMenuViewModel(
 
                 val groupedByType =
                     sortedEmotes.groupBy {
-                        when (it.emoteType) {
-                            is EmoteType.ChannelTwitchEmote,
-                            is EmoteType.ChannelTwitchBitEmote,
-                            is EmoteType.ChannelTwitchFollowerEmote,
-                            -> EmoteMenuTab.SUBS
-
-                            is EmoteType.ChannelFFZEmote,
-                            is EmoteType.ChannelBTTVEmote,
-                            is EmoteType.ChannelSevenTVEmote,
-                            -> EmoteMenuTab.CHANNEL
-
-                            else -> EmoteMenuTab.GLOBAL
+                        when {
+                            it.code in FFZ_EFFECT_CODES -> EmoteMenuTab.EFFECTS
+                            else -> it.emoteType.toMenuTab()
                         }
                     }
                 listOf(
@@ -84,6 +75,8 @@ class EmoteMenuViewModel(
                     async { EmoteMenuTabItem(EmoteMenuTab.SUBS, groupedByType[EmoteMenuTab.SUBS].toEmoteItemsWithFront(channel)) },
                     async { EmoteMenuTabItem(EmoteMenuTab.CHANNEL, groupedByType[EmoteMenuTab.CHANNEL].orEmpty().toEmoteItems()) },
                     async { EmoteMenuTabItem(EmoteMenuTab.GLOBAL, groupedByType[EmoteMenuTab.GLOBAL].orEmpty().toEmoteItems()) },
+                    async { EmoteMenuTabItem(EmoteMenuTab.EFFECTS, groupedByType[EmoteMenuTab.EFFECTS].orEmpty().toEmoteItems()) },
+                    async { EmoteMenuTabItem(EmoteMenuTab.GIF, emptyList()) },
                 ).awaitAll().toImmutableList()
             }
         }.stateIn(
@@ -91,4 +84,21 @@ class EmoteMenuViewModel(
             SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
             EmoteMenuTab.entries.map { EmoteMenuTabItem(it, emptyList()) }.toImmutableList(),
         )
+}
+
+// FFZ's own "effect" emotes live in the effects tab rather than among the regular global ones.
+private val FFZ_EFFECT_CODES = setOf("ffzW", "ffzX", "ffzY", "ffzCursed")
+
+private fun EmoteType.toMenuTab(): EmoteMenuTab = when (this) {
+    is EmoteType.ChannelTwitchEmote,
+    is EmoteType.ChannelTwitchBitEmote,
+    is EmoteType.ChannelTwitchFollowerEmote,
+    -> EmoteMenuTab.SUBS
+
+    is EmoteType.ChannelFFZEmote,
+    is EmoteType.ChannelBTTVEmote,
+    is EmoteType.ChannelSevenTVEmote,
+    -> EmoteMenuTab.CHANNEL
+
+    else -> EmoteMenuTab.GLOBAL
 }
