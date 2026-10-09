@@ -5,4 +5,6 @@ enum class EmoteMenuTab {
     SUBS,
     CHANNEL,
     GLOBAL,
+    EFFECTS,
+    GIF,
 }
