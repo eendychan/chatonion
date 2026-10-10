@@ -23,6 +23,7 @@ import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 sealed interface PinnedMessageState {
@@ -58,26 +59,57 @@ class PinnedMessageRepository(
 
     // Incremented before each fetch and on clear, so stale responses can't override newer state
     private val requestIds = ConcurrentHashMap<UserName, AtomicLong>()
+    private val appliedIds = ConcurrentHashMap<UserName, AtomicLong>()
     private val expiryJobs = ConcurrentHashMap<UserName, Job>()
+    private val retryJobs = ConcurrentHashMap<UserName, Job>()
 
     fun getState(channel: UserName): StateFlow<PinnedMessageState> = stateFlowOf(channel)
 
     suspend fun fetch(channel: UserName) {
-        val channelId = channelRepository.getChannel(channel)?.id ?: return
-        val moderatorId = authDataStore.userIdString ?: return
-        val requestId = requestIdOf(channel).incrementAndFetch()
-        helixApiClient
-            .getPinnedChatMessage(channelId, moderatorId)
-            .onSuccess { dto ->
-                if (requestIdOf(channel).load() != requestId) {
-                    return@onSuccess
+        if (tryFetch(channel)) {
+            return
+        }
+
+        // At app start the channel id, the login or the token aren't always ready yet, or the
+        // first request fails - without a retry the pin then stayed invisible until something
+        // else (a new pin, a pubsub update) triggered another fetch.
+        retryJobs.remove(channel)?.cancel()
+        retryJobs[channel] =
+            scope.launch {
+                for (retryDelay in RETRY_DELAYS) {
+                    delay(retryDelay)
+                    if (tryFetch(channel)) {
+                        return@launch
+                    }
                 }
-                applyState(channel, dto)
             }
     }
 
+    /** Returns true when there's nothing left to retry: applied, or superseded by a newer request/clear. */
+    private suspend fun tryFetch(channel: UserName): Boolean {
+        val channelId = channelRepository.getChannel(channel)?.id ?: return false
+        val moderatorId = authDataStore.userIdString ?: return false
+        val requestId = requestIdOf(channel).incrementAndFetch()
+        return helixApiClient.getPinnedChatMessage(channelId, moderatorId).fold(
+            onSuccess = { dto ->
+                // A response only has to be newer than what was last applied - not be the very
+                // latest request issued. Otherwise a valid response got thrown away whenever a
+                // newer request (e.g. from the reconnect) had been started and then failed.
+                val applied = appliedIdOf(channel)
+                if (requestId > applied.load()) {
+                    applied.store(requestId)
+                    applyState(channel, dto)
+                }
+                true
+            },
+            onFailure = { requestIdOf(channel).load() != requestId },
+        )
+    }
+
     fun clear(channel: UserName) {
-        requestIdOf(channel).incrementAndFetch()
+        // Anything requested before this must not be applied anymore
+        appliedIdOf(channel).store(requestIdOf(channel).incrementAndFetch())
+        retryJobs.remove(channel)?.cancel()
         expiryJobs.remove(channel)?.cancel()
         stateFlowOf(channel).value = PinnedMessageState.None
     }
@@ -105,7 +137,9 @@ class PinnedMessageRepository(
 
     fun removeChannel(channel: UserName) {
         expiryJobs.remove(channel)?.cancel()
+        retryJobs.remove(channel)?.cancel()
         requestIds.remove(channel)
+        appliedIds.remove(channel)
         states.remove(channel)
     }
 
@@ -135,6 +169,8 @@ class PinnedMessageRepository(
 
     private fun requestIdOf(channel: UserName): AtomicLong = requestIds.getOrPut(channel) { AtomicLong(0L) }
 
+    private fun appliedIdOf(channel: UserName): AtomicLong = appliedIds.getOrPut(channel) { AtomicLong(0L) }
+
     private fun PinnedChatMessageDto.toPinnedMessage(channel: UserName): PinnedMessage = PinnedMessage(
         messageId = messageId,
         channel = channel,
@@ -148,3 +184,5 @@ class PinnedMessageRepository(
         endsAt = endsAt?.takeIf { it.isNotBlank() }?.let { runCatching { Instant.parse(it) }.getOrNull() },
     )
 }
+
+private val RETRY_DELAYS = listOf(2.seconds, 5.seconds, 10.seconds)
