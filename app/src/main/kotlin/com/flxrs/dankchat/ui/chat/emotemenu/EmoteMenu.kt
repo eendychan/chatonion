@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,9 +62,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
 import com.flxrs.dankchat.R
+import com.flxrs.dankchat.data.twitch.emote.EmoteEffect
 import com.flxrs.dankchat.data.twitch.emote.GenericEmote
 import com.flxrs.dankchat.preferences.components.DankBackground
+import com.flxrs.dankchat.ui.chat.emote.EffectedEmoteImage
 import com.flxrs.dankchat.ui.chat.emote.EmoteInfoViewModel
 import com.flxrs.dankchat.ui.chat.emote.toEmoteSheetData
 import com.flxrs.dankchat.ui.main.sheet.EmoteMenuViewModel
@@ -304,6 +308,9 @@ private fun GifPaperIcon(color: Color) {
 
 private val EFFECT_PREFIXES = listOf("w!", "h!", "v!", "z!", "c!", "l!", "r!", "p!", "s!")
 
+// Kappa, from Twitch's own emote CDN - only used as the sample the effect previews are drawn on
+private const val EFFECT_PREVIEW_EMOTE_URL = "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0"
+
 @Composable
 private fun EffectsPage(
     tab: EmoteMenuTabItem,
@@ -319,18 +326,21 @@ private fun EffectsPage(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // BTTV effect prefixes are plain text added in front of an emote, so they have no image
-        // and no emote id - they just insert their code.
+        // BTTV effect prefixes are plain text added in front of an emote, so they have no image of
+        // their own: each tile previews the effect on a sample emote, and inserts its code.
         items(count = EFFECT_PREFIXES.size, key = { "effect-${EFFECT_PREFIXES[it]}" }) { index ->
             val code = EFFECT_PREFIXES[index]
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                onClick = { onEmoteClick(code, "") },
-            ) {
-                Box(modifier = Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) {
-                    Text(text = code, style = MaterialTheme.typography.titleSmall)
-                }
+            val effects = remember(code) { EmoteEffect.fromPrefix(code)?.let { setOf(it) }.orEmpty() }
+            Box(modifier = Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
+                EffectedEmoteImage(
+                    painter = rememberAsyncImagePainter(EFFECT_PREVIEW_EMOTE_URL),
+                    width = 36.dp,
+                    height = 36.dp,
+                    effects = effects,
+                    animate = true,
+                    alpha = 1f,
+                    onClick = { onEmoteClick(code, "") },
+                )
             }
         }
         items(count = emotes.size, key = { "ffz-effect-${emotes[it].emote.id}" }) { index ->
