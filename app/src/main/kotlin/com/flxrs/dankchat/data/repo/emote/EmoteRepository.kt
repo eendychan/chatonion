@@ -960,8 +960,11 @@ class EmoteRepository(
             adjustedMessage = adjustedMessage.removeRange(range)
         }
 
+        // FFZ modifiers (ffzW, ...) are real emotes too; once attached to an emote they're
+        // consumed like the text prefixes, so the emote entry for the modifier itself goes away
+        val removedStarts = removedModifiers.mapTo(hashSetOf()) { it.start }
         val adjustedEmotes =
-            emotes.map { emote ->
+            emotes.filter { it.position.first !in removedStarts }.map { emote ->
                 val start = emote.position.first
                 val end = emote.position.last
                 val removedChars = removalRanges.filter { it.last < start }.sumOf { it.last - it.first + 1 }
