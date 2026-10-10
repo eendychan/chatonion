@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.data.twitch.chat.ConnectionState
-import com.flxrs.dankchat.data.twitch.message.RoomStateTag
+import com.flxrs.dankchat.data.twitch.message.RoomStateMode
 import com.flxrs.dankchat.preferences.chat.UserLongClickBehavior
 import com.flxrs.dankchat.ui.main.InputState
 import kotlinx.collections.immutable.ImmutableList
@@ -61,7 +61,7 @@ sealed interface CharacterCounterState {
 
 @Immutable
 data class HelperText(
-    val roomStateParts: ImmutableList<RoomStateTag> = persistentListOf(),
+    val roomStateParts: ImmutableList<RoomStateMode> = persistentListOf(),
     val streamInfo: String? = null,
     val isCompact: Boolean = false,
 ) {
