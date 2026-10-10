@@ -168,8 +168,15 @@ fun EffectedEmoteImage(
     val hue = if (animate && EmoteEffect.Party in effects) partyHue else 0f
     val colorFilter =
         when {
+            EmoteEffect.Party in effects && EmoteEffect.Cursed in effects -> {
+                // Both together: desaturate/contrast first, then rotate the hue
+                ColorFilter.colorMatrix(hueRotationColorMatrix(hue).apply { timesAssign(CURSED_COLOR_MATRIX) })
+            }
+
             EmoteEffect.Party in effects -> ColorFilter.colorMatrix(hueRotationColorMatrix(hue))
+
             EmoteEffect.Cursed in effects -> ColorFilter.colorMatrix(CURSED_COLOR_MATRIX)
+
             else -> null
         }
 
