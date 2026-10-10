@@ -27,6 +27,11 @@ enum class EmoteEffect {
             "p!" to Party,
             "s!" to Shake,
             "z!" to ZeroWidth,
+            // FFZ's own modifier emotes
+            "ffzW" to Wide,
+            "ffzX" to FlipHorizontal,
+            "ffzY" to FlipVertical,
+            "ffzCursed" to Cursed,
         )
 
         fun fromPrefix(word: String): EmoteEffect? = BY_PREFIX[word]
