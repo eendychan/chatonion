@@ -9,6 +9,12 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
 @Immutable
+data class RoomStateMode(
+    val tag: RoomStateTag,
+    val value: Int,
+)
+
+@Immutable
 data class RoomState(
     val channel: UserName,
     val channelId: UserId,
@@ -52,14 +58,14 @@ data class RoomState(
         }.joinToString()
 
     /**
-     * Which modes are currently active, in a fixed display order. The compact helper text shows
-     * these as small icons (see RoomStateIcon in ChatInputLayout) rather than full labels, so
-     * only the tag identity is needed here - not the duration text (that's still shown in full,
-     * with labels, in the moderation menu, which reads the tags/durations above directly).
+     * Which modes are currently active, in a fixed display order, with their raw value (minutes
+     * for follower-only, seconds for slow mode). The compact helper text shows these as small
+     * icons with a short duration (see RoomStateIconsRow in ChatInputLayout) rather than full
+     * labels; the moderation menu still shows the full labels.
      */
-    fun toActiveTags(): ImmutableList<RoomStateTag> = tags
+    fun toActiveModes(): ImmutableList<RoomStateMode> = tags
         .filter { (it.key == RoomStateTag.FOLLOW && it.value >= 0) || it.value > 0 }
-        .keys
+        .map { (tag, value) -> RoomStateMode(tag, value) }
         .toImmutableList()
 
     fun copyFromIrcMessage(msg: IrcMessage): RoomState = copy(
