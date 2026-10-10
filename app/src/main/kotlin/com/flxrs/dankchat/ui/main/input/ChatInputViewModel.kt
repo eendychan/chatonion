@@ -22,7 +22,7 @@ import com.flxrs.dankchat.data.repo.emote.EmoteUsageRepository
 import com.flxrs.dankchat.data.repo.stream.StreamDataRepository
 import com.flxrs.dankchat.data.twitch.chat.ConnectionState
 import com.flxrs.dankchat.data.twitch.command.TwitchCommand
-import com.flxrs.dankchat.data.twitch.message.RoomStateTag
+import com.flxrs.dankchat.data.twitch.message.RoomStateMode
 import com.flxrs.dankchat.di.DispatchersProvider
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
 import com.flxrs.dankchat.preferences.appearance.AppearanceSettingsDataStore
@@ -147,7 +147,7 @@ class ChatInputViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CharacterCounterState.Hidden)
 
-    private val roomStateResources: StateFlow<ImmutableList<RoomStateTag>> =
+    private val roomStateResources: StateFlow<ImmutableList<RoomStateMode>> =
         combine(
             chatSettingsDataStore.showChatModes,
             chatChannelProvider.activeChannel,
@@ -157,7 +157,7 @@ class ChatInputViewModel(
             if (!showModes || channel == null) {
                 flowOf(emptyList())
             } else {
-                channelRepository.getRoomStateFlow(channel).map { it.toActiveTags() }
+                channelRepository.getRoomStateFlow(channel).map { it.toActiveModes() }
             }
         }.distinctUntilChanged()
             .map { it.toImmutableList() }
