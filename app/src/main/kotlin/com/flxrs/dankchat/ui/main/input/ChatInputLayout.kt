@@ -67,9 +67,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -95,6 +99,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flxrs.dankchat.R
+import com.flxrs.dankchat.data.twitch.message.RoomStateMode
 import com.flxrs.dankchat.data.twitch.message.RoomStateTag
 import com.flxrs.dankchat.preferences.DankChatPreferenceStore
 import com.flxrs.dankchat.preferences.appearance.InputAction
@@ -376,11 +381,29 @@ fun ChatInputLayout(
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val shadowColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
+                    // Dark fade over the chat, behind the panel and the helper text - the mirror
+                    // of the shadow under the top toolbar. Starts above the panel so the chat
+                    // fades into it rather than hitting a hard edge.
+                    .drawBehind {
+                        val extra = 28.dp.toPx()
+                        translate(top = -extra) {
+                            drawRect(
+                                brush =
+                                    Brush.verticalGradient(
+                                        0f to shadowColor.copy(alpha = 0f),
+                                        0.4f to shadowColor,
+                                        1f to shadowColor,
+                                        endY = size.height + extra,
+                                    ),
+                                size = Size(size.width, size.height + extra),
+                            )
+                        }
+                    }.navigationBarsPadding()
                     .padding(horizontal = 6.dp),
         ) {
             OptionalTourTooltip(
@@ -746,7 +769,7 @@ internal fun ExpandableHelperText(
         modifier = modifier.fillMaxWidth(),
     ) {
         if (hasRoomState) {
-            RoomStateIconsRow(tags = helperText.roomStateParts)
+            RoomStateIconsRow(modes = helperText.roomStateParts)
         }
         if (hasRoomState && streamInfoText != null) {
             Text(
@@ -777,16 +800,21 @@ internal fun ExpandableHelperText(
  * shows full labels (and durations) for all of these; this is just the compact helper text.
  */
 @Composable
-private fun RoomStateIconsRow(tags: ImmutableList<RoomStateTag>) {
+private fun RoomStateIconsRow(modes: ImmutableList<RoomStateMode>) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        tags.forEach { tag ->
+        modes.forEach { (tag, value) ->
             when (tag) {
-                RoomStateTag.FOLLOW -> RoomStateIcon(Icons.Default.Favorite, R.string.room_state_follower_only)
+                RoomStateTag.FOLLOW -> {
+                    // value is minutes; 0 means everyone who follows, with no minimum
+                    RoomStateIcon(Icons.Default.Favorite, R.string.room_state_follower_only, duration = value.takeIf { it > 0 }?.let { formatModeDuration(it * 60) })
+                }
 
-                RoomStateTag.SLOW -> RoomStateIcon(Icons.Default.AccessTime, R.string.room_state_slow_mode)
+                RoomStateTag.SLOW -> {
+                    RoomStateIcon(Icons.Default.AccessTime, R.string.room_state_slow_mode, duration = formatModeDuration(value))
+                }
 
                 RoomStateTag.SUBS -> RoomStateIcon(Icons.Default.Star, R.string.room_state_subscriber_only)
 
@@ -808,14 +836,42 @@ private fun RoomStateIconsRow(tags: ImmutableList<RoomStateTag>) {
 private fun RoomStateIcon(
     icon: ImageVector,
     @StringRes contentDescriptionRes: Int,
+    duration: String? = null,
 ) {
-    Icon(
-        imageVector = icon,
-        contentDescription = stringResource(contentDescriptionRes),
-        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.size(14.dp),
-    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = stringResource(contentDescriptionRes),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(14.dp),
+        )
+        if (duration != null) {
+            Text(
+                text = "($duration)",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
+
+/**
+ * Short duration for the room state icons: 30s, 1m, 1h, 1d. Weeks and months are shown as days
+ * rather than 1w / 1mo, and anything that isn't an exact day/hour/minute stays in the smaller unit.
+ */
+private fun formatModeDuration(totalSeconds: Int): String = when {
+    totalSeconds % SECONDS_PER_DAY == 0 -> "${totalSeconds / SECONDS_PER_DAY}d"
+    totalSeconds % SECONDS_PER_HOUR == 0 -> "${totalSeconds / SECONDS_PER_HOUR}h"
+    totalSeconds % SECONDS_PER_MINUTE == 0 -> "${totalSeconds / SECONDS_PER_MINUTE}m"
+    else -> "${totalSeconds}s"
+}
+
+private const val SECONDS_PER_MINUTE = 60
+private const val SECONDS_PER_HOUR = 3600
+private const val SECONDS_PER_DAY = 86400
 
 /** Colors the "●" live indicator (see [DankChatPreferenceStore.LIVE_DOT]) and the uptime right after it, instead of showing a "Live"/"is live" label. */
 private fun coloredHelperText(
