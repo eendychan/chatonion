@@ -140,7 +140,8 @@ class PinnedMessageRepository(
         retryJobs.remove(channel)?.cancel()
         requestIds.remove(channel)
         appliedIds.remove(channel)
-        states.remove(channel)
+        // Reset before dropping, so anything still collecting the old flow doesn't keep a stale pin
+        states.remove(channel)?.value = PinnedMessageState.None
     }
 
     private fun applyState(
