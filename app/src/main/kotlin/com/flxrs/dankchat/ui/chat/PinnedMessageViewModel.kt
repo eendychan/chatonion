@@ -74,6 +74,11 @@ class PinnedMessageViewModel(
     private var cachedMessageUi: Pair<String, ChatMessageUiState.PrivMessageUi>? = null
 
     init {
+        // Refresh once the channel's page is actually on screen. The fetch done while the
+        // channel data loads at app start can come up empty - auth or channel info not ready
+        // yet, a failed request - and nothing else re-triggered it until a pin changed.
+        viewModelScope.launch { pinnedMessageRepository.fetch(channel) }
+
         viewModelScope.launch {
             var lastPinKey: Pair<String, Instant?>? = null
             pinnedMessageRepository.getState(channel).collect { state ->
