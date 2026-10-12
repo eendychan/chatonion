@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -133,6 +134,17 @@ fun EmoteMenu(
             val navBarBottomDp = with(LocalDensity.current) { navBarBottom.toDp() }
 
             Box(modifier = Modifier.fillMaxSize()) {
+                val sampleEmoteUrl =
+                    remember(tabItems) {
+                        tabItems
+                            .flatMap { it.items }
+                            .filterIsInstance<EmoteItem.Emote>()
+                            .firstOrNull { it.emote.code == EFFECT_PREVIEW_EMOTE_CODE }
+                            ?.emote
+                            ?.url
+                            ?: EFFECT_PREVIEW_EMOTE_FALLBACK_URL
+                    }
+
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
@@ -143,10 +155,9 @@ fun EmoteMenu(
                     when (tab.type) {
                         EmoteMenuTab.EFFECTS -> {
                             EffectsPage(
-                                tab = tab,
+                                sampleEmoteUrl = sampleEmoteUrl,
                                 navBarBottomDp = navBarBottomDp,
                                 onEmoteClick = onEmoteClick,
-                                onEmoteLongClick = onEmoteLongClick,
                             )
                         }
 
@@ -306,57 +317,60 @@ private fun GifPaperIcon(color: Color) {
     }
 }
 
-private val EFFECT_PREFIXES = listOf("w!", "h!", "v!", "z!", "c!", "l!", "r!", "p!", "s!")
+private val BTTV_EFFECTS = listOf("w!", "h!", "v!", "z!", "c!", "l!", "r!", "p!", "s!")
+private val FFZ_EFFECTS = listOf("ffzW", "ffzX", "ffzY", "ffzCursed")
 
-// Kappa, from Twitch's own emote CDN - only used as the sample the effect previews are drawn on
-private const val EFFECT_PREVIEW_EMOTE_URL = "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0"
+// DinoDance from Twitch's own emote CDN - animated and colorful, so every effect (hue rotation,
+// cursed contrast, shake) is actually visible on it. Used when it isn't among the loaded emotes.
+private const val EFFECT_PREVIEW_EMOTE_CODE = "DinoDance"
+private const val EFFECT_PREVIEW_EMOTE_FALLBACK_URL = "https://static-cdn.jtvnw.net/emoticons/v2/115234/default/dark/2.0"
 
 @Composable
 private fun EffectsPage(
-    tab: EmoteMenuTabItem,
+    sampleEmoteUrl: String,
     navBarBottomDp: Dp,
     onEmoteClick: (code: String, id: String) -> Unit,
-    onEmoteLongClick: (GenericEmote) -> Unit,
 ) {
-    val emotes = tab.items.filterIsInstance<EmoteItem.Emote>()
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 64.dp),
+        columns = GridCells.Adaptive(minSize = 80.dp),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 56.dp + navBarBottomDp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // BTTV effect prefixes are plain text added in front of an emote, so they have no image of
-        // their own: each tile previews the effect on a sample emote, and inserts its code.
-        items(count = EFFECT_PREFIXES.size, key = { "effect-${EFFECT_PREFIXES[it]}" }) { index ->
-            val code = EFFECT_PREFIXES[index]
-            val effects = remember(code) { EmoteEffect.fromPrefix(code)?.let { setOf(it) }.orEmpty() }
-            Box(modifier = Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
-                EffectedEmoteImage(
-                    painter = rememberAsyncImagePainter(EFFECT_PREVIEW_EMOTE_URL),
-                    width = 36.dp,
-                    height = 36.dp,
-                    effects = effects,
-                    animate = true,
-                    alpha = 1f,
-                    onClick = { onEmoteClick(code, "") },
-                )
-            }
-        }
-        items(count = emotes.size, key = { "ffz-effect-${emotes[it].emote.id}" }) { index ->
-            val emote = emotes[index].emote
-            AsyncImage(
-                model = emote.url,
-                contentDescription = emote.code,
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .pointerInput(emote) {
-                            detectTapGestures(
-                                onTap = { onEmoteClick(emote.code, emote.id) },
-                                onLongPress = { onEmoteLongClick(emote) },
-                            )
-                        },
+        effectSection(title = "BTTV", codes = BTTV_EFFECTS, sampleEmoteUrl = sampleEmoteUrl, onEmoteClick = onEmoteClick)
+        effectSection(title = "FFZ", codes = FFZ_EFFECTS, sampleEmoteUrl = sampleEmoteUrl, onEmoteClick = onEmoteClick)
+    }
+}
+
+// Effects are modifiers typed in front of an emote (w! Kappa), so they have no image of their own:
+// each tile previews the effect on a sample emote, and inserts its code when tapped.
+private fun LazyGridScope.effectSection(
+    title: String,
+    codes: List<String>,
+    sampleEmoteUrl: String,
+    onEmoteClick: (code: String, id: String) -> Unit,
+) {
+    item(key = "effects-header-$title", span = { GridItemSpan(maxLineSpan) }) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+        )
+    }
+    items(count = codes.size, key = { "effect-${codes[it]}" }) { index ->
+        val code = codes[index]
+        val effects = remember(code) { EmoteEffect.fromPrefix(code)?.let { setOf(it) }.orEmpty() }
+        Box(modifier = Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
+            EffectedEmoteImage(
+                painter = rememberAsyncImagePainter(sampleEmoteUrl),
+                width = 32.dp,
+                height = 32.dp,
+                effects = effects,
+                animate = true,
+                alpha = 1f,
+                onClick = { onEmoteClick(code, "") },
             )
         }
     }
