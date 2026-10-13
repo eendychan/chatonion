@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -62,13 +63,19 @@ fun ChatMessageImagePreviews(
     val streamerMode = settings.imagePreviewStreamerMode
     val previewViewModel: ChatImagePreviewViewModel = koinViewModel()
 
+    // Images that failed to load are dropped entirely, so no empty placeholder box is left under
+    // the message - the link in the message text itself is all that remains for them.
+    val failedImages = remember { mutableStateMapOf<String, Boolean>() }
+    val visibleLinks = imageLinks.filter { failedImages[it.imageUrl] != true }
+    if (visibleLinks.isEmpty()) return
+
     Row(
         modifier =
             modifier
                 .padding(top = 4.dp)
                 .horizontalScroll(rememberScrollState()),
     ) {
-        imageLinks.forEach { link ->
+        visibleLinks.forEach { link ->
             var unblurred by remember(link.url) { mutableStateOf(false) }
             var imageRatio by remember(link.imageUrl) { mutableStateOf<Float?>(null) }
             val blurred = streamerMode && !unblurred
@@ -102,6 +109,7 @@ fun ChatMessageImagePreviews(
                     model = link.imageUrl,
                     contentDescription = link.url,
                     contentScale = ContentScale.Fit,
+                    onError = { failedImages[link.imageUrl] = true },
                     onSuccess = { state ->
                         val size = state.painter.intrinsicSize
                         if (size.width > 0f && size.height > 0f) {
