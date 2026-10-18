@@ -19,7 +19,7 @@
 - Caching for 7TV emotes and paints  
 - Moderator settings for buttons in User profile cards (similar to Chatterino)  
 - FFZ and BTTV emote modifiers, with controls for individual effects  
-- Poll and prediction menus for voting, betting and moderatio (soon)  
+- Poll and prediction menus for voting, betting and moderation (soon)  
 - Ambilight effect, image previews in chat (kappa.lol, eblo.id, etc.), Shadow Chat, and more...
 
 ---
