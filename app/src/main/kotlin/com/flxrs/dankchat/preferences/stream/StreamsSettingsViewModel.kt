@@ -30,6 +30,8 @@ class StreamsSettingsViewModel(
                 is StreamsSettingsInteraction.ShowStreamExtensions -> dataStore.update { it.copy(showStreamExtensions = interaction.value) }
                 is StreamsSettingsInteraction.PreventStreamReloads -> dataStore.update { it.copy(preventStreamReloads = interaction.value) }
                 is StreamsSettingsInteraction.EnablePiP -> dataStore.update { it.copy(enablePiP = interaction.value) }
+                is StreamsSettingsInteraction.AmbilightEnabled -> dataStore.update { it.copy(ambilightEnabled = interaction.value) }
+                is StreamsSettingsInteraction.AmbilightOpacity -> dataStore.update { it.copy(ambilightOpacity = interaction.value) }
             }
         }
     }
@@ -62,5 +64,13 @@ sealed interface StreamsSettingsInteraction {
 
     data class EnablePiP(
         val value: Boolean,
+    ) : StreamsSettingsInteraction
+
+    data class AmbilightEnabled(
+        val value: Boolean,
+    ) : StreamsSettingsInteraction
+
+    data class AmbilightOpacity(
+        val value: Int,
     ) : StreamsSettingsInteraction
 }
