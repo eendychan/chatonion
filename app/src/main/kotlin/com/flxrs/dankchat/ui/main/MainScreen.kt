@@ -87,6 +87,7 @@ import com.flxrs.dankchat.ui.main.input.TourOverlayState
 import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetOverlay
 import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetState
 import com.flxrs.dankchat.ui.main.sheet.SheetNavigationViewModel
+import com.flxrs.dankchat.ui.main.stream.AmbilightBackground
 import com.flxrs.dankchat.ui.main.stream.StreamView
 import com.flxrs.dankchat.ui.main.stream.StreamViewModel
 import com.flxrs.dankchat.ui.tour.FeatureTourUiState
@@ -845,32 +846,39 @@ fun MainScreen(
                 )
 
             val scaffoldContent: @Composable (PaddingValues, Dp, Boolean) -> Unit = { paddingValues, chatTopPadding, toolbarVisible ->
-                MainScreenPagerContent(
-                    paddingValues = paddingValues,
-                    chatTopPadding = chatTopPadding,
-                    tabState = tabState,
-                    composePagerState = composePagerState,
-                    pagerState = pagerState,
-                    isLoggedIn = isLoggedIn,
-                    showInput = showInput,
-                    isFullscreen = isFullscreen,
-                    swipeNavigation = swipeNavigation,
-                    isSheetOpen = isSheetOpen,
-                    inputHeightDp = inputHeightDp,
-                    helperTextHeightDp = helperTextHeightDp,
-                    navBarHeightDp = navBarHeightDp,
-                    effectiveRoundedCorner = effectiveRoundedCorner,
-                    scrollTargets = scrollTargets.toImmutableMap(),
-                    onClearScrollTarget = { scrollTargets.remove(it) },
-                    callbacks = chatPagerCallbacks,
-                    fabMenuCallbacks = fabMenuCallbacks,
-                    showPinnedMessage = !mainState.gestureToolbarHidden && toolbarVisible,
-                    isToolbarMenuOpen = isToolbarMenuOpen,
-                    currentTourStep = featureTourState.currentTourStep,
-                    recoveryFabTooltipState = featureTourViewModel.recoveryFabTooltipState,
-                    onAddChannel = dialogViewModel::showAddChannel,
-                    onLogin = onLogin,
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Glow behind the chat that follows the colors of the stream (not over the
+                    // theater layout, where the chat is drawn on top of the video itself)
+                    if (currentStream != null && !useTheaterLayout && !isInPipMode) {
+                        AmbilightBackground(chatBesideStream = useWideSplitLayout)
+                    }
+                    MainScreenPagerContent(
+                        paddingValues = paddingValues,
+                        chatTopPadding = chatTopPadding,
+                        tabState = tabState,
+                        composePagerState = composePagerState,
+                        pagerState = pagerState,
+                        isLoggedIn = isLoggedIn,
+                        showInput = showInput,
+                        isFullscreen = isFullscreen,
+                        swipeNavigation = swipeNavigation,
+                        isSheetOpen = isSheetOpen,
+                        inputHeightDp = inputHeightDp,
+                        helperTextHeightDp = helperTextHeightDp,
+                        navBarHeightDp = navBarHeightDp,
+                        effectiveRoundedCorner = effectiveRoundedCorner,
+                        scrollTargets = scrollTargets.toImmutableMap(),
+                        onClearScrollTarget = { scrollTargets.remove(it) },
+                        callbacks = chatPagerCallbacks,
+                        fabMenuCallbacks = fabMenuCallbacks,
+                        showPinnedMessage = !mainState.gestureToolbarHidden && toolbarVisible,
+                        isToolbarMenuOpen = isToolbarMenuOpen,
+                        currentTourStep = featureTourState.currentTourStep,
+                        recoveryFabTooltipState = featureTourViewModel.recoveryFabTooltipState,
+                        onAddChannel = dialogViewModel::showAddChannel,
+                        onLogin = onLogin,
+                    )
+                }
             }
 
             // Shared fullscreen sheet overlay
