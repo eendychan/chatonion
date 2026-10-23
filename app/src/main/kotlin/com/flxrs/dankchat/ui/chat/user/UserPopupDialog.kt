@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,6 +65,7 @@ import coil3.compose.AsyncImage
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.DisplayName
 import com.flxrs.dankchat.data.UserName
+import com.flxrs.dankchat.ui.theme.DankIcons
 import com.flxrs.dankchat.utils.DateTimeUtils
 import com.flxrs.dankchat.utils.compose.SheetErrorContent
 import java.text.NumberFormat
@@ -515,7 +515,7 @@ private fun UserActionsRow(
         }
         if (onHistory != null) {
             IconButton(onClick = onHistory) {
-                Icon(imageVector = Icons.Default.History, contentDescription = stringResource(R.string.message_history))
+                Icon(imageVector = DankIcons.History, contentDescription = stringResource(R.string.message_history))
             }
         }
         if (isSuccess && !isOwnUser) {
@@ -529,7 +529,7 @@ private fun UserActionsRow(
         }
         if (!isOwnUser) {
             IconButton(onClick = onReport) {
-                Icon(imageVector = Icons.Default.Report, contentDescription = stringResource(R.string.user_popup_report))
+                Icon(imageVector = DankIcons.FlagLine, contentDescription = stringResource(R.string.user_popup_report))
             }
         }
     }
