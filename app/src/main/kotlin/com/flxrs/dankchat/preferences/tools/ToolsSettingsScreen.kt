@@ -76,6 +76,7 @@ import com.flxrs.dankchat.preferences.components.SliderPreferenceItem
 import com.flxrs.dankchat.preferences.components.SwitchPreferenceItem
 import com.flxrs.dankchat.preferences.tools.upload.RecentUpload
 import com.flxrs.dankchat.preferences.tools.upload.RecentUploadsViewModel
+import com.flxrs.dankchat.ui.theme.DankIcons
 import com.flxrs.dankchat.utils.compose.ConfirmationBottomSheet
 import com.flxrs.dankchat.utils.compose.buildLinkAnnotation
 import com.flxrs.dankchat.utils.compose.textLinkStyles
@@ -176,7 +177,7 @@ fun ImageUploaderCategory(
             title = stringResource(R.string.preference_uploader_recent_uploads_title),
             isEnabled = hasRecentUploads,
             onClick = { recentUploadSheetOpen = true },
-            trailingIcon = Icons.Default.History,
+            trailingIcon = DankIcons.History,
         )
     }
 
