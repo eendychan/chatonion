@@ -12,18 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.BatterySaver
-import androidx.compose.material.icons.filled.Construction
-import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.FiberNew
-import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Paid
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -47,6 +37,7 @@ import com.flxrs.dankchat.preferences.components.PreferenceCategoryWithSummary
 import com.flxrs.dankchat.preferences.components.PreferenceItem
 import com.flxrs.dankchat.preferences.components.PreferenceSummary
 import com.flxrs.dankchat.ui.theme.DankChatTheme
+import com.flxrs.dankchat.ui.theme.DankIcons
 import com.flxrs.dankchat.utils.compose.buildClickableAnnotation
 import com.flxrs.dankchat.utils.compose.buildLinkAnnotation
 
@@ -124,33 +115,33 @@ fun OverviewSettingsScreen(
         ) {
             PreferenceItem(
                 title = stringResource(R.string.preference_appearance_header),
-                icon = Icons.Default.Palette,
+                icon = DankIcons.PaintBrushAiFill,
                 onClick = { onNavigate(SettingsNavigation.Appearance) },
             )
             PreferenceItem(
                 title = stringResource(R.string.preference_highlights_ignores_header),
-                icon = Icons.Default.NotificationsActive,
+                icon = DankIcons.BellRingingFill,
                 onClick = { onNavigate(SettingsNavigation.Notifications) },
             )
-            PreferenceItem(stringResource(R.string.preference_chat_header), Icons.Default.Forum, onClick = {
+            PreferenceItem(stringResource(R.string.preference_chat_header), DankIcons.MessageFill, onClick = {
                 onNavigate(SettingsNavigation.Chat)
             })
-            PreferenceItem(stringResource(R.string.moderation_settings_title), Icons.Default.Shield, onClick = {
+            PreferenceItem(stringResource(R.string.moderation_settings_title), DankIcons.SwordFill, onClick = {
                 onNavigate(SettingsNavigation.Moderation)
             })
-            PreferenceItem(stringResource(R.string.donation_settings_title), Icons.Default.Paid, onClick = {
+            PreferenceItem(stringResource(R.string.donation_settings_title), DankIcons.CurrencyDollarFill, onClick = {
                 onNavigate(SettingsNavigation.Donations)
             })
-            PreferenceItem(stringResource(R.string.preference_streams_header), Icons.Default.PlayArrow, onClick = {
+            PreferenceItem(stringResource(R.string.preference_streams_header), DankIcons.LiveFill, onClick = {
                 onNavigate(SettingsNavigation.Streams)
             })
-            PreferenceItem(stringResource(R.string.preference_battery_header), Icons.Default.BatterySaver, onClick = {
+            PreferenceItem(stringResource(R.string.preference_battery_header), DankIcons.BatteryChargingFill, onClick = {
                 onNavigate(SettingsNavigation.Battery)
             })
-            PreferenceItem(stringResource(R.string.preference_tools_header), Icons.Default.Construction, onClick = {
+            PreferenceItem(stringResource(R.string.preference_tools_header), DankIcons.ToolFill, onClick = {
                 onNavigate(SettingsNavigation.Tools)
             })
-            PreferenceItem(stringResource(R.string.preference_developer_header), Icons.Default.DeveloperMode, onClick = {
+            PreferenceItem(stringResource(R.string.preference_developer_header), DankIcons.DeveloperSettingsFill, onClick = {
                 onNavigate(SettingsNavigation.Developer)
             })
 
@@ -160,7 +151,7 @@ fun OverviewSettingsScreen(
                 })
             }
 
-            PreferenceItem(stringResource(R.string.logout), Icons.AutoMirrored.Default.ExitToApp, isEnabled = isLoggedIn, onClick = onLogout)
+            PreferenceItem(stringResource(R.string.logout), DankIcons.ExitDoorFill, isEnabled = isLoggedIn, onClick = onLogout)
             SecretDankerModeTrigger {
                 PreferenceCategoryWithSummary(
                     title = {
