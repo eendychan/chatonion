@@ -72,6 +72,7 @@ import com.flxrs.dankchat.ui.chat.emote.EffectedEmoteImage
 import com.flxrs.dankchat.ui.chat.emote.EmoteInfoViewModel
 import com.flxrs.dankchat.ui.chat.emote.toEmoteSheetData
 import com.flxrs.dankchat.ui.main.sheet.EmoteMenuViewModel
+import com.flxrs.dankchat.ui.theme.DankIcons
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -212,7 +213,7 @@ private fun EmoteMenuTabIcon(
 ) {
     if (type == EmoteMenuTab.RECENT) {
         Icon(
-            imageVector = Icons.Default.History,
+            imageVector = DankIcons.History,
             contentDescription = stringResource(R.string.emote_menu_tab_recent),
         )
         return
