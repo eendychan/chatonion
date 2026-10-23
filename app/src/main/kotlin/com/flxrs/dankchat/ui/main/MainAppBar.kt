@@ -14,17 +14,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
@@ -49,6 +42,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.flxrs.dankchat.R
+import com.flxrs.dankchat.ui.theme.DankIcons
 import com.flxrs.dankchat.utils.compose.predictiveBackScale
 import kotlinx.coroutines.CancellationException
 
@@ -196,7 +190,7 @@ private fun RowScope.MainMenuContent(
     // Group 1: settings
     InlineMenuIconItem(
         key = "settings",
-        icon = Icons.Default.Settings,
+        icon = DankIcons.Settings,
         contentDescription = stringResource(R.string.settings),
         onClick = {
             onAction(ToolbarAction.OpenSettings)
@@ -209,7 +203,7 @@ private fun RowScope.MainMenuContent(
     // Group 2: this channel - settings (the draggable channel window), moderation, stream toggle
     InlineMenuIconItem(
         key = "channel_settings",
-        icon = Icons.Default.EditNote,
+        icon = DankIcons.UserEditLine,
         contentDescription = stringResource(R.string.manage_channels),
         onClick = {
             onAction(ToolbarAction.ManageChannels)
@@ -219,7 +213,7 @@ private fun RowScope.MainMenuContent(
     if (isModerator) {
         InlineMenuIconItem(
             key = "mod_actions",
-            icon = Icons.Outlined.Shield,
+            icon = DankIcons.SwordLine,
             contentDescription = stringResource(R.string.menu_mod_actions),
             onClick = {
                 onAction(ToolbarAction.OpenModActions)
@@ -229,7 +223,7 @@ private fun RowScope.MainMenuContent(
     }
     InlineMenuIconItem(
         key = "toggle_stream",
-        icon = if (hasActiveStream) Icons.Filled.Videocam else Icons.Outlined.Videocam,
+        icon = DankIcons.CamcorderLine,
         contentDescription = stringResource(R.string.toggle_stream),
         tint = if (hasActiveStream) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         onClick = {
@@ -244,7 +238,7 @@ private fun RowScope.MainMenuContent(
     if (isLoggedIn) {
         InlineMenuIconItem(
             key = "mentions",
-            icon = if (mentionCount > 0) Icons.Default.Notifications else Icons.Outlined.Notifications,
+            icon = DankIcons.NotificationLine,
             contentDescription = stringResource(R.string.mentions_title),
             tint = if (mentionCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = {
@@ -264,7 +258,7 @@ private fun RowScope.MainMenuContent(
     )
     InlineMenuIconItem(
         key = "last_message",
-        icon = Icons.Default.History,
+        icon = DankIcons.History,
         contentDescription = stringResource(R.string.input_action_last_message),
         onClick = {
             onAction(ToolbarAction.LastMessage)
@@ -277,7 +271,7 @@ private fun RowScope.MainMenuContent(
     // Group 4: reconnect, reload emotes
     InlineMenuIconItem(
         key = "reconnect",
-        icon = Icons.Default.Autorenew,
+        icon = DankIcons.Refresh,
         contentDescription = stringResource(R.string.reconnect),
         onClick = {
             onAction(ToolbarAction.Reconnect)
@@ -300,7 +294,7 @@ private fun RowScope.MainMenuContent(
     if (!isLoggedIn) {
         InlineMenuIconItem(
             key = "login",
-            icon = Icons.AutoMirrored.Filled.Login,
+            icon = DankIcons.OpenDoorLine,
             contentDescription = stringResource(R.string.login),
             onClick = {
                 onAction(ToolbarAction.Login)
@@ -310,7 +304,7 @@ private fun RowScope.MainMenuContent(
     } else {
         InlineMenuIconItem(
             key = "logout",
-            icon = Icons.AutoMirrored.Filled.Logout,
+            icon = DankIcons.OpenDoorLine,
             contentDescription = stringResource(R.string.logout),
             onClick = {
                 onAction(ToolbarAction.Logout)
