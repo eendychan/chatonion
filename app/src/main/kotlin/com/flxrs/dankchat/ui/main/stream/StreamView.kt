@@ -35,7 +35,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CommentsDisabled
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
-import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -61,13 +60,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.doOnAttach
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserName
+import com.flxrs.dankchat.ui.theme.DankIcons
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.delay
-import org.koin.compose.viewmodel.koinViewModel
+import kotlin.coroutines.resume
 import kotlin.math.abs
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.suspendCancellableCoroutine
+import org.koin.compose.viewmodel.koinViewModel
 
 private const val OVERLAY_AUTO_HIDE_MS = 5_000L
 private const val DOUBLE_TAP_TIMEOUT_MS = 300L
@@ -276,6 +282,8 @@ fun StreamView(
                 }
             }
 
+        AmbilightSampler(webView = webView, active = isPageLoaded, streamViewModel = streamViewModel)
+
         if (isPageLoaded) {
             AndroidView(
                 factory = { _ ->
@@ -377,7 +385,7 @@ fun StreamView(
 
                     else -> {
                         StreamOverlayButton(
-                            icon = Icons.Default.Headphones,
+                            icon = DankIcons.HeadphoneFill,
                             contentDescription = stringResource(R.string.menu_audio_only),
                             onClick = onAudioOnly,
                             buttonSize = buttonSize,
@@ -508,3 +516,59 @@ private class StreamComposeWebViewClient(
             )
     }
 }
+
+/**
+ * While the stream is on screen, periodically reads a tiny downscaled copy of the video frame out of
+ * the player page, for the ambilight glow behind the chat. The video is drawn onto a 16x9 canvas
+ * inside the page; if the player doesn't allow reading its pixels back, nothing is reported and the
+ * glow just stays off.
+ */
+@Composable
+private fun AmbilightSampler(
+    webView: WebView,
+    active: Boolean,
+    streamViewModel: StreamViewModel,
+) {
+    val enabled by streamViewModel.ambilightEnabled.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(webView, active, enabled) {
+        if (!active || !enabled) {
+            streamViewModel.updateAmbilight(null)
+            return@LaunchedEffect
+        }
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (isActive) {
+                streamViewModel.updateAmbilight(parseAmbilightFrame(webView.evaluateScript(AMBILIGHT_SCRIPT)))
+                delay(AMBILIGHT_INTERVAL_MS)
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { streamViewModel.updateAmbilight(null) }
+    }
+}
+
+private suspend fun WebView.evaluateScript(script: String): String? =
+    suspendCancellableCoroutine { continuation ->
+        evaluateJavascript(script) { result -> continuation.resume(result) }
+    }
+
+// evaluateJavascript hands back a JSON string: "123,456,..." (with the quotes), "" or null
+private fun parseAmbilightFrame(raw: String?): IntArray? {
+    val values = raw?.trim('"')?.takeIf { it.isNotEmpty() }?.split(',') ?: return null
+    if (values.size != AMBILIGHT_COLUMNS * AMBILIGHT_ROWS) return null
+    return IntArray(values.size) { index ->
+        val rgb = values[index].toIntOrNull() ?: return null
+        (0xFF shl 24) or rgb
+    }
+}
+
+private const val AMBILIGHT_INTERVAL_MS = 400L
+private const val AMBILIGHT_SCRIPT =
+    "(function(){try{var v=document.querySelector('video');if(!v||v.readyState<2||!v.videoWidth)return '';" +
+        "var c=window.__ambilight||(window.__ambilight=document.createElement('canvas'));c.width=$AMBILIGHT_COLUMNS;c.height=$AMBILIGHT_ROWS;" +
+        "var x=c.getContext('2d',{willReadFrequently:true});x.drawImage(v,0,0,$AMBILIGHT_COLUMNS,$AMBILIGHT_ROWS);" +
+        "var d=x.getImageData(0,0,$AMBILIGHT_COLUMNS,$AMBILIGHT_ROWS).data,o=[];" +
+        "for(var i=0;i<d.length;i+=4){o.push((d[i]<<16)|(d[i+1]<<8)|d[i+2]);}return o.join(',');}catch(e){return '';}})()"
