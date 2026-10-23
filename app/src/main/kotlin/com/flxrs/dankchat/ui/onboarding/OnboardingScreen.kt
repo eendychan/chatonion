@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.flxrs.dankchat.R
+import com.flxrs.dankchat.ui.theme.DankIcons
 import com.flxrs.dankchat.utils.compose.buildLinkAnnotation
 import com.flxrs.dankchat.utils.extensions.isAtLeastTiramisu
 import kotlinx.coroutines.launch
@@ -300,7 +301,7 @@ private fun MessageHistoryPage(
     OnboardingPage(
         icon = {
             Icon(
-                imageVector = Icons.Default.History,
+                imageVector = DankIcons.History,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.primary,
