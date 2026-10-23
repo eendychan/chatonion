@@ -25,8 +25,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.preferences.model.ChannelWithRename
+import com.flxrs.dankchat.ui.theme.DankIcons
 import com.flxrs.dankchat.utils.compose.rememberModalSheetState
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -246,21 +245,21 @@ private fun ChannelItem(
 
             IconButton(onClick = onNavigate) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    imageVector = DankIcons.InspectLine,
                     contentDescription = stringResource(R.string.open_channel),
                 )
             }
 
             IconButton(onClick = onEdit) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_edit),
+                    imageVector = DankIcons.EditLine,
                     contentDescription = stringResource(R.string.edit_dialog_title),
                 )
             }
 
             IconButton(onClick = onDelete) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_delete_outline),
+                    imageVector = DankIcons.DeleteLine,
                     contentDescription = stringResource(R.string.remove_channel),
                 )
             }
