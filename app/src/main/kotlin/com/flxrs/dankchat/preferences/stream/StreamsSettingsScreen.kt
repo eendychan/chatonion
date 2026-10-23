@@ -21,14 +21,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.preferences.components.NavigationBarSpacer
+import com.flxrs.dankchat.preferences.components.SliderPreferenceItem
 import com.flxrs.dankchat.preferences.components.SwitchPreferenceItem
+import kotlin.math.roundToInt
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -113,6 +118,25 @@ private fun StreamsSettingsContent(
                 isChecked = settings.preventStreamReloads,
                 isEnabled = settings.fetchStreams,
                 onClick = { onInteraction(StreamsSettingsInteraction.PreventStreamReloads(it)) },
+            )
+
+            SwitchPreferenceItem(
+                title = stringResource(R.string.preference_ambilight_title),
+                summary = stringResource(R.string.preference_ambilight_summary),
+                isChecked = settings.ambilightEnabled,
+                isEnabled = settings.fetchStreams,
+                onClick = { onInteraction(StreamsSettingsInteraction.AmbilightEnabled(it)) },
+            )
+            var ambilightOpacity by remember(settings.ambilightOpacity) { mutableFloatStateOf(settings.ambilightOpacity.toFloat()) }
+            SliderPreferenceItem(
+                title = stringResource(R.string.preference_ambilight_opacity_title),
+                value = ambilightOpacity,
+                range = 5f..100f,
+                steps = 0,
+                onDrag = { ambilightOpacity = it },
+                onDragFinish = { onInteraction(StreamsSettingsInteraction.AmbilightOpacity(ambilightOpacity.roundToInt())) },
+                isEnabled = settings.fetchStreams && settings.ambilightEnabled,
+                summary = stringResource(R.string.preference_ambilight_opacity_summary),
             )
 
             val activity = LocalActivity.current
