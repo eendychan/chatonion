@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.flxrs.dankchat.R
+import com.flxrs.dankchat.ui.theme.DankIcons
 import kotlinx.collections.immutable.ImmutableList
 
 @Composable
@@ -65,7 +65,7 @@ internal fun RecentMessagesPopup(
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.History,
+                        imageVector = DankIcons.History,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
