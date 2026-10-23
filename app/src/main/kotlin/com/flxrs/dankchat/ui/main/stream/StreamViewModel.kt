@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -68,6 +69,44 @@ class StreamViewModel(
                 isTheaterChatDocked = theater.chatDocked,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StreamState())
+
+    val ambilightEnabled: StateFlow<Boolean> =
+        streamsSettingsDataStore.settings
+            .map { it.ambilightEnabled }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), streamsSettingsDataStore.current().ambilightEnabled)
+
+    /** 0f..1f */
+    val ambilightOpacity: StateFlow<Float> =
+        streamsSettingsDataStore.settings
+            .map { it.ambilightOpacity / 100f }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), streamsSettingsDataStore.current().ambilightOpacity / 100f)
+
+    private val _ambilightColors = MutableStateFlow<IntArray?>(null)
+
+    /** The latest frame of the stream, downscaled to AMBILIGHT_COLUMNS x AMBILIGHT_ROWS, as opaque ARGB pixels. */
+    val ambilightColors: StateFlow<IntArray?> = _ambilightColors.asStateFlow()
+
+    fun updateAmbilight(colors: IntArray?) {
+        val previous = _ambilightColors.value
+        // Blend with the previous frame so the glow shifts smoothly rather than flickering
+        _ambilightColors.value =
+            when {
+                colors == null || previous == null || previous.size != colors.size -> colors
+                else -> IntArray(colors.size) { blendArgb(previous[it], colors[it]) }
+            }
+    }
+
+    private fun blendArgb(
+        old: Int,
+        new: Int,
+    ): Int {
+        val r = (((old shr 16) and 0xFF) + ((new shr 16) and 0xFF)) / 2
+        val g = (((old shr 8) and 0xFF) + ((new shr 8) and 0xFF)) / 2
+        val b = ((old and 0xFF) + (new and 0xFF)) / 2
+        return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
+    }
 
     val shouldEnablePipAutoMode: StateFlow<Boolean> =
         combine(
@@ -253,3 +292,6 @@ private data class TheaterState(
     val chatVisible: Boolean,
     val chatDocked: Boolean,
 )
+
+const val AMBILIGHT_COLUMNS = 16
+const val AMBILIGHT_ROWS = 9
