@@ -16,10 +16,6 @@ import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Theaters
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.preferences.appearance.InputAction
+import com.flxrs.dankchat.ui.theme.DankIcons
 import com.flxrs.dankchat.utils.compose.rememberModalSheetState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -216,11 +213,11 @@ internal val InputAction.icon: ImageVector
     get() =
         when (this) {
             InputAction.Search -> Icons.Default.Search
-            InputAction.LastMessage -> Icons.Default.History
-            InputAction.Stream -> Icons.Outlined.Videocam
-            InputAction.ModActions -> Icons.Outlined.Shield
-            InputAction.Fullscreen -> Icons.Default.Fullscreen
-            InputAction.Theater -> Icons.Default.Theaters
-            InputAction.HideInput -> Icons.Default.VisibilityOff
+            InputAction.LastMessage -> DankIcons.History
+            InputAction.Stream -> DankIcons.CamcorderLine
+            InputAction.ModActions -> DankIcons.SwordLine
+            InputAction.Fullscreen -> DankIcons.FullscreenFill
+            InputAction.Theater -> DankIcons.FilmLine
+            InputAction.HideInput -> DankIcons.EyeCloseLine
             InputAction.Debug -> Icons.Default.BugReport
         }
