@@ -10,13 +10,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
-import androidx.compose.material.icons.filled.Headphones
-import androidx.compose.material.icons.filled.Paid
-import androidx.compose.material.icons.filled.Theaters
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.flxrs.dankchat.R
 import com.flxrs.dankchat.preferences.appearance.InputAction
+import com.flxrs.dankchat.ui.theme.DankIcons
 
 /**
  * These actions always live behind the overflow trigger next to the input field. Shown as a
@@ -65,7 +61,7 @@ fun QuickActionsMenu(
         // Used to live in the top toolbar's overflow menu - now first here per the fixed order.
         QuickActionItem(
             text = stringResource(R.string.upload_media),
-            icon = Icons.Default.CloudUpload,
+            icon = DankIcons.UploadLine,
             enabled = enabled,
             onClick = onUploadClick,
         )
@@ -73,7 +69,7 @@ fun QuickActionsMenu(
         if (showDonations) {
             QuickActionItem(
                 text = stringResource(R.string.donations_menu_item),
-                icon = Icons.Default.Paid,
+                icon = DankIcons.CurrencyDollarLine,
                 enabled = enabled,
                 onClick = onDonationsClick,
             )
@@ -83,7 +79,7 @@ fun QuickActionsMenu(
         // still shown per the fixed order, just disabled.
         QuickActionItem(
             text = stringResource(if (isFullscreen) R.string.menu_exit_fullscreen else R.string.menu_fullscreen),
-            icon = if (isFullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
+            icon = if (isFullscreen) Icons.Default.FullscreenExit else DankIcons.FullscreenFill,
             enabled = enabled && !isTheaterMode,
             onClick = { onActionClick(InputAction.Fullscreen) },
         )
@@ -92,21 +88,21 @@ fun QuickActionsMenu(
         // stream to switch modes for.
         QuickActionItem(
             text = stringResource(if (isTheaterMode) R.string.menu_exit_theater_mode else R.string.menu_theater_mode),
-            icon = Icons.Default.Theaters,
+            icon = DankIcons.FilmLine,
             enabled = enabled && isStreamActive,
             onClick = { onActionClick(InputAction.Theater) },
         )
 
         QuickActionItem(
             text = stringResource(R.string.menu_hide_input),
-            icon = Icons.Default.VisibilityOff,
+            icon = DankIcons.EyeCloseLine,
             enabled = enabled,
             onClick = { onActionClick(InputAction.HideInput) },
         )
 
         QuickActionItem(
             text = stringResource(if (isAudioOnly) R.string.menu_exit_audio_only else R.string.menu_audio_only),
-            icon = if (isAudioOnly) Icons.Outlined.Videocam else Icons.Default.Headphones,
+            icon = if (isAudioOnly) Icons.Outlined.Videocam else DankIcons.HeadphoneFill,
             enabled = enabled && isStreamActive,
             onClick = onAudioOnly,
         )
