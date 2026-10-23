@@ -695,6 +695,10 @@
     <string name="preference_helix_sending_summary">Отправлять сообщения чата через Twitch Helix API вместо IRC</string>
     <string name="preference_7tv_live_updates_title">Обновления 7TV эмоций в реальном времени</string>
     <string name="preference_streams_header">Прямая трансляция</string>
+    <string name="preference_ambilight_title">Ambilight</string>
+    <string name="preference_ambilight_summary">Подсветка на фоне чата, которая следует за цветами трансляции</string>
+    <string name="preference_ambilight_opacity_title">Непрозрачность Ambilight</string>
+    <string name="preference_ambilight_opacity_summary">Сила подсветки, в процентах</string>
     <string name="preference_pip_title">Включить режим «картинка в картинке»</string>
     <string name="preference_pip_summary">Позволяет потокам продолжать воспроизведение, пока приложение находится в фоновом режиме.</string>
     <string name="preference_battery_header">Батарея</string>
