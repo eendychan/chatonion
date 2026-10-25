@@ -335,16 +335,15 @@ private fun dankIcon(
     name: String,
     fillType: PathFillType,
     vararg pathData: String,
-): ImageVector =
-    ImageVector
-        .Builder(
-            name = name,
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f,
-        ).addPath(
-            pathData = PathParser().parsePathString(pathData.joinToString(separator = "")).toNodes(),
-            pathFillType = fillType,
-            fill = SolidColor(Color.Black),
-        ).build()
+): ImageVector = ImageVector
+    .Builder(
+        name = name,
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).addPath(
+        pathData = PathParser().parsePathString(pathData.joinToString(separator = "")).toNodes(),
+        pathFillType = fillType,
+        fill = SolidColor(Color.Black),
+    ).build()
