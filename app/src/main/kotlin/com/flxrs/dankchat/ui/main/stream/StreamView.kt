@@ -68,12 +68,12 @@ import com.flxrs.dankchat.R
 import com.flxrs.dankchat.data.UserName
 import com.flxrs.dankchat.ui.theme.DankIcons
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlin.coroutines.resume
-import kotlin.math.abs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.coroutines.resume
+import kotlin.math.abs
 
 private const val OVERLAY_AUTO_HIDE_MS = 5_000L
 private const val DOUBLE_TAP_TIMEOUT_MS = 300L
@@ -550,10 +550,9 @@ private fun AmbilightSampler(
     }
 }
 
-private suspend fun WebView.evaluateScript(script: String): String? =
-    suspendCancellableCoroutine { continuation ->
-        evaluateJavascript(script) { result -> continuation.resume(result) }
-    }
+private suspend fun WebView.evaluateScript(script: String): String? = suspendCancellableCoroutine { continuation ->
+    evaluateJavascript(script) { result -> continuation.resume(result) }
+}
 
 // evaluateJavascript hands back a JSON string: "123,456,..." (with the quotes), "" or null
 private fun parseAmbilightFrame(raw: String?): IntArray? {
