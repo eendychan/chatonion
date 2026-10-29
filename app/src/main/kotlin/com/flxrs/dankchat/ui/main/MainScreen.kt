@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -22,6 +23,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
@@ -88,6 +90,7 @@ import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetOverlay
 import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetState
 import com.flxrs.dankchat.ui.main.sheet.SheetNavigationViewModel
 import com.flxrs.dankchat.ui.main.stream.AmbilightBackground
+import com.flxrs.dankchat.ui.main.stream.LocalChatBackgroundTransparent
 import com.flxrs.dankchat.ui.main.stream.StreamView
 import com.flxrs.dankchat.ui.main.stream.StreamViewModel
 import com.flxrs.dankchat.ui.tour.FeatureTourUiState
@@ -846,38 +849,46 @@ fun MainScreen(
                 )
 
             val scaffoldContent: @Composable (PaddingValues, Dp, Boolean) -> Unit = { paddingValues, chatTopPadding, toolbarVisible ->
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // Glow behind the chat that follows the colors of the stream (not over the
-                    // theater layout, where the chat is drawn on top of the video itself)
-                    if (currentStream != null && !useTheaterLayout && !isInPipMode) {
+                // Glow behind the chat that follows the colors of the stream (not over the theater
+                // layout, where the chat is drawn on top of the video itself)
+                val ambilightHost = currentStream != null && !useTheaterLayout && !isInPipMode
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .then(if (ambilightHost) Modifier.background(MaterialTheme.colorScheme.background) else Modifier),
+                ) {
+                    if (ambilightHost) {
                         AmbilightBackground(chatBesideStream = useWideSplitLayout)
                     }
-                    MainScreenPagerContent(
-                        paddingValues = paddingValues,
-                        chatTopPadding = chatTopPadding,
-                        tabState = tabState,
-                        composePagerState = composePagerState,
-                        pagerState = pagerState,
-                        isLoggedIn = isLoggedIn,
-                        showInput = showInput,
-                        isFullscreen = isFullscreen,
-                        swipeNavigation = swipeNavigation,
-                        isSheetOpen = isSheetOpen,
-                        inputHeightDp = inputHeightDp,
-                        helperTextHeightDp = helperTextHeightDp,
-                        navBarHeightDp = navBarHeightDp,
-                        effectiveRoundedCorner = effectiveRoundedCorner,
-                        scrollTargets = scrollTargets.toImmutableMap(),
-                        onClearScrollTarget = { scrollTargets.remove(it) },
-                        callbacks = chatPagerCallbacks,
-                        fabMenuCallbacks = fabMenuCallbacks,
-                        showPinnedMessage = !mainState.gestureToolbarHidden && toolbarVisible,
-                        isToolbarMenuOpen = isToolbarMenuOpen,
-                        currentTourStep = featureTourState.currentTourStep,
-                        recoveryFabTooltipState = featureTourViewModel.recoveryFabTooltipState,
-                        onAddChannel = dialogViewModel::showAddChannel,
-                        onLogin = onLogin,
-                    )
+                    CompositionLocalProvider(LocalChatBackgroundTransparent provides ambilightHost) {
+                        MainScreenPagerContent(
+                            paddingValues = paddingValues,
+                            chatTopPadding = chatTopPadding,
+                            tabState = tabState,
+                            composePagerState = composePagerState,
+                            pagerState = pagerState,
+                            isLoggedIn = isLoggedIn,
+                            showInput = showInput,
+                            isFullscreen = isFullscreen,
+                            swipeNavigation = swipeNavigation,
+                            isSheetOpen = isSheetOpen,
+                            inputHeightDp = inputHeightDp,
+                            helperTextHeightDp = helperTextHeightDp,
+                            navBarHeightDp = navBarHeightDp,
+                            effectiveRoundedCorner = effectiveRoundedCorner,
+                            scrollTargets = scrollTargets.toImmutableMap(),
+                            onClearScrollTarget = { scrollTargets.remove(it) },
+                            callbacks = chatPagerCallbacks,
+                            fabMenuCallbacks = fabMenuCallbacks,
+                            showPinnedMessage = !mainState.gestureToolbarHidden && toolbarVisible,
+                            isToolbarMenuOpen = isToolbarMenuOpen,
+                            currentTourStep = featureTourState.currentTourStep,
+                            recoveryFabTooltipState = featureTourViewModel.recoveryFabTooltipState,
+                            onAddChannel = dialogViewModel::showAddChannel,
+                            onLogin = onLogin,
+                        )
+                    }
                 }
             }
 
