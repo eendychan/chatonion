@@ -103,6 +103,7 @@ import com.flxrs.dankchat.ui.chat.messages.UserNoticeMessageComposable
 import com.flxrs.dankchat.ui.chat.messages.WhisperMessageComposable
 import com.flxrs.dankchat.ui.main.TheaterChatModeIcon
 import com.flxrs.dankchat.ui.main.input.TourTooltip
+import com.flxrs.dankchat.ui.main.stream.LocalChatBackgroundTransparent
 import com.flxrs.dankchat.utils.compose.predictiveBackScale
 import kotlinx.collections.immutable.ImmutableList
 
@@ -206,7 +207,8 @@ fun ChatScreen(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = containerColor,
+        // The background shows through when something (the stream's ambilight glow) is drawn behind the chat
+        color = if (LocalChatBackgroundTransparent.current) Color.Transparent else containerColor,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
