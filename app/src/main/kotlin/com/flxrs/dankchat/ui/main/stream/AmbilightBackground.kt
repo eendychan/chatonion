@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -22,6 +23,12 @@ import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
 private const val EDGE_THICKNESS = 2
+
+/**
+ * True while the chat is drawn on top of an [AmbilightBackground] host: the chat then leaves its own
+ * background transparent, otherwise its opaque surface would cover the glow completely.
+ */
+val LocalChatBackgroundTransparent = staticCompositionLocalOf { false }
 
 /**
  * A soft glow in the chat background that follows the colors along the edge of the stream next to
