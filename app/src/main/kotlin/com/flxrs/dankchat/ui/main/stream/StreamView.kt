@@ -538,8 +538,16 @@ private fun AmbilightSampler(
             return@LaunchedEffect
         }
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            var lastError: String? = null
             while (isActive) {
-                streamViewModel.updateAmbilight(parseAmbilightFrame(webView.evaluateScript(AMBILIGHT_SCRIPT)))
+                val result = webView.evaluateScript(AMBILIGHT_SCRIPT)
+                streamViewModel.updateAmbilight(parseAmbilightFrame(result))
+                // The page reports why it couldn't read the frame (e.g. the player doesn't allow it)
+                val error = result?.trim('"')?.takeIf { it.startsWith(AMBILIGHT_ERROR_PREFIX) }
+                if (error != null && error != lastError) {
+                    ambilightLogger.warn { "Ambilight frame couldn't be read: $error" }
+                }
+                lastError = error
                 delay(AMBILIGHT_INTERVAL_MS)
             }
         }
@@ -565,9 +573,11 @@ private fun parseAmbilightFrame(raw: String?): IntArray? {
 }
 
 private const val AMBILIGHT_INTERVAL_MS = 400L
+private const val AMBILIGHT_ERROR_PREFIX = "error:"
+private val ambilightLogger = KotlinLogging.logger("Ambilight")
 private const val AMBILIGHT_SCRIPT =
     "(function(){try{var v=document.querySelector('video');if(!v||v.readyState<2||!v.videoWidth)return '';" +
         "var c=window.__ambilight||(window.__ambilight=document.createElement('canvas'));c.width=$AMBILIGHT_COLUMNS;c.height=$AMBILIGHT_ROWS;" +
         "var x=c.getContext('2d',{willReadFrequently:true});x.drawImage(v,0,0,$AMBILIGHT_COLUMNS,$AMBILIGHT_ROWS);" +
         "var d=x.getImageData(0,0,$AMBILIGHT_COLUMNS,$AMBILIGHT_ROWS).data,o=[];" +
-        "for(var i=0;i<d.length;i+=4){o.push((d[i]<<16)|(d[i+1]<<8)|d[i+2]);}return o.join(',');}catch(e){return '';}})()"
+        "for(var i=0;i<d.length;i+=4){o.push((d[i]<<16)|(d[i+1]<<8)|d[i+2]);}return o.join(',');}catch(e){return 'error:'+e.name;}})()"
