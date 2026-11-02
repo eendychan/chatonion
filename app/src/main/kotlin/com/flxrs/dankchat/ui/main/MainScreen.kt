@@ -90,7 +90,6 @@ import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetOverlay
 import com.flxrs.dankchat.ui.main.sheet.FullScreenSheetState
 import com.flxrs.dankchat.ui.main.sheet.SheetNavigationViewModel
 import com.flxrs.dankchat.ui.main.stream.AmbilightBackground
-import com.flxrs.dankchat.ui.main.stream.LocalChatBackgroundTransparent
 import com.flxrs.dankchat.ui.main.stream.StreamView
 import com.flxrs.dankchat.ui.main.stream.StreamViewModel
 import com.flxrs.dankchat.ui.tour.FeatureTourUiState
@@ -861,34 +860,33 @@ fun MainScreen(
                     if (ambilightHost) {
                         AmbilightBackground(chatBesideStream = useWideSplitLayout)
                     }
-                    CompositionLocalProvider(LocalChatBackgroundTransparent provides ambilightHost) {
-                        MainScreenPagerContent(
-                            paddingValues = paddingValues,
-                            chatTopPadding = chatTopPadding,
-                            tabState = tabState,
-                            composePagerState = composePagerState,
-                            pagerState = pagerState,
-                            isLoggedIn = isLoggedIn,
-                            showInput = showInput,
-                            isFullscreen = isFullscreen,
-                            swipeNavigation = swipeNavigation,
-                            isSheetOpen = isSheetOpen,
-                            inputHeightDp = inputHeightDp,
-                            helperTextHeightDp = helperTextHeightDp,
-                            navBarHeightDp = navBarHeightDp,
-                            effectiveRoundedCorner = effectiveRoundedCorner,
-                            scrollTargets = scrollTargets.toImmutableMap(),
-                            onClearScrollTarget = { scrollTargets.remove(it) },
-                            callbacks = chatPagerCallbacks,
-                            fabMenuCallbacks = fabMenuCallbacks,
-                            showPinnedMessage = !mainState.gestureToolbarHidden && toolbarVisible,
-                            isToolbarMenuOpen = isToolbarMenuOpen,
-                            currentTourStep = featureTourState.currentTourStep,
-                            recoveryFabTooltipState = featureTourViewModel.recoveryFabTooltipState,
-                            onAddChannel = dialogViewModel::showAddChannel,
-                            onLogin = onLogin,
-                        )
-                    }
+                    MainScreenPagerContent(
+                        paddingValues = paddingValues,
+                        chatTopPadding = chatTopPadding,
+                        tabState = tabState,
+                        composePagerState = composePagerState,
+                        pagerState = pagerState,
+                        isLoggedIn = isLoggedIn,
+                        showInput = showInput,
+                        isFullscreen = isFullscreen,
+                        swipeNavigation = swipeNavigation,
+                        isSheetOpen = isSheetOpen,
+                        inputHeightDp = inputHeightDp,
+                        helperTextHeightDp = helperTextHeightDp,
+                        navBarHeightDp = navBarHeightDp,
+                        effectiveRoundedCorner = effectiveRoundedCorner,
+                        scrollTargets = scrollTargets.toImmutableMap(),
+                        onClearScrollTarget = { scrollTargets.remove(it) },
+                        callbacks = chatPagerCallbacks,
+                        fabMenuCallbacks = fabMenuCallbacks,
+                        showPinnedMessage = !mainState.gestureToolbarHidden && toolbarVisible,
+                        isToolbarMenuOpen = isToolbarMenuOpen,
+                        currentTourStep = featureTourState.currentTourStep,
+                        recoveryFabTooltipState = featureTourViewModel.recoveryFabTooltipState,
+                        onAddChannel = dialogViewModel::showAddChannel,
+                        onLogin = onLogin,
+                        chatBackgroundTransparent = ambilightHost,
+                    )
                 }
             }
 
