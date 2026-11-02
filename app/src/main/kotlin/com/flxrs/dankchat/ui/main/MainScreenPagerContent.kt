@@ -136,6 +136,7 @@ internal fun MainScreenPagerContent(
     recoveryFabTooltipState: TooltipState?,
     onAddChannel: () -> Unit,
     onLogin: () -> Unit,
+    chatBackgroundTransparent: Boolean = false,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         val showFullScreenLoading = tabState.loading && tabState.tabs.isEmpty()
@@ -200,6 +201,7 @@ internal fun MainScreenPagerContent(
                                     fabMenuCallbacks = fabMenuCallbacks,
                                     showPinnedMessage = showPinnedMessage,
                                     isToolbarMenuOpen = isToolbarMenuOpen,
+                                    transparentBackground = chatBackgroundTransparent,
                                     contentPadding =
                                         PaddingValues(
                                             top = chatTopPadding + if (isFullscreen) 0.dp else 56.dp,
