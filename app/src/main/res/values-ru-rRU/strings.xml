@@ -699,6 +699,10 @@
     <string name="preference_ambilight_summary">Подсветка на фоне чата, которая следует за цветами трансляции</string>
     <string name="preference_ambilight_opacity_title">Непрозрачность Ambilight</string>
     <string name="preference_ambilight_opacity_summary">Сила подсветки, в процентах</string>
+    <string name="preference_ambilight_spread_title">Растяжка Ambilight</string>
+    <string name="preference_ambilight_spread_summary">Как далеко подсветка заходит в чат, в процентах от его размера</string>
+    <string name="preference_ambilight_power_saving_title">Энергосбережение Ambilight</string>
+    <string name="preference_ambilight_power_saving_summary">Подсветка обновляется реже: меньше нагрузка на батарею и процессор, но цвета отстают от видео</string>
     <string name="preference_pip_title">Включить режим «картинка в картинке»</string>
     <string name="preference_pip_summary">Позволяет потокам продолжать воспроизведение, пока приложение находится в фоновом режиме.</string>
     <string name="preference_battery_header">Батарея</string>
