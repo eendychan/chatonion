@@ -14,5 +14,8 @@ data class StreamsSettings(
     val ambilightEnabled: Boolean = true,
     // percent, 0-100
     val ambilightOpacity: Int = 40,
+    // how far the glow reaches into the chat, percent of the chat's size
+    val ambilightSpread: Int = 20,
+    val ambilightPowerSaving: Boolean = false,
     val splitFraction: Float = 0.6f,
 )
