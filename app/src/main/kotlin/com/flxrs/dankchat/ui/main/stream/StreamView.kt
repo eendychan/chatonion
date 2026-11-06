@@ -530,9 +530,10 @@ private fun AmbilightSampler(
     streamViewModel: StreamViewModel,
 ) {
     val enabled by streamViewModel.ambilightEnabled.collectAsStateWithLifecycle()
+    val powerSaving by streamViewModel.ambilightPowerSaving.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(webView, active, enabled) {
+    LaunchedEffect(webView, active, enabled, powerSaving) {
         if (!active || !enabled) {
             streamViewModel.updateAmbilight(null)
             return@LaunchedEffect
@@ -548,7 +549,7 @@ private fun AmbilightSampler(
                     ambilightLogger.warn { "Ambilight frame couldn't be read: $error" }
                 }
                 lastError = error
-                delay(AMBILIGHT_INTERVAL_MS)
+                delay(if (powerSaving) AMBILIGHT_INTERVAL_POWER_SAVING_MS else AMBILIGHT_INTERVAL_SMOOTH_MS)
             }
         }
     }
@@ -572,7 +573,6 @@ private fun parseAmbilightFrame(raw: String?): IntArray? {
     }
 }
 
-private const val AMBILIGHT_INTERVAL_MS = 400L
 private const val AMBILIGHT_ERROR_PREFIX = "error:"
 private val ambilightLogger = KotlinLogging.logger("Ambilight")
 private const val AMBILIGHT_SCRIPT =
