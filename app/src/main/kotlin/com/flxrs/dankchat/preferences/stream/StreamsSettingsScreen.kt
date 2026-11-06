@@ -139,6 +139,25 @@ private fun StreamsSettingsContent(
                 summary = stringResource(R.string.preference_ambilight_opacity_summary),
             )
 
+            var ambilightSpread by remember(settings.ambilightSpread) { mutableFloatStateOf(settings.ambilightSpread.toFloat()) }
+            SliderPreferenceItem(
+                title = stringResource(R.string.preference_ambilight_spread_title),
+                value = ambilightSpread,
+                range = 5f..100f,
+                steps = 0,
+                onDrag = { ambilightSpread = it },
+                onDragFinish = { onInteraction(StreamsSettingsInteraction.AmbilightSpread(ambilightSpread.roundToInt())) },
+                isEnabled = settings.fetchStreams && settings.ambilightEnabled,
+                summary = stringResource(R.string.preference_ambilight_spread_summary),
+            )
+            SwitchPreferenceItem(
+                title = stringResource(R.string.preference_ambilight_power_saving_title),
+                summary = stringResource(R.string.preference_ambilight_power_saving_summary),
+                isChecked = settings.ambilightPowerSaving,
+                isEnabled = settings.fetchStreams && settings.ambilightEnabled,
+                onClick = { onInteraction(StreamsSettingsInteraction.AmbilightPowerSaving(it)) },
+            )
+
             val activity = LocalActivity.current
             val pipAvailable =
                 remember {
