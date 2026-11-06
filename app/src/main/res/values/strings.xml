@@ -747,6 +747,10 @@
     <string name="preference_ambilight_summary">Glow in the chat background that follows the colors of the stream</string>
     <string name="preference_ambilight_opacity_title">Ambilight opacity</string>
     <string name="preference_ambilight_opacity_summary">Strength of the glow, in percent</string>
+    <string name="preference_ambilight_spread_title">Ambilight spread</string>
+    <string name="preference_ambilight_spread_summary">How far the glow reaches into the chat, in percent of its size</string>
+    <string name="preference_ambilight_power_saving_title">Ambilight power saving</string>
+    <string name="preference_ambilight_power_saving_summary">Updates the glow less often: lighter on the battery and CPU, but the colors follow the video with a delay</string>
     <string name="preference_pip_title">Enable picture-in-picture mode</string>
     <string name="preference_pip_summary">Allows streams to continue playing while the app is in the background</string>
     <string name="preference_battery_header">Battery</string>
