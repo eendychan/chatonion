@@ -83,29 +83,26 @@ class StreamViewModel(
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), streamsSettingsDataStore.current().ambilightOpacity / 100f)
 
+    /** 0f..1f, how far the glow reaches into the chat */
+    val ambilightSpread: StateFlow<Float> =
+        streamsSettingsDataStore.settings
+            .map { it.ambilightSpread / 100f }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), streamsSettingsDataStore.current().ambilightSpread / 100f)
+
+    val ambilightPowerSaving: StateFlow<Boolean> =
+        streamsSettingsDataStore.settings
+            .map { it.ambilightPowerSaving }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), streamsSettingsDataStore.current().ambilightPowerSaving)
+
     private val _ambilightColors = MutableStateFlow<IntArray?>(null)
 
     /** The latest frame of the stream, downscaled to AMBILIGHT_COLUMNS x AMBILIGHT_ROWS, as opaque ARGB pixels. */
     val ambilightColors: StateFlow<IntArray?> = _ambilightColors.asStateFlow()
 
     fun updateAmbilight(colors: IntArray?) {
-        val previous = _ambilightColors.value
-        // Blend with the previous frame so the glow shifts smoothly rather than flickering
-        _ambilightColors.value =
-            when {
-                colors == null || previous == null || previous.size != colors.size -> colors
-                else -> IntArray(colors.size) { blendArgb(previous[it], colors[it]) }
-            }
-    }
-
-    private fun blendArgb(
-        old: Int,
-        new: Int,
-    ): Int {
-        val r = (((old shr 16) and 0xFF) + ((new shr 16) and 0xFF)) / 2
-        val g = (((old shr 8) and 0xFF) + ((new shr 8) and 0xFF)) / 2
-        val b = ((old and 0xFF) + (new and 0xFF)) / 2
-        return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
+        _ambilightColors.value = colors
     }
 
     val shouldEnablePipAutoMode: StateFlow<Boolean> =
@@ -295,3 +292,7 @@ private data class TheaterState(
 
 const val AMBILIGHT_COLUMNS = 16
 const val AMBILIGHT_ROWS = 9
+
+// How often the stream is sampled: often (and interpolated in between) for a smooth glow, rarely to save power
+const val AMBILIGHT_INTERVAL_SMOOTH_MS = 120L
+const val AMBILIGHT_INTERVAL_POWER_SAVING_MS = 500L
